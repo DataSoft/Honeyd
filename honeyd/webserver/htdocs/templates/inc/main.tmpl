@@ -1,0 +1,18 @@
+<table width=100%>
+<tr><td valign=top width=15%>
+<TMPL_INCLUDE nav.tmpl>
+</td><td>
+<div class="main">
+<TMPL_IF message>
+<div id="box"><TMPL_VAR message></div><p>
+</TMPL_IF>
+<TMPL_IF greeting>
+<div class="greeting"><TMPL_VAR greeting></div>
+</TMPL_IF>
+<table width="100%"><tr>
+<td valign=top align=left><TMPL_VAR content></td>
+<td valign=top align=right><TMPL_VAR side_content></td>
+</tr></table>
+</div>
+</td></tr>
+</table>

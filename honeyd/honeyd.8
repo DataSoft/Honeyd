@@ -1,0 +1,625 @@
+.\"
+.\" Copyright (c) 2002 Niels Provos <provos@citi.umich.edu>
+.\"
+.Dd April 4, 2002
+.Dt HONEYD 8
+.Sh NAME
+.Nm honeyd
+.Nd Honeypot Daemon
+.Sh SYNOPSIS
+.Nm honeyd
+.Op Fl dP
+.Op Fl l Ar logfile
+.Op Fl s Ar servicelog
+.Op Fl p Ar fingerprints
+.Op Fl 0 Ar p0f-file
+.Op Fl x Ar xprobe
+.Op Fl a Ar assoc
+.Op Fl f Ar file
+.Op Fl i Ar interface
+.Op Fl u Ar uid
+.Op Fl g Ar gid
+.Op Fl c Ar host:port:username:password
+.Op Fl -webserver-address Ar address
+.Op Fl -webserver-port Ar port
+.Op Fl -webserver-root Ar path
+.Op Fl -rrdtool-path Ar path
+.Op Fl -disable-webserver
+.Op Fl -disable-update
+.Op Fl -verify-config
+.Op Fl -fix-webserver-permissions
+.Op Fl V|--version
+.Op Fl h|--help
+.Op Fl -include-dir
+.Op Fl -data-dir
+.Op Ar net ...
+.Sh DESCRIPTION
+.Nm Honeyd
+creates virtual hosts for IP addresses
+matching the specified
+.Ar net .
+The daemon simulates the networking stack of the configured
+hosts and can simulate any TCP and UDP service.  ICMP is fully
+supported, too. By default, all UDP ports are closed
+and
+.Nm
+will generate an ICMP unreachable port message if
+the configured personality permits that.
+.Pp
+.Nm Honeyd
+enables a single host to claim unused addresses on a LAN for network
+simulation.
+The
+.Ar net
+argument may contain multiple addresses and network ranges.
+For configured templates (see below) to work all the configured
+addreses need to be included in
+.Ar net .
+Notice that
+.Nm
+will answer to ICMP requests for all addresses defined in
+.Ar net
+if there is no configured specific host or default template.
+.Pp
+In order for
+.Nm
+to receive network traffic for IP addresses that it should
+simulate, it is necessary to either explicitly route traffic to
+it, use proxy arp or run
+.Xr arpd 8
+for unassigned IP addresses on a shared network.
+By assigning an ethernet address to a template via
+.Bd -literal
+  set template ethernet "<vendor|mac address>"
+.Ed
+.Pp
+it is possible to integrate virtual honeypots into a production
+network without running
+.Xr arpd 8 .
+Futhermore,
+.Nm Honeyd
+supports acquiring IP addresses via DHCP.
+You can ask a template to be assigned to a DHCP IP address via
+.Bd -literal
+  dhcp template on fxp0 [ethernet "<vendor|mac address>"]
+.Ed
+.Pp
+.Nm Honeyd
+exits on an interrupt or termination signal and
+rotates logfiles on SIGUSR1.
+.Pp
+The options are as follows:
+.Bl -tag -width Ds
+.It Fl d
+Do not daemonize, and enable verbose debugging messages.
+.It Fl P
+On some operating systems, it is not possible to get event notifications
+for pcap via
+.Xr select 2 .
+In that case,
+.Nm
+needs to run in polling mode.  This flag enables polling.
+.It Fl l Ar logfile
+Log packets and connections to the logfile specified by
+.Ar logfile .
+.It Fl s Ar servicelog
+Logs information from service scripts to the log file
+specified by
+.Ar servicelog .
+.It Fl p Ar fingerprints
+Read
+.Nm nmap
+style fingerprints.  The names defined after the
+.va Fingerprint
+token are stored as personalities.
+The personalities can be used in the configuration file to modify the
+behaviour of the simulated TCP stack.
+.It Fl x Ar xprobe
+Read
+.Nm xprobe
+style fingerprints.
+This file determines how
+.Nm
+reacts to ICMP fingerprinting tools.
+.It Fl a Ar assoc
+Read the file that associates
+.Nm nmap
+style fingerprints with
+.Nm xprobe
+style fingerprints.
+.It Fl 0 Ar p0f-file
+Read the database for passive fingerprinting.
+The names of the operating systems specified in
+this file are recognized by
+.Nm Honeyd's
+parser and can be used for dynamic templates.
+.It Fl u Ar uid
+Set the UID that
+.Nm Honeyd
+is running as.
+.It Fl g Ar gid
+Set the GID that
+.Nm Honeyd
+is running as.
+.It Fl f Ar file
+Read the configuration in
+.Ar file .
+It is possible to create host templates with the configuration file
+that specify which servers should run and which scripts should be
+started to simulate them.
+.Nm
+will reread the configuration file when sent a SIGHUP signal.
+.Pp
+The syntax is as follows:
+.Bd -literal
+config	= creation | addition | delete | binding | set |
+          annotate | route [config] | option
+creation= "create" template-name | "create" "default" |
+  "dynamic" template-name
+addition= "add" template-name proto "port" port-number action |
+  "add" template-name "subsystem" cmd-string ["shared"] |
+  "add" template-name "use" template-name "if" condition
+delete= "delete" template-name |
+  "delete" template-name proto "port" port-number
+binding	= "bind" ip-address template-name |
+  "bind" condition ip-address template-name |
+  "bind" ip-address "to" interface-name |
+  "dhcp" template-name "on" interface-name ["ethernet" cmd-string] |
+  "clone" template-name template-name
+set	= "set" template-name "default" proto "action" action |
+  "set" template-name "personality" personality-name |
+  "set" template-name "personality" "random"
+  "set" template-name "ethernet" cmd-string
+  "set" template-name "uptime" seconds
+  "set" template-name "droprate" "in" percent
+  "set" template-name "uid" number ["gid" number]
+  "set" template-name "spoof" ["from" ip-address] ["to" ip-address]
+  "set" template-name "maxfds" number
+  "set" ip-address "uptime" seconds
+annotate= "annotate" personality-name [no] finscan |
+  "annotate" personality-name "fragment" ("drop" | "old" | "new")
+route	= "route" "entry" ipaddr |
+  "route" "entry" ipaddr "network" ipnetwork |
+  "route" ipaddr "link" ipnetwork |
+  "route" ipaddr "unreach" ipnetwork |
+  "route" ipaddr "add" "net" ipnetwork \\
+		 "tunnel" ipaddr(src) ipaddr(dst) |
+  "route" ipaddr "add" "net" ipnetwork ipaddr \\
+		["latency" number"ms"] ["loss" percent] \\
+		["bandwidth" number["Mbps"|"Kbps"] \\
+		["drop" "between" number "ms" "-" number "ms" ]
+proto	= "tcp" | "udp" | "icmp"
+action	= ["tarpit"] ("block" | "open" | "reset" | cmd-string | \\
+  "internal" cmd-string \\
+  "proxy" ipaddr":"port )
+condition = "source os =" cmd-string |
+  "source ip =" ipaddr | "source ip =" ipnetwork |
+  "time " timecondition | "proto" protocol | "otherwise"
+timecondition = "between" time "-" time
+option  = "option" plugin option value
+.Ed 
+.Pp
+The
+.Va cmd-string
+and the
+.Va personality-name
+are arbitrary strings enclosed with quotation marks.
+Variable expansion on the tokens
+.Va $ipsrc ,
+.Va $ipdst ,
+.Va $sport ,
+.Va $dport
+and
+.Va $date
+is performed when executing the command string or when resolving
+the proxy address.  Additionally, the environment variables
+.Va HONEYD_IP_SRC ,
+.Va HONEYD_IP_DST ,
+.Va HONEYD_DST_PORT ,
+.Va HONEYD_SRC_PORT ,
+.Va HONEYD_PERSONALITY
+and
+.Va HONEYD_REMOTE_OS
+are available, too.
+.Pp
+If the
+.Va internal
+key word is use,
+.Nm
+interprets the command string as Python module.
+These modules are executed within
+.Nm
+without forking a new process.
+As a result, internal scripts are very fast and cheap to execute.
+.Pp
+The special keyword
+.Va tarpit
+is used to slow down the progress of a TCP connection.
+This is used to hold network resources of the connecting computer.
+.Pp
+If an IP address
+is not bound to a template, the actions specified in the
+.Va default
+template are executed.
+.Pp
+Personalities need to be annotated before they are assigned to
+a template or an IP address.
+.Pp
+The default fragment policy is to accept fragment and resolve overlaps
+in favor of old data.  If the personality returns TCP timestamps, the
+default uptime is a randomly chosen between zero and twenty days.
+.Pp
+The special
+.Va include
+directive may be used to include other configuration files, for
+example to keep all personality annotations separate from the
+main configuration file.
+.Pp
+All honeyd plugins can be configured via the configuration file.
+Each configuration option goes in one line, indicated by the
+.Va option
+keyword.
+It is followed by three items: the name of the plugin, the name of the
+configuration option, and a value.
+The value can be either an integer, a float, or a character string.
+The options are picked up when honeyd reads the configuration file and
+can then be queried by the plugins.
+.It Fl i Ar interface
+Listen on
+.Ar interface .
+It is possible to specify multiple interfaces.
+.It Fl c Ar hostname:port:username:password
+Using this flag,
+.Nm Honeyd
+functions as a traffic statistic collector.
+Collected statistics get propagated upstream to an aggregator
+running at the specified hostname and port.
+The username and password is used to create a signature on the
+data packet that can be used to verify the integrity of the data.
+The statistics can be used to automatically detect anomalies like
+worm propagation.
+.It Fl -webserver-address Ar address
+Specifies the address on which the web server should listen.
+By default, this is
+.Va 127.0.0.1
+so that only local requests are served.
+By specifying
+.Va 0.0.0.0 ,
+the webserver is going to answer to external requests, too.
+.It Fl -webserver-port Ar port
+Specifies the port on which the web server should listen.
+.It Fl -webserver-root Ar path
+The path to the document tree of the webserver.
+This is usually
+.Pa {prefix}/shared/honeyd/webserver/htdocs/ .
+.It Fl -rrdtool-path Ar path
+Specifies the path for
+.Xr rrdtool 1 .
+Without
+.Nm rrdtool
+no traffic graphs can be generated.
+.It Fl -disable-webserver
+Disables the builtin webserver.
+.It Fl -disable-update
+Prevents
+.Nm Honeyd
+from checking if there are any security problems with the current
+version of the application.
+.It Fl -verify-config
+Verifies that
+.Nm Honeyd
+can parse the configuration correctly.
+This does not require any special permissions, although some configurations
+that require direct access to interfaces might fail to validate.
+.It Fl -fix-webserver-permissions
+Changes the ownership of the web server files to the user,
+.Nm Honeyd
+is going to run as.
+.It Fl V|--version
+Print version information and exit.
+.It Fl h|--help
+Print summary of command line options and exit.
+.It Fl -include-dir
+For plugin development.
+Reports the directory in which
+.Nm
+stores its header files.
+.It Fl -data-dir
+Reports the directory in which
+.Nm
+stores data files like Python modules.
+.It Ar net
+The IP address or network (specified in CIDR notation) or IP address
+ranges to claim
+(e.g. ``10.0.0.3'', ``10.0.0.0/16'' or ``10.0.0.5-10.0.0.15'').
+If unspecified,
+.Nm
+will attempt to claim any IP address it sees traffic for.
+.El
+.Sh ROUTING TOPOLOGY
+.Nm
+supports the creation of a complete network topology including
+routing.  In order to enable the simulation of a network topology,
+a router entry point has to be configured with
+.Bd -literal
+  route entry <IP address>
+.Ed
+.Pp
+By adding a
+.Va network
+to a router entry point,
+.Nm
+is told about the network addresses this entry point is responsible
+for.
+This enables multiple entry points into the routing topology.
+.Pp
+Every
+.Va route add net
+directive creates the specified gateway as a new router.
+In the case of tunneling, no new router is created, instead
+packets are
+.Xr gre 4
+encapsulated and sent to the tunnel destination address.
+It is assumed that the tunnel destination address routes
+the encapsulated packets to a
+.Nm
+machine.
+.Pp
+The virtual machines that can be directly accessed by a router
+are defined as network range in the
+.Va route link
+command.
+.Pp
+A link may carry attributes like
+.Va latency ,
+.Va loss ,
+and
+.Va bandwidth .
+The
+.Va latency
+specifies a constant delay for packets travelling across the link.
+The
+.Va bandwidth
+on the other hand tracks the bandwidth related queuing delay for
+each link.
+If a packet is still being transmitted on the link then the
+queue delay for another packet is the propagating delay depending
+on the bandwidth plus the time for the previous packet to clear
+the link.
+.Pp
+Unless the link is configured to drop packets between a configurable
+delay threshold,
+.Nm Honeyd
+currently assumes infinite buffer space, so use this option 
+with care.
+.Pp
+An address space can be made unrouteable via the
+.Va route unreach
+command.
+.Pp
+The router entry point is the first address that inspects
+a packet.  The packet follows a path defined by the network
+topology until the current router has the destination IP address
+on its local network.
+.Pp
+It is possible to integrate real machines into the routing topology.
+.Nm
+takes care of ARP requests and replies and encapsulates packets
+that go to external machines into ethernet packets.
+.Pp
+External machines can be configured with the following command:
+.Bd -literal
+  bind <IP address> to <interface name>
+.Ed
+.Pp
+.Sh SUBSYSTEM VIRTUALIZATION
+Subsystem virtualization allows you to run regular network applications
+under a virtual IP address controlled by
+.Nm honeyd .
+The application's network calls are intercepted and virtualized
+to the honeypot that they are configured to.
+As a result, all network calls that subsytem applications make appear
+to originate from the virtual IP address of a honeypot.
+This includes binding ports, accepting and initiating UDP and TCP connections.
+Raw sockets are not supported.
+.Pp
+Subsystem are configured as follows
+.Bd -literal
+    set template subsystem "/usr/sbin/httpd"
+.Ed
+.Pp
+and are started as a separate process for every bound template.
+Applications started as a 
+.Nm
+subsystem need to be dynamically linked in order to work under
+.Nm Honeyd .
+.Pp
+It is possible to shared subsystems across different addresses
+if they are created with the
+.Va shared
+flag.
+This allows a subsystem to bind to several virtual IP addresses
+and may also be used to increase the performance of subsystems
+across addresses.
+.Sh DYNAMIC TEMPLATES
+Dynamic templates give
+.Nm Honeyd
+the ability to change networking behavior based on several
+different conditions:
+.Bl -tag -width operatingxsystemx
+.It source address
+The source address of the network connection determines which
+template is going to be used.
+.It operating system
+The operating system as determined by passive fingerprinting
+needs to be matched for the template to be activated.
+.It time
+The template is only being used between a certain time interval.
+This allows Honeyd to simulate machines being turned on and off.
+.El
+.Pp
+A dynamic template can be created with the following command:
+.Bd -literal
+  dynamic magichost
+  add magichost use windowsxp if source os = windows
+  add magichost use linux if source ip = 192.168.0.0/16
+  add magichost use invisible if time between 12:00am - 5:00am
+  add magichost otherwise use default 
+.Ed
+.Pp
+As an alternative, it is possible to use a short cut in the
+bind command to create dynamic templates:
+.Bd -literal
+  bind source ip = 192.168.0.0/16 10.0.0.5 cisco
+  bind source ip = 10.0.0.0/8 10.0.0.5 juniper
+.Ed
+.Pp
+In this example, the host on
+.Va 10.0.0.5
+behaves like a cisco router if it is contacted from IP addresses
+in the
+.Va 192.168
+network.
+If it is contacted from IP addresses in the
+.Va 10
+network, it behaves like a juniper router.
+.Sh MANAGEMENT CONSOLE
+The
+.Xr honeydctl 1
+command allows the dynamic configuration of
+.Nm Honeyd
+while it is running; see
+.Xr honeydctl 1
+for more information.
+.Sh LOGGING
+.Nm Honeyd
+has two different logging modes.
+The syslog facility is used to log connection establishment and
+termination including other relevant packet events.  Most
+messages can be disabled when configuring
+.Xr syslog.conf 5
+to drop all messages for the
+.Dv LOG_DAEMON
+facility if the log level is below
+.Dv LOG_NOTICE .
+.Pp
+Services started by
+.Nm
+can cause the daemon to log data by sending information to
+.Va stderr .
+.Pp
+The second way of logging network activity is by using the
+.Fl l
+flag.
+This causes
+.Nm
+to log all received packets in a human readable format.
+For UDP and TCP connections,
+.Nm
+logs the start and end of a flow including the amount of
+data transfered.
+.Pp
+For logging any other information, it is suggested to run
+a separate intrusion detection system.
+.Sh SCRIPTING WITH PYTHON
+.Nm Honeyd
+supports internal service scripts that have been written in Python.
+To improve the performance of these services, 
+.Nm Honeyd 
+provides an event-driven model.
+The services need to indiciate when they are ready to read and when
+they are ready to write data.
+.Nm Honeyd
+keeps track of state that is provided to the Python scripts on
+every invocation.
+.Pp
+The folowing example uses a Python script to implement a simple
+echo server:
+.Bd -literal
+  import honeyd
+  import sys
+
+  def honeyd_init(data):
+    mydata = {}
+    honeyd.read_selector(honeyd.EVENT_ON)
+    return mydata
+
+  def honeyd_readdata(mydata, data):
+    honeyd.read_selector(honeyd.EVENT_ON)
+    honeyd.write_selector(honeyd.EVENT_ON)
+    mydata["write"] = data
+    return 0
+
+  def honeyd_writedata(mydata):
+    data = mydata["write"]
+    del mydata["write"]
+    return data
+
+  def honeyd_end(mydata):
+    del mydata
+    return 0
+.Ed
+.Pp
+
+.Sh EXAMPLES
+A sample configuration file looks as follows:
+.Bd -literal
+# Example of a simple host template and its binding
+include annotations
+
+# Set up the hosts
+create template
+set template personality "OpenBSD 2.6-2.7"
+add template tcp port 80 "sh scripts/web.sh"
+add template tcp port 22 "sh scripts/test.sh $ipsrc $dport"
+add template udp port 53 proxy yournameserver:53
+set template default tcp action reset
+set template uid 32767 gid 32767
+
+bind 10.11.69.2 template
+set 10.11.69.2 uptime 1327650
+.Ed
+.Pp
+A simple example of a routing topology:
+.Bd -literal
+route entry 10.0.0.1
+route 10.0.0.1 link 10.2.0.0/24
+route 10.0.0.1 add net 10.2.1.0/24 10.2.0.10 latency 10ms loss 3.4
+route 10.2.0.10 link 10.2.1.0/24
+.Ed
+.Pp
+For this topology to work the
+.Ar net
+value in the command line has to be
+.Ar 10.0.0.1 10.2.0.0/24 10.2.1.0/24 .
+.Sh FILES
+.Bl -tag -width {prefix}/share/honeyd/xprobe2.conf
+.It Pa /var/run/honeyd.pid
+The PID of the current daemon.
+.It Pa {prefix}/lib/honeyd/webserver/
+Python modules and web server documents used by the internal webserver.
+.It Pa {prefix}/lib/honeyd/libhoneyd.so
+A shared library that can be preloaded to virtualize applications within
+.Nm honeyd .
+.It Pa {prefix}/share/honeyd/nmap.assoc
+An association file to match
+.Nm xprobe2
+fingerprints against
+.Nm nmap .
+.It Pa {prefix}/share/honeyd/nmap.prints
+.Nm Nmap
+fingerprints used by
+.Nm
+to impersonate operating system stacks.
+.It Pa {prefix}/share/honeyd/xprobe2.conf
+.Nm Xprobe
+fingerprints used by
+.Nm
+to impersonsate the ICMP section of operating system stacks.
+.El
+.Sh SEE ALSO
+.Xr honeydctl 1
+.Xr arpd 8
+.Sh AUTHORS
+Niels Provos
+.Aq provos@citi.umich.edu

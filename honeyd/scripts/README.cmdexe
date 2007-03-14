@@ -1,0 +1,100 @@
+#
+# $Id: README.cmdexe,v 1.1 2004/12/31 18:54:22 provos Exp $
+#
+
+1. Description
+
+   cmdexe.pl is a simple Perl script, that works with honeyd, to
+   emulate a DOS command prompt.  It is useful to emulate a simple
+   Windows "shell" backdoor, as used by many worms nowadays.  It logs
+   the command line entered.  Non-printable characters are logged in
+   hexdump format.
+
+
+2. Dependencies
+
+   cmdexe.pl needs Perl and a working honeyd environment.  For
+   instructions on how to compile and configure honeyd, please refer
+   to the honeyd website:
+
+   http://www.honeyd.org/
+
+
+3. Installation
+
+   a. copy the cmdexe.pl script:
+
+      # cp cmdexe.pl /full/path/cmdexe.pl
+      # chmod 755 /full/path/cmdexe.pl
+
+   b. create the LOGDIR directory:
+
+      # mkdir -p /full/path/cmdexe
+      # chown nobody:nobody /full/path/cmdexe
+
+   c. edit your honeyd configuration file, adding something like:
+
+      ###
+      create backdoor
+      set backdoor personality "Microsoft Windows XP Home Edition"
+      set backdoor default tcp action reset
+      set backdoor default udp action reset
+      set backdoor default icmp action open
+      set backdoor uid 32767 gid 32767
+      # blaster
+      add backdoor tcp port 4444 "/full/path/cmdexe.pl -p winxp -l /full/path/cmdexe"
+      # sasser
+      add backdoor tcp port 5554 "/full/path/cmdexe.pl -p winxp -l /full/path/cmdexe"
+      add backdoor tcp port 9996 "/full/path/cmdexe.pl -p winxp -l /full/path/cmdexe"
+      # dabber
+      add backdoor tcp port 8967 "/full/path/cmdexe.pl -p winxp -l /full/path/cmdexe"
+      add backdoor tcp port 9898 "/full/path/cmdexe.pl -p winxp -l /full/path/cmdexe"
+      # lovgate
+      add backdoor tcp port 20168 "/full/path/cmdexe.pl -p winxp -l /full/path/cmdexe"
+
+      bind 192.0.2.1 backdoor
+      ### change the IP above -- this is only an example.
+
+   d. restart honeyd.
+
+
+4. Logging
+
+   cmdexe.pl logs all its activities to LOGDIR/logfile.  LOGDIR can be
+   specified using the `-l' option.  If this option is not provided,
+   LOGDIR defaults to `/var/cmdexe'.
+
+   
+5. Personalities
+
+   The default personality is "winxp". Select one of the following
+   personalities using the '-p' option: "win95", "win98", "winme",
+   "winnt", "win2000", or "winxp".
+
+   
+6. License Information
+
+   cmdexe.pl is Free Software.  For license details, please refer to
+   the source code.
+
+
+7. Obtaining new versions
+
+   New versions of my cmdexe.pl are available at:
+   http://www.honeynet.org.br/tools/
+
+
+8. Reports and questions
+
+   Please send comments, questions and bug reports to
+   cordeiro@nic.br.
+
+
+9. Acknowledgments
+
+   The author would like to thank the Honeynet.BR Team and the
+   Brazilian Honeypots Alliance for their ideas and help testing this
+   tool.
+
+
+# README ends here.

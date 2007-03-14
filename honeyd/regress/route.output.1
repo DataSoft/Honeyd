@@ -1,0 +1,36 @@
+SRC=192.0.2.1
+DST=192.18.3.10
+ID=8143
+TTL=1
+DATA=TCP(seq=10000L, sum=314, dport=80, sport=555)
+
+SRC=192.18.0.1
+DST=192.0.2.1
+ID=22168
+TTL=255
+DATA=ICMP(sum=31288, type=11, data=TimeExceed(data=IP(src='\xc0\x00\x02\x01', dst='\xc0\x12\x03\n', sum=5348, len=40, p=6, ttl=1, id=8143, data=TCP(seq=10000L, sum=314, dport=80, sport=555))))
+
+SRC=192.0.2.1
+DST=192.18.3.10
+ID=8144
+TTL=2
+DATA=TCP(seq=10000L, sum=314, dport=80, sport=555)
+
+SRC=192.18.2.1
+DST=192.0.2.1
+ID=22169
+TTL=254
+DATA=ICMP(sum=31288, type=11, data=TimeExceed(data=IP(src='\xc0\x00\x02\x01', dst='\xc0\x12\x03\n', sum=5347, len=40, p=6, ttl=1, id=8144, data=TCP(seq=10000L, sum=314, dport=80, sport=555))))
+
+SRC=192.0.2.1
+DST=192.18.3.10
+ID=8145
+TTL=3
+DATA=TCP(seq=10000L, sum=314, dport=80, sport=555)
+
+SRC=192.18.3.1
+DST=192.0.2.1
+ID=22170
+TTL=253
+DATA=ICMP(sum=31288, type=11, data=TimeExceed(data=IP(src='\xc0\x00\x02\x01', dst='\xc0\x12\x03\n', sum=5346, len=40, p=6, ttl=1, id=8145, data=TCP(seq=10000L, sum=314, dport=80, sport=555))))
+

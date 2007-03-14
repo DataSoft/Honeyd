@@ -1,0 +1,36 @@
+route entry 10.0.0.1
+route 10.0.0.1 link 10.2.0.0/24
+route 10.0.0.1 add net 10.3.0.0/16 10.3.0.1 latency 8ms bandwidth 10Mbps
+route 10.3.0.1 link 10.3.0.0/24
+route 10.3.0.1 add net 10.3.1.0/24 10.3.1.1 latency 7ms loss 0.5
+route 10.3.1.1 link 10.3.1.0/24
+
+# Example of a simple host template and its binding
+create template
+set template personality "Microsoft Windows XP Professional SP1"
+set template uptime 1728650
+set template maxfds 35
+add template tcp port 80 "scripts/iis5.net/main.pl"
+add template tcp port 22 "sh scripts/test.sh $ipsrc $dport"
+add template tcp port 23 proxy $ipsrc:23
+add template udp port 53 proxy 141.211.92.141:53
+set template default tcp action reset
+
+create default
+set default default tcp action block
+set default default udp action block
+set default default icmp action block
+
+create router
+set router personality "Cisco 1601R router running IOS 12.1(5)"
+set router default tcp action reset
+add router tcp port 22 "scripts/test.sh"
+add router tcp port 23 "scripts/router-telnet.pl"
+
+bind 10.3.0.1 router
+bind 10.3.1.1 router
+bind 10.3.1.12 template
+bind 10.3.1.11 template
+bind 10.3.1.10 template
+set 10.3.1.11 personality "Microsoft Windows NT 4.0 SP3"
+set 10.3.1.10 personality "IBM AIX 4.2"

@@ -1,0 +1,986 @@
+#2Wire Home Portal 100 residential gateway, v.3.1.0;
+#3Com Access Builder 4000 Switch;
+#3Com terminal server ESPL CS2100;
+#3Com NBX PBX;
+#3com Office Connect Router 810;
+#3Com OfficeConnect Remote 812 ADSL Router;
+#3Com SuperStack II switch (OS v 2.0);
+#3Com SuperStack II switch SW/NBSI-CF,11.1.0.00S38;
+#3Com Netbuilder & Netbuilder II router OS v8.1;
+#3Com Netbuilder Remote Office 222 router;
+#3Com Netbuilder Remote Office 222 (ESPL-310), Version 10.1 (SW/NBRO-AB,10.1);
+#3Com Netbuilder II Router Ver 11.4.0.51;
+#3Com NetBuilder-II, OS version SW/NB2M-BR-5.1.0.27;
+#3Com NetBuilder & NetBuilder II OS v 9.3;
+#3Com Sharkfin/Tailfin Cable Modem;
+#3Com Sharkfin/Tailfin Cable Modem;
+#4.3BSD-tahoe on a MicroVax III;
+#Dell Powervault 132T Automated Tape Library;
+#Dell Powervault 132T Automated Tape Library;
+#ACC Amazon 9.2.29 or Congo 9.2.35 WAN concentrator;
+#Alteon Networks ACEswitch 180e Software Version 8.0.62.7;
+#Actiontec 1520 DSL gateway firmware 8.2.0.16;
+#Avaya G3 PBX version 8.3;
+#Avaya TN2302 Prowler/Medpro H.323 gateway;
+#SMC Barricade or D-Link DL-707 Wireless Broadband Router;
+#SMC Barricade Wireless Broadband Router (firmware R1.93e);
+#SMC Barricade DSL Router/Modem/Wireless AP;
+#SMC Barricade Router, firmware 1.94a;
+#SonicWall SOHO firewall, Enterasys Matrix E1, or Accelerated Networks VoDSL, or Cisco 360 Access Point;
+#Acorn RISC OS 3.60 (Acorn TCP/IP Stack 4.07);
+Acorn RISC OS 3.70 using AcornNet TCP/IP stack or RISC OS 4 (Pace, RISCOS Ltd);Sun Solaris 9 (SunOS 2.9)
+#AGE Logic, Inc. IBM XStation;
+#Aironet 630-2400 V3.3P Wireless LAN bridge;
+#Aironet AP4800E v8.07 - Aironet (Cisco?) 11 Mbps wireless access point;
+#Aironet Wireless Bridge running firmware V5.0J;
+#IBM AIX 3.2;
+#IBM AIX 3.2;
+#IBM AIX 3.2 running on RS/6000;
+#IBM AIX 3.2.3 running on RS6000 model 560;
+#IBM AIX 3.2.5 (Bull HardWare);
+#IBM AIX 4.0 - 4.2;
+#IBM AIX 4.02.0001.0000;
+#IBM AIX v4.2;
+#IBM AIX 4.1-4.1.5;
+#IBM AIX v4.1 running on a C10;
+#IBM AIX 4.1;
+#IBM AIX 4.2;
+#IBM AIX 4.2-4.3.3;
+#IBM AIX 4.2.X-4.3.3.0;
+#IBM AIX 4.3.2.0-4.3.3.0 on an IBM RS/*;
+#IBM 8239 Token-Ring Stackable Hub;
+#IBM OS/400 V4R2M0;
+#IBM OS/400 V4R5M0;
+#IBM OS/400 V5R1M0;
+#IBM OS/400 V5R2M0;
+#IBM OS/400 V5R1M0;
+#IBM AIX 4.3.3.0 on an IBM RS/*;
+#IBM AIX 4.3;
+#IBM AIX Version 4.3;
+#IBM AIX 5.1 on a p610-6C1;
+#IBM AIX 5.1;
+#IBM AIX 5.1;
+#Alcatel 1000 ADSL (modem);
+#Alcatel 1000 DSL Router;
+#Alcatel Advanced Reflexes IP Phone, Version: E/AT400/46.8;
+#Alcatel OmniStack switch version 4.3.3 GA;
+#Alcatel Speed Touch *DSL modem/router;
+#Alcatel Speed Touch 510 *DSL modem/router;
+#Allied Telesyn AT-S10 version 3.0 on an AT-TS24TR hub;
+#Allied Telesyn AT-3726 Ethernet Switch: 2.1cycleA;
+#Allied Telesyn AT-RP24i switch or Ericcson HiS V2.0;
+#Alteon AceSwitch 110 or Cantillion C100 ATM Switch;
+#Alteon ACEswitch 184 V. 8.0.49;
+#AmigaOS Miami 2.1-3.0;
+#AmigaOS Miami 3.0;
+#AmigaOS Miami 3.1-3.2;
+#AmigaOS Miami Deluxe 0.9 - Miami 3.2B;
+#AmigaOS 3.1 running Miami Deluxe 0.9m;
+#AmigaOS 3.5/3.9 running Miami Deluxe 1.0c;
+#AmigaOS AmiTCP/IP 4.3;
+#AmigaOS AmiTCP/IP Genesis 4.6;
+#Amos 2.3A;
+#AOS/VS on a Data General mainframe;
+#Apollo Domain/OS SR10.4;
+#AOS/VS or VSII;
+#APC MasterSwitch Network Power Controller;
+#APC Web/SNMP UPS management card;
+#APC Smart-UPS 3000RM;
+#ARESCOM NetDSL 1000NDS series ADSL router;
+#ARLAN BR2000E V5.0E Radio Bridge;
+#Ascend DSLPipe DSL-50S-CELL DSL router;
+#Ascend P130 Router;
+#Ascend Max 1800 50Ap8+ or 2024 router;
+#Ascend / Lucent MAX TNT Running TAOS version 8.0.1 w/ VoIP Hash;
+#Ascend/Lucent Max (HP,4000-6000) version 6.1.3 - 7.0.2+;
+#Ascend Pipeline 50 running 5.1A Firmware;
+#Ascend Pipeline 50;
+#Ascend Pipeline 50 rev 4.6C;
+#Ascend GRF Router running Ascend Embedded/OS 2.1;
+#Ascend P75 router;
+#Ascend Pipeline P130 or 50;
+#Ascend Pipeline 400/T1 (Software V 4.5B);
+#Ascend TNT OS +5.0Ap48+;
+#Apple Airport Extreme Base Station (WAP);
+Apple Mac OS 8.5.1 (Appleshare IP 6.0);Mac OS X 10.1.5
+Apple Mac OS 8.1 running on a PowerPC G3 (iMac);Mac OS X 10.1.5
+Apple Mac OS 8.6;Mac OS X 10.1.5
+Apple Mac OS 8.6;Mac OS X 10.1.5
+Apple Mac OS 9 - 9.1;Mac OS 9.2.x
+Apple Mac OS X Server 1.0-1.0-1 (Rhapsody 5.3 - 5.4);Mac OS X 10.1.5
+Apple Mac OS X 1.1-1.2 (Rhapsody 5.5-5.6) on a G3;Mac OS X 10.1.5
+Apple Mac OS X 10.1 - 10.1.4;Mac OS X 10.1.5
+Apple Mac OS X 10.1.4 (Darwin Kernel 5.4) on iMac;Mac OS X 10.1.5
+Apple Mac OS X 10.1.5;Mac OS X 10.1.5
+Apple Mac OS X 10.1.5-10.2.6;Mac OS X 10.1.5
+Apple Mac OS X 10.2.6 (Jaguar);Mac OS X 10.1.5
+#Apple Newton MessagePad 2100, Newton OS 2.1;
+#Apple Color LaserWriter 600 Printer;
+#Apple Color LaserWriter 600 Printer;
+#Apple Color LaserWriter 12/660 PS (Model No. M3036);
+Apple LaserWriter 16/600 PS, HP 6P, or HP 5 Printer;HPUX B.11.0 x
+#Apple LaserWriter 8500 (PostScript version 3010.103);
+#Asante 6524-2G GigE switch;
+#Asante IntraStack Ethernet Switch (6014 DSB Versions: BP(2.06 ), FW(1.03 ));
+#Asante IntraSwitch 5324;
+#Asante IntraSwitch 6216M firmware v2.05A;
+#AsanteHub 2072 Ethernet Hu;
+#Asante FriendlyNet FR3004 Series Internet Hub;
+#Auspex Fileserver (AuspexOS 1.9.1/SunOS 4.1.4);
+#Atari Mega STE running JIS-68k 3.0;
+#AtheOS ( www.atheos.cx );
+#AtheOS/Syllable 0.4.2;
+#ATT Unix SVR4.2 on a Lucent Definity voicemail system;
+#Apple A/UX 3.1.1 SVR2 or OpenStep 4.2;
+Axent Raptor Firewall running on Windows NT;Microsoft Windows XP Professional
+#AXIS or Meridian Data Network CD-ROM server;
+#AXIS 540/542 print server v5.30;
+#Axis 540 e'net print server ver 5.48;
+#Axis 540 print server;
+#Axis 2120 network camera;
+#AXIS NetEye Camera Server V1.20;
+#AXIS Stack -- CD-ROM Server or Print Server or Camera Server;
+#Axis 200+ Web Camera running OS v1.42;
+#Axis 2100 Network Camera running Linux/CRIS v2.32;
+#AXIS Network Print Server;
+#Bay Networks BLN-2 Network Router or ASN Processor revision 9;
+#Bay Networks BayStack 310T switch;
+#BayStack 28115/ADV Fast Ethernet Switch;
+#Baystack Instant Internet 400 SoHo Router;
+BeOS 4 - 4.5;Linux Kernel 2.4.5 and above
+#BeOS R5.03 Personal Edition;
+#BeOS 5.0.4 (BeOS 5 Pro + BONE 7a);
+#BeOS 5.1d0/DANO on x86;
+#F5 Labs BigIp Load balancer Kernel 4.1.1PTF-03 (X86);
+#F5 Labs Big-IP load balancer kernel 4.2PTF-05a (X86);
+#FiberLine WL-1200R1 (also known as InterEpoch IWE-1200A-1) Wireless Broadband Router (WAP);
+#Bintec XS/XM ISDN access router V. 4.9.1-4.9.3;
+#Borderware 5.0 Firewall;
+#Borderware 5.2 firewall;
+#Borderware 6.0.2 firewall;
+#Brix 1000 Verifier;
+#BSDI BSD/OS 2.0 - 2.1;
+#BSDI BSD/OS 3.0-3.1 (or possibly Mac OS, NetBSD);
+#BSDI BSD/OS 4.0-4.0.1;
+#BSDI BSD/OS 4.0.1;
+#CacheFlow 6000 web proxy running Security Gateway 2.1.0;
+#CacheOS (CacheFlow 2000 proxy cache);
+#Canon GP 160 PF printer;
+#Canon IR6000 printer;
+#Canon photocopier/fax/scanner/printer GP30F;
+#Capellix 3000 Modular SAN Switch;
+#Chase IOLan Terminal Server;
+#Check Point FireWall-1 4.0 SP-5 (IPSO build);
+Checkpoint Firewall-1 on Windows NT 4.0 Server SP4-SP5;Microsoft Windows XP Professional
+#Checkpoint SecurePlatform NG FP3;
+#Cisco 1200 access point (WAP) running IOS 12.2(8);
+#Cisco AIR-WGB340 V8.38 wireless workgroup bridge 340;
+#Cisco WGB350 802.11b WorkGroup Bridge;
+#Cisco 761 running c760-in.r.NET3 4.3(1);
+#Cisco 762 Non-IOS Software release 4.1(2) or 766 ISDN router;
+#Cisco 766 non-IOS software 4.2(3.5);
+#Cisco 1538M HUB running Cisco 1538M EES (1.00.00) or Assured Access Technology ISAS Switch Release-2.3.0 or Thomson Multimedia RCA DCM245 Cable Modem;
+#Cisco 2620 router running IOS 12.1(6);
+#Cisco 3600 router running IOS 12.2(6c);
+#Cisco 801/1720 router running IOS 12.2.8;
+#Cisco 827 aDSL router running IOS 112.2(11);
+#Cisco router running IOS 12.1.5-12.2.13a;
+#Cisco 1601R router running IOS 12.1(5);
+#Cisco 4500 router running IOS 11.2(2);
+#Cisco 7206 running IOS 11.1(24);
+#Cisco Cache Engine Web Proxy;
+#Cisco CPA2500 (68030) or 2511 router;
+#Cisco Catalyst 5500/6500 or Alcatel Omni Switch/Router;
+#Cisco AS5200 terminal server;
+#Cisco Catalyst 4006 Switch running NmpSW 7.4(2);
+#Cisco Localdirector 430, running OS 2.1;
+#Cisco PIX 4.2(2) Internal Interface;
+#Cisco PIX Firewall running PIX 4.1(5);
+#Cisco PIX v4.2 Firewall;
+#Cisco PIX 515 firewall running software 4.4(5);
+#Cisco PIX 506 Firewall;
+#Cisco PIX Firewall Version 6.1(2);
+#Cisco PIX 515 or 525 running 6.1(4) - 6.2(1);
+#Cisco PIX Firewall Version 6.2(2) - 6.3;
+#Cisco PIX Firewall Version 6.2(1);
+#Cisco Firewall (PIX 6.1.4 - 6.2.2);
+#Cisco Secure PIX Firewall Version 5.0(2);
+#Cisco PIX w/IOS 6.1(1);
+#Cisco PIX 501 firewall running PIX 6.1(1);
+#Cisco switch/router with IOS 11.1(7)-11.2(8.10);
+#Cisco 2501/4500 router with IOS Version 10.3(15) - 11.1(20);
+#Cisco IP Phone 7910 or 7940 Firmware 3.1;
+#Cisco IP phone (POS3-04-3-00, PC030301);
+#Cisco 2501/5260/5300 terminal server IOS 11.3.6(T1);
+#Cisco 5200 router running IOS v12.0(15);
+#Cisco 4500-M router running IOS 11.3(6) IP Plus;
+#Cisco Catalyst 1900 switch, Bay networks 350-450 switch,  or Netopia DSL/ISDN router;
+#Cisco Catalyst 2820 switch Management Console;
+#Cisco IOS 11.3 - 12.0(11);
+#IOS 12.0(7)T (on a 1700 router);
+#Cisco IOS 12.0(21) (On a 2514 router);
+#Cisco IOS 12.0(5)WC3 - 12.0(16a);
+#Cisco Catalyst 2950 switch running IOS 12.0(5.3)WC(1);
+#Cisco 827 ADSL router running IOS 12.1(1)XB1;
+#Cisco 7206 router (IOS 11.1(17);
+#Cisco 1600/3640/7513 Router (IOS 11.2(14)P);
+#Cisco Local Director 420 version 2.1.1;
+#Cisco IOS v11.14(CA)/12.0.2aT1/v12.0.3T;
+#Cisco Router/Switch with IOS 11.2;
+#Cisco IOS 12.0(3.3)S (perhaps a 7200 router);
+#Cisco ATA 186 POTS<->VOIP phone gateway device;
+#Cisco 675 DSL router -- cbos 2.1;
+#Cisco 760 Series ISDN router (non IOS) or IBM Stackable Hub;
+#Cisco ATA-186 or 7905 VoIP Phone;
+#Cisco CacheOS (1.1.0);
+#Cisco Content Engine 505 Software V. 4.2.1;
+#Cisco Content Engine 560 running Content Networking System V. 4.2.3;
+#Cisco uBR 7223 router;
+#Cisco VPN 3000 or 3Com 4924 GigE Switch;
+#Cisco 3000 Series VPN Concentrator;
+#Cisco X.25/TCP/LAT Protocol Translator ver 8.2(4);
+#Intergraph CLiX R3.1 Vr.7.6.20 6480;
+#Cnet CNIG904B Internet Broadband Gateway firmware version 1.11;
+#CNT UltraNet EDGE (SAN Router) V. 1.4.1.2;
+Cobalt Linux 4.0 (Fargo) Kernel 2.0.34C52_SK on MIPS or TEAMInternet Series 100 WebSense;Linux Kernel 2.4.0 - 2.4.4
+#Corega BAR SW-4P Broadband Access Router;
+#Commodore 64 with TFE Ethernet Card (uIP TCP/IP stack);
+#Commodore 64 with TFE Ethernet Card (Contiki);
+#Compatible Systems (RISC Router, IntraPort);
+#Computone Power Rack IntelliServer terminal server Release 1.5.4d;
+#ComOS based terminal server - Livingston PortMaster or U.S. Robotics/3Com Total Control;
+#Lucent Portmaster 4 running ComOS v4.0.3c2;
+Convex OS Release 10.1;Mac OS X 10.1.5
+#Cray UNICOS/mk 8.6;
+Cray UNICOS 9.0 - 10.0 or UNICOS/mk 1.5.1;NetBSD 1.5.1
+#UNICOS 10.0.0 on Cray 90;
+#Cray UNICOS 9.0.1ai - 10.0.0.2;
+#Cyberguard 4.0 firewall;
+#Cyclades PathRouter V 1.2.4;
+#Cyclades PathRAS Remote Access Server v1.1.8 - 1.3.12;
+#Cyclades PathRAS Remote Access Server v1.1.7;
+#Cyclades PathRouter;
+#Cyclades PathRouter/PC;
+#Datavoice TxPORT PRISM 3000 T1 CSU/DSU 6.22/2.06;
+#Cisco 1601 (IOS 11.0) or DECbrouter90T1 (Runs Cisco IOS 10.2(5));
+#Cisco router running IOS 12.0(18)S or 12.0(18)S1;
+#Cisco IOS 12.0(5)WC5a on a catalyst 2900XL switch;
+#Cisco IOS 12.1(4) on a 2600 router;
+#Cisco router running IOS 12.1(5)-12.2(7a);
+#Cisco router running IOS 12.2(8)T;
+#Cisco IOS 12.2(8)T5 on a 7507 router;
+#DECNIS 600 V4.1.3B multiprotocol bridge/router;
+#DECserver 700-16 terminal server, Network Access SW V2.2;
+#DEC VAX/VMS 5.3 on a MicroVAX II;
+#DEC VAX/VMS v5.5, CMU-TEK TCP/IP stack;
+#DEC VAX 7000-610 or 4200/SPX OR 6000-430;
+#DEC VMS MultiNet V4.1(16);
+#DEC OpenVMS 6.1;
+#DEC OpenVMS V6.1 on VAX 4000-105A;
+#DEC OpenVMS 6.2 - 7.2-1 on VAX or AXP;
+#DEC OpenVMS AXP 6.2 running Attachmate Pathway 3.1 TCP stack;
+#DEC OpenVMS 6.2/Alpha;
+#DEC OpenVMS 6.2;
+#DEC OpenVMS Alpha 6.2 running DIGITAL TCP/IP Services (UCX) v4.0;
+#DEC OpenVMS 6.2;
+#DEC OpenVMS 6.2;
+#DEC OpenVMS 7.1 using Process Software's TCPWare 5.3 TCP/IP package;
+#DEC OpenVMS/Alpha 7.1 using Process Software's TCPWare V5.3-4;
+#DEC OpenVMS 7.1 Alpha running Digital's UCX v4.1ECO2 TCP/IP package;
+#DEC OpenVMS v7.1 VAX running Process Software's TCPWare 5.1-5 TCP/IP package;
+#DEC OpenVMS Alpha V7.1-1H2 running DIGITAL TCP/IP Services (UCX) V4.2;
+#DEC OpenVMS V7.1 on VAX 6000-530;
+#DEC VMS MultiNet V4.2(16)/ OpenVMS V7.1-2;
+#DEC VMS MultiNet V4.4 / OpenVMS V7.1;
+#DEC OpenVMS 7.1;
+#DEC OpenVMS 7.2;
+#DEC OpenVMS 7.2;
+#DEC OpenVMS 7.3-1;
+#DEC OpenVMS v7.3 on VAXStation 4000/60;
+#DEC OpenVMS 7.3 (Alpha) TCP/IP 5.3;
+#DEC OpenVMS 7.3 (Compaq TCP/IP 5.3);
+Digital Networks VNswitch 900;Digital UNIX 5.6
+#Digitel NetRouter NR3000;
+#Digitel NetRouter NR3100;
+#Data General DG/UX Release R4.11MU02;
+#Data General DG/UX Release R4.20MU02;
+#Data General DG/UX Release R4.20MU04;
+#Data General DG/UX Release R4.20MU06;
+Digital Link DL2001 CSU/DSU Management Access Processor;Digital UNIX 5.6
+Digital UNIX OSF1 V 3.0,3.2,3.2C;Digital UNIX 5.6
+Digital UNIX OSF1 V 4.0,4.0B,4.0D,4.0E,4.0F;Digital UNIX 5.6
+#Draytek Vigor 2000 ISDN router;
+#Draytek Vigor 2200e DSL router v2.1b;
+#Draytek Vigor 2200e DSL Router v2.1a;
+#Compaq Integrated Lights Out remote configuration Board;
+#Compaq Proliant DL580 Integrated Lights-Out remote configuration board V1.06;
+#WAP: Compaq iPAQ Connection Point or Netgear MR814;
+Compaq Tru64 UNIX (formerly Digital UNIX) 4.0e;Digital UNIX 5.6
+#Compaq Tru64 UNIX 4.0e;
+#Compaq Tru64 UNIX 5.0 or DEC OpenVMS 7.2;
+#Compaq Tru64 UNIX V5.1 (Rev. 732);
+#Compaq Tru64 UNIX V5.1 (Rev. 732);
+#Compaq Tru64 UNIX V5.1A (Rev. 1885);
+#Compaq Tru64 UNIX V5.1A (Rev. 1885);
+#Quanterra seismic data acquisition system running OS/9 V2.4 on 68K;
+#OSF1 5.0 Rev. 910 (AKA Compaq/Digital Tru64 Unix);
+#DEC OSF/1 V1.3A - 2.0;
+#DEC OSF1 (AKA Compaq/Digital Tru64 UNIX) Version 5.0.0;
+#OSF/1 (AKA Compaq/Digital Tru64 UNIX) 5.60;
+DEC Digital UNIX OSF1 V 4.0-4.0F;Digital UNIX 5.6
+#Sequent DYNIX/ptx 4.0 V4.4.6 i386;
+#Sequent Dynix/PTX 4.4.2;
+#Easytel TeleWell EA-701B ADSL Modem/Router;
+#Edimax BR-6004 broadband router;
+#Edimax PS-901 Print Server model 1P/13E-9.5.12;
+#Eicon Diva1830 ISDN router running 1.5 firmware;
+#ELSA LANCOM DSL/10 Office router v2.62.0002;
+#ELSA LANCOM DSL/I-1611 Office router;
+#EMC DART running on a Data Mover fileserver. Version T4.1.8.1;
+#EMC IP4700 Filer;
+#Enterasys/Cabletron switch running Enterasys E8.2.0.0 - E9.0.0.0;
+#Epson Stylus 800n/EPSON Ethernet Ver. 4.20;
+#EPSON Ethernet Ver. 4.20 6.04, 13395E-98;
+#Ericsson HM220dp ADSL modem/router;
+#Exabyte X80 tape backup robot;
+#Extreme Networks Alpine 3804 Switch running Extremeware 6.2.1;
+#Extreme Networks Black Diamond switch;
+#Extreme Gigabit switch (unknown version);
+#NAT LANB/290 router Console Program V4.00;
+#NCR server running MP-RAS SVR4 UNIX System Version 3;
+#NCR S26 server (i386) running NCR MP-RAS SVR4 UNIX System;
+#F5 Labs Big/IP HA TCP/IP Load Balancer (BSDI kernel/x86);
+#Broadband Router (Farralon Netopia or Compatible Systems 900i);
+#FastComm FRAD (Frame Relay Access Device) F9200-DS-DNI -- Ver. 4.2.3A;
+#Fore ForeThought 7.1.0 ATM switch;
+#Foundry Load Balancer OS Ver 7.2.X - 7.3.X;
+#Foundry FastIron Edge Switch (load balancer) 2402;
+#Foundry FastIronII 4000 load balancer running 06.6.34T43;
+#Foundry NetIron load balancer OS Ver. 7.1.23T13;
+#Foundry Networks, Inc. Router/Load balancer, IronWare Version 06.5.12T43;
+#Foundry ServerIron XL load balancing IP Switch Version 06.0.00T12;
+#Galacticomm WorldGroup BBS / Vircom TCP/IP stack;
+#Galacticomm WorldGroup BBS (MajorBBS) w/TCP/IP;
+#Gandalf LanLine Router;
+#Genius print server;
+#Gnat Box Light firewall v3.0.3 (from the inside interface);
+Gauntlet 4.0a firewall on Solaris 2.5.1;Sun Solaris 9 (SunOS 2.9)
+#GNet BB0040 or SAR 703 DSL modem + router;
+#Compatible Systems ISDN/leased-line/dialup MicroRouter 900i v3.0.9;
+#Compatible Systems ISDN/leased-line/dialup Microrouter 2220R w/ firmware v4.5;
+#FlowPoint/2000 - 2200 SDSL Router (v1.2.3 - 3.0.4) or ASCOM Timeplex Access Router;
+#DSL Router: Flowpoint 144/22XX v3.0.8 or SpeedStream 5851 v4.0.5.1;
+#Speedstream 5871 DSL router;
+FreeBSD 2.2.1 - 4.1;FreeBSD 4.1.1
+FreeBSD 2.1.0 - 2.1.5;FreeBSD 4.6
+FreeBSD 2.2.1-STABLE;FreeBSD 4.6
+FreeBSD 3.2-4.0;FreeBSD 4.6
+FreeBSD 3.4-RELEASE;FreeBSD 4.6
+FreeBSD 4.0-20000208-CURRENT;FreeBSD 4.6
+FreeBSD 4.1.1 - 4.3 (X86);FreeBSD 4.1.1
+FreeBSD 4.3 - 4.4-RELEASE;FreeBSD 4.3
+FreeBSD 4.3 - 4.4PRERELEASE;FreeBSD 4.3
+FreeBSD 4.4-STABLE;FreeBSD 4.6
+FreeBSD 4.4 for i386 (IA-32);FreeBSD 4.4
+FreeBSD 4.5-RELEASE (or -STABLE) through 4.6-RC (X86);FreeBSD 4.6
+FreeBSD 4.6;FreeBSD 4.6
+FreeBSD 4.6-RC on Alpha;FreeBSD 4.6
+FreeBSD 4.6 through 4.6.2 (July 2002) (X86);FreeBSD 4.6
+FreeBSD 4.6;FreeBSD 4.6
+FreeBSD 4.6.2-RELEASE;FreeBSD 4.6
+FreeBSD 4.7-RELEASE (X86);FreeBSD 4.6
+FreeBSD 4.6.2-RELEASE - 4.8-RELEASE;FreeBSD 4.6
+FreeBSD 4.7-RELEASE;FreeBSD 4.6
+#FreeBSD-4.7-RELEASE-p3;
+FreeBSD 4.7-STABLE;FreeBSD 4.6
+FreeBSD 4.7-RELEASE;FreeBSD 4.6
+FreeBSD 4.8-STABLE;FreeBSD 4.6
+FreeBSD 4.8-STABLE;FreeBSD 4.6
+FreeBSD 5.0-CURRENT (Apr 2002);FreeBSD 4.6
+FreeBSD 5.0-RELEASE or -CURRENT (Jan 2003);FreeBSD 4.6
+FreeBSD 5.0-RELEASE (x86);FreeBSD 4.6
+FreeBSD 5.0-RELEASE;FreeBSD 4.6
+FreeBSD 5.0-RELEASE;FreeBSD 4.6
+FreeBSD 5.1-CURRENT (June 2003) on Sparc64;FreeBSD 4.6
+#FreeSCO 0.27 (Linux kernel 2.0.38);
+#FreeSCO 0.27 (Linux kernel 2.0.38);
+#GNU Hurd 0.2 (GNUmach-1.2/Hurd-0.2) X86;
+#Hitachi HI-UX/MPP;
+#HP Advancestack Etherswitch 224T or 210 or Netgear RP114 DSL-Router w/Switch;
+#HP-BSD 2.0;
+#HP Deskjet 6127 printer;
+#HP Entria X station (running Netstation 7.x);
+#Embedded device: HP Switch, Copper Mountain DSL Concentrator, Compaq Remote Insight Lights-Out remote console card, 3Com NBX 25 phone system or Home Wireless Gateway, or TrueTime NTP clock;
+#HP printer w/JetDirect card;
+#HP printer w/JetDirect card;
+#HP printer w/JetDirect card;
+#HP printer w/JetDirect card;
+#HP printer w/JetDirect card;
+#HP JetDirect J6057A Firmware Version R.22.09 in 4100mpf printer;
+#HP JetDirect Card in a LaserJet printer;
+#HP LaserJet printer/print server;
+#HP LaserJet 4000N Printer;
+#HP LaserJet 4100N printer;
+#HP pritner w/JetDirect J2556b card Firmware A.05.32;
+#HP printer w/JetDirect J2556b card (firmware A.05.32);
+#HP Printer w/Jet Direct;
+#HP LaserJet 5;
+#HP Procurve Routing Switch 9304M;
+#HP-UX A.09.00 E 9000/817 - A.09.07 A 9000/777;
+#HP-UX 9.01 - 9.07;
+#HP-UX B.10.01 A 9000/715;
+#HP-UX B.10.20 A with tcp_random_seq = 0;
+#HP-UX B.10.20 A 9000/715 or 9000/712 or 9000/871 with tcp_random_seq = 1;
+#HP-UX 10.20 A 9000/715 or 9000/899;
+#HP-UX B.10.20 A 9000/750;
+#HP-UX release B.10.20 version A;
+#HP-UX B.10.20 9000/897;
+#HP-UX 10.20 E 9000/777 or A 712/60 with tcp_random_seq = 0;
+#HP-UX 11.00;
+#HP-UX B11.00 U 9000/839;
+#HP-UX B.11.00 A 9000/800;
+#HP-UX B.11.00 A 9000/785;
+Mac OS 9, or HP/UX 11.00;Mac OS X 10.1.5
+#HP MPE/iX 5.5;
+HP MPE/iX 5.5 on HP 3000;HPUX B.11.0 x
+#Huawei Quidway R2621 router running VRP 1.5.6(1);
+#Hua Wei Quidway Router R2621E VRP 1.5.6;
+#Hydra HydraWEB 5000;
+#IBM 2210 router;
+#IBM 8210 Multiprotocol Switching Server/router for ATM networks;
+#IBM 8222 hub;
+#IBM 2210 Router MRS 2.x on Token Ring interface;
+#IBM 3494 Magnetic Tape Library;
+#IBM AIX v3.2.5 - 4;
+#IBM AIX 4.3.1 on a IBM RS/6000 R40;
+#IBM AIX 5.1;
+#IBM AIX 5.1 - 5.2;
+#IBM AIX 5.1-5.2 on RS/6000;
+#IBM Infoprint 12 Net-Printer;
+#IBM LAN RouteSwitch/Xylan OmniSwitch Version 3.2.5/NeXT;
+#IBM OS/2 V 2.1;
+#IBM OS/2 V.3;
+#IBM OS/2 Warp 4.0;
+#IBM OS/2 Warp Server for E-business (Aurora) Beta;
+#IBM OS/2 Warp Server for E-business (Aurora) Beta;
+#AS/400 running OS/400 R4.4;
+#IBM AS400 running OS/400 5.1;
+#IBM AS/400 V3 and V4;
+#IBM VM/CMS (mainframe);
+#IBM VM/ESA 2.2.0 CMS Mainframe System;
+#D-Link 704P Broadband Gateway or DI-713P WAP;
+#DLink DI-604 ethernet router using firmware 1.62 build 2;
+#DLink DI-604 ethernet router;
+#D-Link DI-704 cable/DSL residential gateway, firmware 2.50 build 9;
+#D-Link Corp. DE-1800 Stackable Hub SNMP/Telnet Agent Software version 2.04B3 boot PROM 2.21;
+#D-Link DI-701, Version 2.22;
+#D-Link DI-713P Wireless Gateway (2.57 build 3a);
+#DLink DI-804 Cable/DSL Residential Gateway (firmware v2.00B7);
+#D-Link DCS-1000 webcam with firmware 1.06;
+#D-Link DSL-300G+ DSL modem;
+#D-Link DSL-500 DSL modem;
+#D-Link Print Server;
+#DI-701 Residential Gateway or KA9Q NOS - KO4KS-TNOS v. 2.30;
+#D-Link DWL-5000AP WAP/BSP 1.3;
+#wireless access point (WAP): D-Link DRC-1000AP or 3com Access Point 2000;
+#Intel Corporation, ER9100 Express Router 9100;
+#Intel Express 510T switch;
+#Intel InBusiness Print Station;
+#Intel NetportExpress 10 3-port print server;
+#Intel Netport Express PRO print server V04.33a;
+#Intel NetportExpress 10/100 3-port print server;
+#Intel NetportExpress XL print server;
+#Intel NetStructure 470T Switch;
+#Labtam MT300, X-Terminal Kernel;
+#Lantronix ETS16 terminal server Version V3.4/5(961028);
+#Lantronix ETS16P terminal server Version V3.5/2(970721);
+#Lantronix EPS1 print server version V3.5/1(970325);
+#Lantronix EPS2 print server Version V3.5/2(970721);
+#Lantronix SCS1600 secure console server version V1.0/2(010620);
+#Lantronix SCS1600 secure console server version V1.0/2(010620);
+#LG Goldstream LR3100p router, software version 1.0-1.5;
+#LG Goldstream LR3001f router, software version 4.0;
+#Microbase VirtuOS v3.00b R.09;
+#MultiTech CommPlete Controller (terminal server);
+#MultiTech MultiVOIP Version 2.01A Firmware;
+#MultiTech standalone firewall box, version 3;
+#IBM MVS TCP/IP TCPMVS 3.2;
+#IBM MVS TCP/IP stack V. 3.2 or AIX 4.3.2;
+#IBM MVS TCP/IP TCPOE 3.3;
+#IBM MVS;
+#Innovaphone IP200/IP400 VOIP phone/gateway;
+#Bay Networks Instant Internet router;
+#Intergraph Workstation (2000 Series) running CLiX R3.1;
+#IPAD (Internet Protocol Adapter) Model 5000 or V.1.52;
+#SGI IRIX 5.2;
+#SGI IRIX 5.3;
+#SGI IRIX 6.2;
+#SGI IRIX 6.2 - 6.5;
+#SGI IRIX 6.2 - 6.5;
+#SGI IRIX 6.5;
+#SGI IRIX 6.5 Origin2;
+#SGI IRIX 6.5-6.5.15m;
+#SGI IRIX 6.5.7f-6.5.8f;
+#SGI IRIX 6.5.15m on SGI O2;
+#SGI IRIX 6.5.7f-6.5.8f;
+#SGI IRIX 6.5.14;
+#Isolation Systems Infocrypt Enterprise;
+#Ixia 1600 -- Ixia Socket/Serial TCL traffic generation and analysis server;
+#Juniper Router running JUNOS;
+#Juniper Networks JUNOS 5.3 on an Olive router;
+#Juniper Networks router JUNOS 5.5R1.2;
+#Juniper Networks JUNOS 5.6R1.3 routing software on X86 box;
+#KA9Q amateur radio OS;
+#Kentrox Datasmart 656 CSU/DSU, USR Netserver/16, or 3Com OfficeConnect ADSL router;
+#Kronos Time clock;
+#Kyocera IB-21 Printer NIC;
+#Lantronix LSB4 Ethernet Switch;
+#RoadLanner broadband router BRL-04FW 6.15.02r Build 0091 L:01;
+#Rockwell Spectrum 100 POTS switcher release 7.2;
+#Router/Switch/Printer/Firewall (LanPlex 2500/Cisco Catalyst 5505/CISCO 6509/Trancell Webramp/Xylan Omni Switch)/Epson Stylus (100BTX-NIC HP Secure Web Console, SonicWall firewall appliance 3.3.1);
+#Leunig ePower Switch b723 v5.2;
+#Lexmark M412n network printer;
+#Lexmark Optra S Printer;
+#Lexmark Optra printer;
+#Lexmark Marknet X2031e printer;
+#Lexmark Optra printer w/MarkNet XL Network Adapter;
+#Lexmark Optra R+ (4049-RA0) w. MarkNet XL card (firmware rev. 79.133.1;
+#Lexmark T522 printer;
+#Lexmark T522/T622 printer;
+#Linksys BEFW11S4 WAP or BEFSR41 router;
+#Linksys EtherFast print server;
+#Linksys EtherFast print server;
+#Linksys WAP11 Wireless AP;
+#Linksys WAP11 or D-Link DWL-900+ wireless AP;
+#Linksys WET-11 wireless ethernet bridge;
+#Pitney Bowes photocopier, Konica printer/fax/scanner, or Toshiba E-Studio16 printer;
+PS2 Linux 1.0 on Sony PS2 game console;Linux Kernel 2.4.5 and above
+Linux 1.0.9;Linux Kernel 2.4.5 and above
+Linux 1.2.8 - 1.2.13;Linux Kernel 2.4.5 and above
+Linux 1.2.13;Linux Kernel 2.4.5 and above
+Linux 1.3.20 (X86);Linux Kernel 2.4.5 and above
+Linux 2.0.0;Linux Kernel 2.4.5 and above
+Linux 2.0.27 - 2.0.30;Linux Kernel 2.4.5 and above
+Linux 2.0.32-34;Linux Kernel 2.4.5 and above
+Linux 2.0.32-34;Linux Kernel 2.4.5 and above
+Linux 2.0.34-38;Linux Kernel 2.4.5 and above
+Linux 2.0.39;Linux Kernel 2.4.5 and above
+Linux 2.0.35 (S.u.S.E. Linux 5.3 (i386);Linux Kernel 2.4.5 and above
+Linux 2.1.24 PowerPC;Linux Kernel 2.4.5 and above
+Linux 2.1.76;Linux Kernel 2.4.5 and above
+Linux Kernel 2.1.88;Linux Kernel 2.4.5 and above
+Linux 2.1.91 - 2.1.103;Linux Kernel 2.4.5 and above
+Linux 2.1.19 - 2.2.25;Linux Kernel 2.4.5 and above
+Linux 2.2.20 SMP;Linux Kernel 2.4.5 and above
+Linux kernel 2.2.13 (SuSE; X86);Linux Kernel 2.4.5 and above
+Linux 2.2.5 - 2.2.13 SMP;Linux Kernel 2.4.5 and above
+Linux 2.2.12 - 2.2.19;Linux Kernel 2.4.5 and above
+Linux kernel 2.2.13;Linux Kernel 2.4.5 and above
+Linux 2.2.14;Linux Kernel 2.4.5 and above
+Linux 2.2.19 - 2.2.20;Linux Kernel 2.4.5 and above
+Linux 2.2.19 on a DEC Alpha;Linux Kernel 2.4.5 and above
+IPCop 1.20 Linux 2.2.2X-based firewall;Linux Kernel 2.4.5 and above
+Linux 2.2.21 SMP (X86);Linux Kernel 2.4.5 and above
+Linux kernel 2.2.22;Linux Kernel 2.4.5 and above
+Linux 2.3.12;Linux Kernel 2.4.5 and above
+Linux 2.3.28-33;Linux Kernel 2.4.5 and above
+Linux 2.3.49 x86;Linux Kernel 2.4.5 and above
+Linux 2.3.47 - 2.3.99-pre2 x86;Linux Kernel 2.4.5 and above
+Linux 2.4.6 as on Sharp Zaurus PDA;Linux Kernel 2.4.5 and above
+Linux Kernel 2.4.0-test5;Linux Kernel 2.4.5 and above
+Linux kernel 2.2.16;Linux Kernel 2.4.5 and above
+Linux kernel 2.4.18 (x86);Linux Kernel 2.4.5 and above
+Linux kernel 2.4.19 (X86);Linux Kernel 2.4.5 and above
+Linux Kernel 2.4.0 - 2.5.20;Linux Kernel 2.4.0 - 2.4.4
+Linux Kernel 2.4.18 - 2.5.70 (X86);Linux Kernel 2.4.5 and above
+Linux Kernel 2.4.20;Linux Kernel 2.4.5 and above
+Linux 2.4.7 (zLinux on OS/390);Linux Kernel 2.4.5 and above
+Linux 2.4.16 - 2.4.18;Linux Kernel 2.4.5 and above
+Linux Kernel 2.4.0 - 2.5.20 w/o tcp_timestamps;Linux Kernel 2.4.0 - 2.4.4
+Linux kernel 2.4.18 - 2.4.20 (X86);Linux Kernel 2.4.5 and above
+#Gentoo 1.2 linux (Kernel 2.4.19-gentoo-rc5);
+Linux 2.4.18;Linux Kernel 2.4.5 and above
+Linux 2.4.18 - 2.4.20 (X86);Linux Kernel 2.4.5 and above
+Linux Kernel 2.4.18;Linux Kernel 2.4.5 and above
+Linux 2.4.19 w/grsecurity patch;Linux Kernel 2.4.5 and above
+Linux kernel 2.4.20;Linux Kernel 2.4.5 and above
+Linux kernel 2.4.20;Linux Kernel 2.4.5 and above
+Linux 2.4.20;Linux Kernel 2.4.5 and above
+Linux 2.4.20 - 2.4.21 w/grsecurity.org patch;Linux Kernel 2.4.5 and above
+Linux 2.5.25 - 2.5.70 or Gentoo 1.2 Linux 2.4.19 rc1-rc7);Linux Kernel 2.4.5 and above
+Linux Kernel 2.4.3 SMP (RedHat);Linux Kernel 2.4.5 and above
+Linux 2.4.7 (X86);Linux Kernel 2.4.5 and above
+Linux 2.4.17 on HP 9000 s700;Linux Kernel 2.4.5 and above
+Astaro Security Linux 4 (Kernel 2.4.19);Linux Kernel 2.4.5 and above
+#lwIP (Lightweight TCP/IP stack) version lwip-0.5.3-win32;
+Apple Mac OS 7.1;Mac OS X 10.1.5
+Apple Mac OS 7.0-7.1 With MacTCP 1.1.1 - 2.0.6;Mac OS X 10.1.5
+Apple Mac OS 7.5.5 - 9;Mac OS 9.2.x
+Apple Mac OS 8.0;Mac OS X 10.1.5
+Apple Mac OS 8 running on an LC 475;Sun Solaris 8 (SunOS 2.8)
+Apple Mac OS 8.1;Mac OS X 10.1.5
+Apple Mac OS 8.1;Mac OS X 10.1.5
+Apple Mac OS 8.1;Mac OS X 10.1.5
+Apple Mac OS 8.5;Mac OS X 10.1.5
+Apple Mac OS 8.6;Mac OS X 10.1.5
+Apple Mac OS 8.6;Mac OS X 10.1.5
+Apple Mac OS 9.2.2;Mac OS X 10.1.5
+Apple Mac OS 9.04 or HP-UX B.11.00;Mac OS X 10.1.5
+Apple Mac OS X Server 10.1.2 (ppc);Mac OS X 10.1.5
+#Magna SG10 intranet router;
+FreeBSD 4.4-5 or Apple Mac OS X 10.0.4 (Darwin V. 1.3-1.3.7 or 4P13);FreeBSD 4.6
+#Maxim-IC TiniOS DS80c400;
+#MegaBit Gear TE4111C modem;
+#Meridian Data Network CD-ROM Server (V4.20 Nov 26 1997);
+Xylogics Micro Annex ELS terminal server x7.1.8;Microsoft Windows XP Professional
+#Microplex Print Server;
+#IBM 6400 printer or Microplex Pocket Print Server;
+#MiNT with MiNTnet 1.03 running on Atari TT;
+#Minix 32-bit/Intel 2.0.0;
+#minix v2.0.2 32bits;
+#Minix 32-bit/Intel 2.0.3;
+#MiraPoint messaging server v3.1;
+#Mirapoint messaging server M1000 (OS v 1.0.0);
+#Motorola SurfBoard SB4100E Cable Modem;
+#Motorola SurfBoard 4401 cable modem;
+#Motorola System V/68 version R3V7 on a 68030;
+#MOTOROLA VANGUARD 320 IP router running OS version 5.4;
+#Motorola Vanguard 320 multi-protocol network access device V5.5 - 5.6;
+#MultiTech CommPlete (modem server) RAScard;
+#NEC UX/4800;
+#NCD X server (NCD16 server 2.3.0 03/12/91);
+#NCR MP-RAS 3.0.x;
+#NCR MP-RAS 3.01;
+#NCSA Telnet (dos);
+#NCSA Telnet 2.3.08 for the PC (DOS);
+#Cisco 11151/Arrowpoint 150 load balancer, Neoware (was HDS) NetOS V. 2.0.1 or HP ENTRIA C3230A;
+#NetApp F360 or 760 Filer;
+#NetApp Data OnTap 6.1.2R3 on an F840 filer;
+#NetApp DataOnTap Release 6.3.1;
+#NetApp NetCache C760 os 4.x;
+#NetApp NetCache running OS 5.4R2;
+#NetApp Data OnTap 3.1.6 or BSDi 1.1;
+#NetApp Data OnTap 5.1.2 - 5.3.5r2;
+#Network Appliance NetCache 5.1D4;
+NetBSD 1.0 i386;NetBSD 1.5.2
+NetBSD 1.0 little endian arch;NetBSD 1.5.2
+NetBSD 1.0 big endian arch;NetBSD 1.5.2
+NetBSD 1.1 - 1.2.1 litle endian arch;NetBSD 1.5.2
+NetBSD 1.2 - 1.2.1 big endian arch;NetBSD 1.5.2
+NetBSD 1.3 - 1.3.3 little endian arch;NetBSD 1.5.2
+NetBSD 1.3 - 1.3.3 big endian arch;NetBSD 1.5.2
+NetBSD 1.3H (after 19980919) or 1.3I (before 19990119) little endian arch;NetBSD 1.5.2
+NetBSD 1.3H-1.5  big endian arch;NetBSD 1.5.2
+NetBSD 1.3I through 1.6;NetBSD 1.5.2
+NetBSD 1.5_ALPHA i386;NetBSD 1.5.2
+NetBSD 1.5.2 running on a Commodore Amiga (68040 processor);NetBSD 1.5.2
+NetBSD/Alpha 1.5.2 on a DEC 3000/300 LX;NetBSD 1.5.2
+NetBSD 1.6 BETA 4 i386 (20020630 snapshot);NetBSD 1.5.2
+NetBSD 1.6;NetBSD 1.5.2
+#Netgear FM144P/Repotec IP515H Router & Print Server;
+#Netopia 4541/R7100 DSL router;
+#Netopia DSL router;
+#NetScreen-100;
+#NetSilicon NetARM running ThreadX 2.0;
+#Nokia IPSO 3.2-4.3.1-FCS5 Running checkpoint FW1;
+#Nokia IPSO 3.2-3.5 Running Checkpoint Firewall-1 or NG FP2;
+#Nokia IPSO 3.6 running CheckPoint FW-1 NG FP2;
+#Nokia M1122 DSL Router;
+#Netopia R3100-I DSL Router Firmware version v4.7.2;
+#NetJet Version 3.0 - 4.0 Printer;
+#Netscreen 5XP firewall + vpn (OS 3.0.1r2);
+#Netscreen 5XP firewall+vpn (os 4.0.3r2.0);
+#Network Systems router NS6614 (NSC 6600 series);
+#Nexland ISB Pro800 Turbo Cable/DSL router;
+#NeXT Mach;
+#Nokia IP530 Network Appliance (IPSO 3.4-3.4.2);
+#Nortel/Alteon ACE Director 3 Version 6.0.42-B;
+#Nortel Networks BayStack switch;
+#Nortel CallPilot 100 voicemail system, 3Com Superstack 3 switch, Enterasys switch, HP TopTools remote control card, or Cisco 1538M hub;
+#Nortel Networks CVX1800 RAS. Software version 2.02;
+#Nortel Networks Passport 8600 routing switch sw 3.3.0.0;
+#Novell NetWare 3.12 or 386 TCP/IP;
+#Novell NetWare 3.12 - 5.00;
+#NetWare 4.11 SP7- 5 SP3A BorderManager 3.5;
+#NetWare 4.11 SP8a - Netware 5 SP4;
+#Novell NetWare 5.0 with Border Manager;
+#Novell Netware 5.x;
+#Netware 5.0 SP 3a;
+#Novell Netware 5.00.09 SP06;
+#Novell Netware 4.11-5.0SP5;
+#Netware 5.1 SP3;
+#Novell Netware 5.1-6.0;
+#Novell NetWare 5.1SP4 - 6.0;
+#Novell Netware 5.1 SP5 with Groupwise;
+#Novell Netware 5.1 SP5;
+#Novell Netware 6 SP1;
+#Novell Netware 6 SP2;
+#NSG 500 router. OS version 7.6.1 (http://www.nsg.ru);
+#OpenStep 4.0-4.2 or NeXTStep 1.0-3.3 (Intel);
+#OpenStep 4.1/NeXTStep 3.3;
+#NeXTStep/OpenStep 4.2/Intel;
+#Okidata 7200 Printer;
+OpenBSD 2.1 - 2.3/SPARC;OpenBSD 3.1
+OpenBSD 2.1/X86;OpenBSD 3.1
+OpenBSD 2.2 - 2.3;OpenBSD 3.1
+OpenBSD Post 2.4 (November 1998) - 2.5;OpenBSD 2.5
+OpenBSD 2.6-2.8;OpenBSD 3.1
+OpenBSD 2.6-2.8;OpenBSD 3.1
+OpenBSD 2.6 with all available patches as of roughly Feb01;OpenBSD 2.6
+OpenBSD 2.7/SPARC or NFR IDS Appliance ( 12/10/00 );OpenBSD 3.1
+OpenBSD 2.8 (X86);OpenBSD 2.8
+OpenBSD 2.9-beta through release (X86);OpenBSD 3.1
+OpenBSD 2.9-stable;OpenBSD 3.1
+OpenBSD 3.0 or 3.3;OpenBSD 3.0
+OpenBSD 3.0-STABLE (X86);OpenBSD 3.1
+OpenBSD 3.0 SPARC with pf "scrub in all" feature;OpenBSD 3.0
+OpenBSD 3.1 on an Alpha;OpenBSD 3.1
+OpenBSD 3.1 (X86);OpenBSD 3.1
+OpenBSD 3.1 (X86);OpenBSD 3.1
+OpenBSD 3.2 with pf scrub and no-df;OpenBSD 3.1
+OpenBSD 3.2 (X86);OpenBSD 3.1
+OpenBSD 3.3;OpenBSD 3.1
+#Savin 9927 Copier;
+#Sequent DYNIX/ptx(R) V4.2.1;
+#Sequent DYNIX/ptx(R) V4.4.6;
+#Siemens HiCom 300E business phone system Release 6.5;
+#Siemens HICOM 300 Phone switch (PBX);
+#Siemens HICOM Phone switch (PBX);
+#Siemens RM200-C40 running ReliantUNIX-N 5.45;
+#Siemens SINIX-N 5.43C3002;
+#Siemens SINIX-N 5.41C0005;
+#SINIX-Y 5.43B0045;
+#Siemens SINIX-Y 5.43C4001;
+#Siemens Speedstream 2602 DSL/Cable router;
+#Smoothwall Linux-based firewall 2.2.23;
+#SonicWall/10 firewall;
+#SonicWall SOHO-3 firewall;
+#SonicWall SOHO-3 firewall;
+#SonicWall/10 Firewall;
+#SONY NewsOS 6.1.2;
+#Sega Dreamcast game console;
+#StackTools StackTos 1.0 embedded networking OS;
+#Proxim Stratum MP wireless bridge;
+#Stratus VOS Release 14.3.1ae;
+Symantec Enterprise Firewall 7.0 running on Windows 2000 SP2;Microsoft Windows 2000/2000SP1/2000SP2/2000SP3
+#Systech RCS/3182 ethernet serial port server (firmware 06D);
+#IBM OS/390 V2R10;
+#IBM OS/390 V5R0M0;
+#IBM OS/400 V4 r4-5;
+#Packet Engines PowerRail 5200 router version 2.6.0r10 - 16 Sep, 1999;
+#Panasonic KX-HCM10 network camera;
+#pSOS embedded IP stack, such as Packeteer IP-PacketShaper 2000 V3.1;
+#Packeteer PacketShaper 4000 v4.1.3b2 2000-04-05;
+#Panasonic IP Technology Broadband Networking Gateway, KX-HGW200;
+#Panasonic panafax DX2000 SuperG3 fax machine;
+#Pigtail Express VoIP phone (runs VxWorks);
+#Bell Labs Plan9 Second Edition;
+#Bell Labs Plan9 Release 4 (x86);
+#Planet WAP 1950 Wireless Access Point;
+#Polycom ViewStation 512K videoconferencing system;
+#Polycom ViewStation;
+#PolyCom ViewStation video-conferencing system (firmware v7.2);
+#Proteon OpenRoute 2.1 on a RBX200 Router or IBM 2210 Router;
+#Proteon OpenRoute 3.0 gt series router;
+#QMS Magicolor 2200 DeskLaser printer;
+#QNX 4.24 - 4.25 realtime embedded OS;
+#QNX 6.00 realtime embedded x86;
+#Racal 7100 Host Security Module 1.05 / 5.05;
+#Lantronix CoBox serial device server or Radionics Ram IV Alarm;
+Raptor firewall 5.03 on NT 4;Microsoft Windows NT 4 Service Pack 4 and Above
+Raptor Firewall 6 on Solaris 2.6;Sun Solaris 6 (SunOS 2.6)
+#RCA/Thomson cable modem DCM-235/245;
+#Redback SMS 1000-2000 DSL Router;
+#Redback SMS500 Redback Networks router AOS Release 5.0.4.0;
+#Redback SMS 1800/10000 router or Thomson TMC 390 cable modem;
+#Redback SMS 1800 router;
+#ReliantUNIX-Y 5.44 B0033 RM600 1/256 R10000;
+#Ricoh Aficio AP4500 Network Laser Printer;
+#Ringdale RP21 Print server;
+#SCO UNIX release 3.2;
+SCO OpenServer Release 5;SCO OpenServer Release 5
+SCO OpenServer(TM) Release 5;SCO OpenServer Release 5
+SCO OpenServer 5.0.5;SCO OpenServer Release 5
+#Cray Unisys LX/NX MCP 46.1/HMP 5.0 on LX5120;
+#SCO UnixWare 2.01;
+#SCO UnixWare 2.1;
+#SCO UnixWare 2.1.2;
+SCO UnixWare 7.0.0 or OpenServer 5.0.4-5.0.6;SCO OpenServer Release 5
+#SCO UnixWare 7.1.0 x86;
+#SCO UnixWare 7.1.0 - 7.1.1 (x86);
+SCO Open Desktop 2.0;SCO OpenServer Release 5
+#Secure Computing Sidewinder firewall 3.2 update 4;
+#Secure Computing Sidewinder firewall 5.2.1.06;
+#Secure Computing SECUREZone Firewall Version 2.0;
+Sharp Digital Imager (copier) AR-507;Digital UNIX 5.6
+#Shiva AccessPort Bridge/Router Software V 2.1.0 or 3Com HiPer Access Router Card hardware V1.0.0 software V4.1.59;
+#Shiva LanRover/8E Version 3.5;
+#Quantum Snap Server Network Storage Box;
+#Quantum Snap server 4100;
+#Brocade Fibre Switch or Sun Remote System Console;
+Sun Solaris 2.3 - 2.4;Sun Solaris 9 (SunOS 2.9)
+Sun Solaris 2.4 w/most Sun patches (jumbo cluster patch, security patches, etc);Sun Solaris 9 (SunOS 2.9)
+Sun Solaris 2.5, 2.5.1;Sun Solaris 9 (SunOS 2.9)
+Sun Solaris 2.6 (SPARC);Sun Solaris 6 (SunOS 2.6)
+Sun Solaris 2.6 - 7 (SPARC);Sun Solaris 7 (SunOS 2.7)
+Sun Solaris 2.6 - 7 X86;Sun Solaris 7 (SunOS 2.7)
+Sun Solaris 2.6;Sun Solaris 6 (SunOS 2.6)
+Sun Solaris 2.6 - 7 with tcp_strong_iss=0;Sun Solaris 7 (SunOS 2.7)
+Sun Solaris 2.6 - 7 with tcp_strong_iss=2;Sun Solaris 7 (SunOS 2.7)
+Sun Solaris 8 early access beta through actual release;Sun Solaris 8 (SunOS 2.8)
+Sun Trusted Solaris 8;Sun Solaris 8 (SunOS 2.8)
+Sun Solaris 9;Sun Solaris 9 (SunOS 2.9)
+Sun Solaris 9 with TCP_STRONG_ISS set to 2;Sun Solaris 9 (SunOS 2.9)
+#Convex SPP-UX 5.2.1;
+#SPP-UX 5.x on a Convex SPP-1600;
+Sun SunOS 4.0.3;Sun Solaris 9 (SunOS 2.9)
+Sun SunOS 4.1.3_U1 + ISI RFC1323 mods from ISI;Sun Solaris 9 (SunOS 2.9)
+Sun SunOS 4.1.1 - 4.1.4 (or derivative);Sun Solaris 9 (SunOS 2.9)
+Sun RSC (Remote System Control card) v1.14 (in Solaris 2.7);Sun Solaris 7 (SunOS 2.7)
+#Ericsson Tigris Access Server Software V. 12.1.*;
+#Tahoe OS 1.2.1 running on Tahoe router;
+#Tally 9112 Printer;
+#Tandberg X-terminal;
+#Tandem NSK D39;
+#Tandem NSK D40;
+#Tektronix Phaser 350 firmware 3.3 (printer);
+#Tektronix Phaser 360 printer;
+#Tektronix Phaser(TM) printer with share ethernet card, firmware version 3.01;
+#Tektronix Phaser 560 printer;
+#Telebit's NetBlazer 3.0 router;
+#Telebit NetBlazer router Version 3.05;
+#Telebit NetBlazer Version 3.1, patch level 13;
+#Telindus 11xx ADSL Router;
+#Telocity (DirectTVDSL) Gateway x2 Model;
+#Teltrend (aka Securicor 3net) Router;
+#DEC TOPS-20 Monitor 7(21733),KL-10 (DEC 2065);
+#DEC TOPS-20 Monitor 7(102540)-1,TD-1;
+#Toshiba TR650 ISDN Router;
+#TurtleBeach Audiotron network MP3 player;
+#TurtleBeach Audiotron network MP3 player;
+#Turtle Beach AudioTron 100 network MP3 player;
+#DEC Ultrix 4.1;
+#Ultrix 4.2 - 4.5;
+#US Robotics USR8022 broadband wireless router (WAP);
+#US Robotics Total Control NETServer Card;
+#3Com / USR TotalSwitch Firmware: 02.02.00R;
+#VersaNet ISP-Accelerator(TM) Remote Access Server;
+#Virtual Access LinXpeed Pro 120 router running Software 7.4.33CM;
+#VxWorks 5.3.x bases system (usually an ethernet hub or switch such as HP ProCurve) or Bay Networks MicroAnnex XL terminal server;
+#WatchGuard Firebox SOHO V5.x firewall;
+#Minolta QMS Printer running VxWorks 5.4.2;
+Microsoft Windows 3.1 with Trumpet Winsock 2.0 revision B;Microsoft Windows XP Professional
+Windows for Workgroups 3.11 / TCP/IP-32 3.11b stack or Windows 98;Microsoft Windows 98/98SE
+Microsoft Windows 95 4.00.950B;Microsoft Windows XP Professional
+Windows NT 3.10 (Build 528);Microsoft Windows NT 4 Service Pack 4 and Above
+Microsoft Windows NT 3.51 SP5, NT 4.0 or 95/98/98SE;Microsoft Windows NT 4 Service Pack 4 and Above
+Microsoft Windows 98SE;Microsoft Windows 98/98SE
+Microsoft Windows 98SE;Microsoft Windows 98/98SE
+Microsoft PocketPC 3.0.11171 running on Compaq iPAQ 3870 Pocket PC;Microsoft Windows XP Professional
+Microsoft Windows 95 4.00.950B (IE 5 5.00 2314.1003);Microsoft Windows XP Professional
+Microsoft Windows 98SE + IE5.5sp1;Microsoft Windows 98/98SE
+Microsfot Windows 98SE with security patch A;Microsoft Windows 98/98SE
+Microsoft Windows 98 4.10.1998;Microsoft Windows 98/98SE
+Microsoft Windows 98 SP2;Microsoft Windows 2000/2000SP1/2000SP2/2000SP3
+Microsoft Windows 98SE 4.10.2222A;Microsoft Windows 98/98SE
+Microsoft Windows NT 4.0 SP3;Microsoft Windows 2000/2000SP1/2000SP2/2000SP3
+Microsoft Windows NT 4.0 SP3;Microsoft Windows 2000/2000SP1/2000SP2/2000SP3
+Microsoft Windows 95/98/NT 4.0 or PocketPC;Microsoft Windows XP Professional
+Microsoft Windows NT 4.0 SP5-SP6;Microsoft Windows NT 4 Service Pack 4 and Above
+Microsoft Windows NT 4.0 Workstation SP6a;Microsoft Windows NT 4 Service Pack 4 and Above
+Microsoft Windows NT 4.0 SP6a;Microsoft Windows NT 4 Service Pack 4 and Above
+Microsoft Windows NT 4.0 Workstation SP6a;Microsoft Windows NT 4 Service Pack 4 and Above
+Microsoft Windows NT 4.0 Workstation SP6a;Microsoft Windows NT 4 Service Pack 4 and Above
+Microsoft Windows NT 4.0 Server SP5-SP6;Microsoft Windows NT 4 Service Pack 4 and Above
+Microsoft Windows NT 4.0 SP 6a + hotfixes;Microsoft Windows 2000/2000SP1/2000SP2/2000SP3
+Microsoft Windows NT 4.0 Terminal Server Edition;Microsoft Windows NT 4 Service Pack 4 and Above
+HP Journada running Microsoft Windows CE 2.11 (Handheld/PC Pro 3.0 PDA);Microsoft Windows XP Professional
+Microsoft Windows 98;Microsoft Windows 98/98SE
+Microsoft Windows 98 SP1;Microsoft Windows 2000/2000SP1/2000SP2/2000SP3
+Microsoft Windows NT 5 Beta2 or Beta3;Microsoft Windows NT 4 Service Pack 4 and Above
+Microsoft Windows .NET Enterprise Server (build 3604-3790);Microsoft Windows XP Professional
+Microsoft Windows .NET Enterprise Server RC2 (Version 5.2, build 3718.dnsrv.021114-1947);Microsoft Windows XP Professional
+Microsoft Windows Server 2003 Standard Edition;Microsoft Windows XP Professional
+Microsoft Windows Server 2003;Microsoft Windows XP Professional
+Microsoft Windows Server 2003 Enterprise Edition;Microsoft Windows XP Professional
+Microsoft Windows Server 2003;Microsoft Windows XP Professional
+Microsoft Windows Millennium Edition (Me), Windows 2000 Professional or Advanced Server, or Windows XP;Microsoft Windows XP Professional
+Microsoft Windows 2000 Server SP3;Microsoft Windows 2000/2000SP1/2000SP2/2000SP3
+Microsoft Windows Millennium Edition (Me);Microsoft Windows XP Professional
+Microsoft Windows 2000 Server SP2;Microsoft Windows 2000/2000SP1/2000SP2/2000SP3
+Microsoft Windows 2000 Server SP3 or Windows XP Professional SP1;Microsoft Windows XP Professional
+Microsoft Windows 2000 SP2;Microsoft Windows 2000/2000SP1/2000SP2/2000SP3
+Microsoft Windows 2000 Server SP3;Microsoft Windows 2000/2000SP1/2000SP2/2000SP3
+Microsoft Windows 2000 Server SP3;Microsoft Windows 2000/2000SP1/2000SP2/2000SP3
+Microsoft Windows 2000 SP3;Microsoft Windows 2000/2000SP1/2000SP2/2000SP3
+Microsoft Windows 2000 SP3;Microsoft Windows 2000/2000SP1/2000SP2/2000SP3
+Microsoft Windows 2000 SP3;Microsoft Windows 2000/2000SP1/2000SP2/2000SP3
+Microsoft Windows 2000 SP3;Microsoft Windows 2000/2000SP1/2000SP2/2000SP3
+Microsoft Windows 2000 Professional SP2 or Windows XP SP1;Microsoft Windows XP Professional
+Microsoft Windows 2000 Server SP3;Microsoft Windows 2000/2000SP1/2000SP2/2000SP3
+Microsoft Windows 2000 SP3;Microsoft Windows 2000/2000SP1/2000SP2/2000SP3
+Microsoft Windows 2000 SP3;Microsoft Windows 2000/2000SP1/2000SP2/2000SP3
+Microsoft Windows 2000 SP3;Microsoft Windows 2000/2000SP1/2000SP2/2000SP3
+Microsoft Windows 2000 Professional SP3;Microsoft Windows XP Professional
+Microsoft Windows 2000 Advanced Server SP3;Microsoft Windows 2000/2000SP1/2000SP2/2000SP3
+Microsoft Windows 2000 Advanced Server SP3;Microsoft Windows 2000/2000SP1/2000SP2/2000SP3
+Microsoft Windows Millennium Edition (Me);Microsoft Windows XP Professional
+Microsoft Windows 2000 Professional;Microsoft Windows XP Professional
+Microsoft Windows 2000 SP1;Microsoft Windows 2000/2000SP1/2000SP2/2000SP3
+Microsoft Windows XP Home Edition;Microsoft Windows XP Professional
+Microsoft Windows XP Professional or Windows 2000 Professional SP2+;Microsoft Windows XP Professional
+Microsoft Windows 2000 SP3;Microsoft Windows 2000/2000SP1/2000SP2/2000SP3
+Microsoft Windows Millennium Edition (Me), Windows 2000, or Windows XP;Microsoft Windows XP Professional
+Microsoft Windows 2000 Professional RC1 or Windows 2000 Advanced Server Beta3;Microsoft Windows XP Professional
+Microsoft Windows XP Professional RC1+ through final release;Microsoft Windows XP Professional
+Microsoft Windows XP SP1;Microsoft Windows XP Professional
+Microsoft Windows XP Professional SP1;Microsoft Windows XP Professional
+Microsoft Windows XP SP1;Microsoft Windows XP Professional
+Microsoft Windows XP SP1 or Windows 2000 SP3;Microsoft Windows 2000/2000SP1/2000SP2/2000SP3
+Microsoft Windows XP Professional;Microsoft Windows XP Professional
+Microsoft Windows XP SP1;Microsoft Windows XP Professional
+Microsoft Windows XP Professional SP1;Microsoft Windows XP Professional
+Microsoft Windows XP Professional SP1;Microsoft Windows XP Professional
+Microsoft Windows XP Professional SP1 or Windows 2000 Advanced Server SP3;Microsoft Windows XP Professional
+Microsoft Windows XP Professional Version 5.1 Build 2600;Microsoft Windows XP Professional
+Microsoft Windows XP Professional SP1 or Windows 2000 SP3;Microsoft Windows XP Professional
+Microsoft Windows XP Professional SP1;Microsoft Windows XP Professional
+Microsoft Windows XP Professional SP1;Microsoft Windows XP Professional
+Microsoft Xbox (modified) running evolutionX;Microsoft Windows XP Professional
+Microsoft Xbox (modified) running evolutionX;Microsoft Windows XP Professional
+Microsoft Xbox running Debian Linux 2.4.20;Linux Kernel 2.4.5 and above
+WNOS 5.0 on Microsoft DOS 6.22;Microsoft Windows XP Professional
+#WTI Network Power Switch v3.02;
+#XCD Xconnect print server, firmware version CC8S-3.58 (98.09.21);
+#Xerox 8830 Plotter;
+#Xerox Document Centre ColorSeries 50;
+#Xerox Document Centre 440 w/ CentreWare Internet Services;
+#Xerox DocuPrint C55;
+#Xerox DocuPrint N24/N32/N40 Network Laser Printer;
+#Xerox DocuPrint N40;
+#Xerox Docuprint N2125 network printer;
+xMach free distributed OS version 0.1 current;Mac OS X 10.1.5
+#Xylan OmniSwitch 5x/9x ethernet switch, Xylogics Annex-III Comm server R10.0, or Hitachi HI-UX/WE2;
+#Xyplex 1600 terminal server running MAXserver V6.0.2 firmware;
+#Xylogics Remote Annex 4000 terminal server running LynxOS realtime OS;
+#Cabletron Systems SSR 8000 smart switch router System Software, Version 3.1.B.16;
+#Cabletron Smart Switch Router 8600;
+#CasheFlow CacheOS (CacheFlow 500-5000 web proxy cache) CFOS 2.1.08 - 2.2.1;
+#CacheFlow CacheOS 3.1 on a model 6000 web proxy cache;
+#Cacheflow 6x5 web proxy cache running CacheOS 3.1.19-4.1.05;
+#CacheFlow 6000 web proxy cache running CacheOS 4.1.05;
+#CastleNet AR502/GlobespanVirata GS8100 (same thing) DSL router;
+#Cayman 2E DSL/CABLE router;
+#Chase IOLAN Terminal Server v3.5.02 CDi;
+#Chase IOLAN terminal server;
+#Xyplex Network 9000 terminal server;
+#Xyplex Terminal Server v6.0.2S5;
+#Xyplex Terminal Server CSERV-20 software v6.0.4;
+#Print Server: Zero One Tech 3000, Hawking PN7117, or EUSSO UPS1211-B;
+#ZoomAir IG-4165 wireless gateway (WAP);
+#Zyxel XyWALL 50 (ZyNOS 3.52);
+#Zyxel ZyNOS based broadband router (ZyNOS) or Intel Express ISDN router;
+#Zyxel Prestige 642R-11 ASDL router running ZyNOS;
+#ZyXEL P480 ISDN router running ZyNOS v2.42(O.00);
+#Hardware: Zyxel Prestige broadband router;
+#ZyXEL Prestige 700/Netgear MA314 broadband router;

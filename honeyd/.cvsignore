@@ -1,0 +1,5 @@
+aclocal.m4
+config.h.in
+lex.c
+parse.c
+parse.h

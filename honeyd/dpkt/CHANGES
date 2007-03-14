@@ -1,0 +1,9 @@
+
+dpkt-1.2:
+	- changed license from GPL to BSD
+	- added DTP module
+	- added HTTP module
+	- added DNS RR decodes
+	- added enough PPP to decode PPTP GRE encapsulation
+
+# $Id: CHANGES,v 1.1.1.1 2005/10/29 18:20:48 provos Exp $

@@ -1,0 +1,10 @@
+create default
+set default default tcp action block
+set default default udp action block
+set default default icmp action block
+
+create template
+set template ethernet "3com"
+set template personality "Linux 2.4.7 (X86)"
+
+bind 192.168.1.125 template

@@ -1,0 +1,11 @@
+
+dpkt
+----
+
+fast, simple packet creation / parsing, with definitions for the basic
+TCP/IP protocols and then some.
+
+-d.
+
+---
+http://monkey.org/~dugsong/dpkt/

@@ -1,0 +1,50 @@
+# $Id: INSTALL.kuang2,v 1.1 2004/12/31 18:54:22 provos Exp $
+
+Installation instructions:
+
+1. install the Digest::SHA1 Perl module.  On *BSD systems, this can be
+   done using the ports collection:
+
+   # cd /usr/ports/security/p5-Digest-SHA1/
+   # make install && make clean
+
+   On other systems this module can be downloaded from CPAN:
+
+   http://search.cpan.org/~gaas/Digest-SHA1-2.10/SHA1.pm
+
+
+2. copy the kuang2.pl script and its configuration file:
+
+   # cp kuang2.pl kuang2.conf /full/path/
+   # chmod 755 /full/path/kuang2.pl
+   # chmod 644 /full/path/kuang2.conf
+
+
+3. create the LOGDIR directory:
+
+   # mkdir -p /full/path/kuang2
+   # chown nobody:nobody /full/path/kuang2
+
+
+4. make your local changes to the kuang2.conf file.  Specially
+   important is the logdir value.
+
+
+5. edit your honeyd configuration file, adding something like:
+
+   ###
+   create kuang2
+   set kuang2 personality "Microsoft Windows XP Professional"
+   set kuang2 default tcp action reset
+   set kuang2 default udp action reset
+   set kuang2 default icmp action open
+   set kuang2 uid 32767 gid 32767
+   add kuang2 tcp port 17300 "/full/path/kuang2.pl -f /full/path/kuang2.conf"
+
+   bind 192.0.2.1 kuang2
+   ### change the IP above -- this is only an example.
+
+
+6. restart honeyd.
+
+# INSTALL ends here.

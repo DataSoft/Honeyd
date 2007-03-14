@@ -1,0 +1,790 @@
+# Process this file with autoconf to produce a configure script.
+AC_INIT(honeyd)
+AC_CONFIG_SRCDIR(honeyd.c)
+
+AC_CANONICAL_SYSTEM
+
+AM_INIT_AUTOMAKE(honeyd, 1.5a)
+AM_CONFIG_HEADER(config.h)
+AM_MAINTAINER_MODE
+
+AM_PROG_LIBTOOL
+
+dnl Initialize prefix.
+if test "$prefix" = "NONE"; then
+   prefix="/usr/local"
+fi
+
+# Checks for programs.
+AC_PROG_CC
+AC_PROG_INSTALL
+AM_PROG_LEX
+AC_PROG_YACC
+
+AC_CHECK_LIB(dl, dlopen, [ LIBDL="-ldl"
+                           LIBS="$LIBS -ldl" ],,)
+AC_SUBST(LIBDL)
+
+# Checks for libraries.
+dnl Checks for libpcap
+AC_MSG_CHECKING(for libpcap)
+AC_ARG_WITH(libpcap,
+[  --with-libpcap=DIR      use libpcap build directory],
+[ case "$withval" in
+  yes|no)
+     AC_MSG_RESULT(no)
+     ;;
+  *)
+     AC_MSG_RESULT($withval)
+     if test -f $withval/pcap.h -a -f $withval/libpcap.a; then
+        owd=`pwd`
+        if cd $withval; then withval=`pwd`; cd $owd; fi
+	PCAPINC="-I$withval -I$withval/bpf"
+	PCAPLIB="-L$withval -lpcap"
+     else
+        AC_ERROR(pcap.h or libpcap.a not found in $withval)
+     fi
+     ;;
+  esac ],
+[ if test -f ${prefix}/include/pcap.h; then
+     PCAPINC="-I${prefix}/include"
+     PCAPLIB="-L${prefix}/lib -lpcap"
+  elif test -f /usr/include/pcap/pcap.h; then
+     PCAPINC="-I/usr/include/pcap"
+     PCAPLIB="-lpcap"
+  elif test -f /usr/include/pcap.h; then
+     PCAPLIB="-lpcap"
+  else
+     AC_MSG_RESULT(no)
+     AC_ERROR(libpcap not found)
+  fi
+  AC_MSG_RESULT(yes) ]
+)
+AC_SUBST(PCAPINC)
+AC_SUBST(PCAPLIB)
+
+dnl Checks for (installed) libdnet
+AC_ARG_WITH(libdnet,
+[  --with-libdnet=DIR      use libdnet in DIR],
+[ case "$withval" in
+  yes|no)
+     AC_ERROR([Please specify directory containing dnet-config when using --with-libdnet])
+     ;;
+  *)
+     AC_MSG_CHECKING(for libdnet)
+     AC_MSG_RESULT($withval)
+     if test -f $withval/src/libdnet.a; then
+	DNETINC="-I$withval/include"
+	DNETLIB="-L$withval/src -ldnet `$withval/dnet-config --libs`"
+     elif test -x $withval/bin/dnet-config; then
+	DNETINC="`$withval/bin/dnet-config --cflags`"
+	DNETLIB="`$withval/bin/dnet-config --libs`"
+     else
+        AC_MSG_RESULT(no)
+        AC_ERROR(dnet-config not found in $withval/bin)
+     fi
+     ;;
+  esac
+  AC_MSG_RESULT(yes) ],
+[ dnl This is the default case so let's just use AC_PATH_PROG! --CPK.
+  AC_PATH_PROG(dnetconfig, dnet-config, "no")
+  if test "$dnetconfig" = "no"; then
+     AC_ERROR(dnet-config not found)
+  else
+     DNETINC="`$dnetconfig --cflags`"
+     DNETLIB="`$dnetconfig --libs`"
+  fi]
+)
+
+dnl We still need to check whether it's dnet or dumbnet as
+dnl for example on Debian. We test by looking at the content
+dnl of DNETLIB and derive from the library name what version
+dnl we're dealing with. If we find a libdumbnet, we prefix
+dnl compat/libdnet to our inclusion path. It provides a dnet.h
+dnl that transparently includes dumbnet.h for those systems. --CPK.
+AC_MSG_CHECKING([whether libdnet is a libdumbnet])
+if test `echo $DNETLIB | sed -e '/dumb/=;d'`; then
+     AC_MSG_RESULT(yes)
+     AC_DEFINE(HAVE_DUMBNET, 1,
+		[Define if our libdnet is a libdumbnet])
+     DNETCOMPAT="compat/libdnet"
+else
+     AC_MSG_RESULT(no)
+fi
+
+AC_SUBST(DNETCOMPAT)
+AC_SUBST(DNETINC)
+AC_SUBST(DNETLIB)
+
+dnl Checks for libevent
+AC_MSG_CHECKING(for libevent)
+AC_ARG_WITH(libevent,
+[  --with-libevent=DIR     use libevent build directory],
+[ case "$withval" in
+  yes|no)
+     AC_MSG_RESULT(no)
+     ;;
+  *)
+     AC_MSG_RESULT($withval)
+     if test -f $withval/event.h -a -f $withval/libevent.a; then
+        owd=`pwd`
+        if cd $withval; then withval=`pwd`; cd $owd; fi
+        EVENTINC="-I$withval"
+        EVENTLIB="-L$withval -levent"
+     elif test -f $withval/include/event.h -a -f $withval/lib/libevent.a; then
+        owd=`pwd`
+        if cd $withval; then withval=`pwd`; cd $owd; fi
+	EVENTINC="-I$withval/include"
+	EVENTLIB="-L$withval/lib -levent"
+     else
+        AC_ERROR(event.h or libevent.a not found in $withval)
+     fi
+     ;;
+  esac ],
+[ if test -f ${prefix}/include/event.h; then
+     EVENTINC="-I${prefix}/include"
+     EVENTLIB="-L${prefix}/lib -levent"
+  elif test -f /usr/include/event/event.h; then
+     EVENTINC="-I/usr/include/event"
+     EVENTLIB="-levent"
+  elif test -f /usr/include/event.h; then
+     EVENTLIB="-levent"
+  else
+     AC_MSG_RESULT(no)
+     AC_ERROR(libevent not found)
+  fi
+  AC_MSG_RESULT(yes) ]
+)
+AC_SUBST(EVENTINC)
+AC_SUBST(EVENTLIB)
+
+LIBS=$EVENTLIB
+CFLAGS=$EVENTINC
+AC_CHECK_LIB(event, event_priority_init,, AC_MSG_ERROR(["libevent is too old - you need to install a newer version.  Check http://www.monkey.org/~provos/libevent/" ]))
+LIBS=""
+CFLAGS=""
+
+dnl Checks for libdnsres
+AC_MSG_CHECKING(for libdnsres)
+AC_ARG_WITH(libdnsres,
+[  --with-libdnsres=DIR     use libdnsres build directory],
+[ case "$withval" in
+  yes|no)
+     AC_MSG_RESULT(no)
+     ;;
+  *)
+     AC_MSG_RESULT($withval)
+     if test -f $withval/dnsres.h -a -f $withval/libdnsres.a; then
+        owd=`pwd`
+        if cd $withval; then withval=`pwd`; cd $owd; fi
+        DNSRESINC="-I$withval"
+        DNSRESLIB="-L$withval -ldnsres"
+     elif test -f $withval/include/dnsres.h -a -f $withval/lib/libdnsres.a
+     then
+        owd=`pwd`
+        if cd $withval; then withval=`pwd`; cd $owd; fi
+	DNSRESINC="-I$withval/include"
+	DNSRESLIB="-L$withval/lib -ldnsres"
+     else
+        AC_ERROR(dnsres.h or libdnsres.a not found in $withval)
+     fi
+     ;;
+  esac ],
+[ if test -f ${prefix}/include/dnsres.h; then
+     DNSRESINC="-I${prefix}/include"
+     DNSRESLIB="-L${prefix}/lib -ldnsres"
+  elif test -f /usr/include/dnsres/dnsres.h; then
+     DNSRESINC="-I/usr/include/dnsres"
+     DNSRESLIB="-ldnsres"
+  elif test -f /usr/include/dnsres.h; then
+     DNSRESLIB="-ldnsres"
+  else
+     AC_MSG_RESULT(no)
+     AC_ERROR(libdnsres not found)
+  fi
+  AC_MSG_RESULT(yes) ]
+)
+AC_SUBST(DNSRESINC)
+AC_SUBST(DNSRESLIB)
+
+dnl Checks for libpcre
+AC_MSG_CHECKING(for libpcre)
+AC_ARG_WITH(libpcre,
+[  --with-libpcre=DIR     use libpcre build directory],
+[ case "$withval" in
+  yes|no)
+     AC_MSG_RESULT(no)
+     ;;
+  *)
+     AC_MSG_RESULT($withval)
+     if test -f $withval/pcre.h -a -f $withval/libpcre.a; then
+        owd=`pwd`
+        if cd $withval; then withval=`pwd`; cd $owd; fi
+        PCREINC="-I$withval"
+        PCRELIB="-L$withval -lpcre"
+     elif test -f $withval/include/pcre.h -a -f $withval/lib/libpcre.a
+     then
+        owd=`pwd`
+        if cd $withval; then withval=`pwd`; cd $owd; fi
+	PCREINC="-I$withval/include"
+	PCRELIB="-L$withval/lib -lpcre"
+     else
+        AC_ERROR(pcre.h or libpcre.a not found in $withval)
+     fi
+     ;;
+  esac ],
+[ if test -f ${prefix}/include/pcre.h; then
+     PCREINC="-I${prefix}/include"
+     PCRELIB="-L${prefix}/lib -lpcre"
+  elif test -f /usr/include/pcre/pcre.h; then
+     PCREINC="-I/usr/include/pcre"
+     PCRELIB="-lpcre"
+  elif test -f /usr/include/pcre.h; then
+     PCRELIB="-lpcre"
+  else
+     AC_MSG_RESULT(no)
+     AC_ERROR(libpcre not found)
+  fi
+  AC_MSG_RESULT(yes) ]
+)
+AC_SUBST(PCREINC)
+AC_SUBST(PCRELIB)
+
+dnl Checks for libraries.
+AC_MSG_CHECKING(for libedit)
+AC_ARG_WITH(libedit,
+[  --with-libedit=DIR      use libedit build directory],
+[ case "$withval" in
+  yes|no)
+     AC_MSG_RESULT(no)
+     ;;
+  *)
+     AC_MSG_RESULT($withval)
+     if test -f $withval/histedit.h -a -f $withval/libedit.a; then
+        owd=`pwd`
+        if cd $withval; then withval=`pwd`; cd $owd; fi
+	AC_DEFINE(HAVE_LIBEDIT, 1, [Define if you have libedit])
+        EDITINC="-I$withval"
+        EDITLIB="-L$withval -ledit"
+     else
+        AC_ERROR(histedit.h or libedit.a not found in $withval)
+     fi
+     ;;
+  esac ],
+[ if test -f ${prefix}/include/histedit.h; then
+     EDITINC="-I${prefix}/include"
+     EDITLIB="-L${prefix}/lib -ledit"
+  elif test -f /usr/include/edit/histedit.h; then
+     EDITINC="-I/usr/include/edit"
+     EDITLIB="-ledit"
+  elif test -f /usr/include/histedit.h; then
+     EDITLIB="-ledit"
+  else
+     AC_MSG_RESULT(no)
+  fi
+  if test ! -z "$EDITLIB" ; then
+	AC_DEFINE(HAVE_LIBEDIT, 1, [Define if you have libedit])
+	AC_MSG_RESULT(yes)
+  fi ]
+)
+AC_SUBST(EDITINC)
+AC_SUBST(EDITLIB)
+
+if test -z "$EDITLIB" ; then
+AC_MSG_CHECKING(for libreadline)
+AC_ARG_WITH(libreadline,
+[  --with-libreadline=DIR      use libreadline build directory],
+[ case "$withval" in
+  yes|no)
+     AC_MSG_RESULT(no)
+     ;;
+  *)
+     AC_MSG_RESULT($withval)
+     if test -f $withval/readline/readline.h -a -f $withval/libreadline.a; then
+        owd=`pwd`
+        if cd $withval; then withval=`pwd`; cd $owd; fi
+	AC_DEFINE(HAVE_LIBREADLINE, 1, [Define if you have libreadline])
+        EDITINC="-I$withval"
+        EDITLIB="-L$withval -lreadline"
+     else
+        AC_ERROR(readline/readline.h or libreadline.a not found in $withval)
+     fi
+     ;;
+  esac ],
+[ if test -f ${prefix}/include/readline/readline.h; then
+     EDITINC="-I${prefix}/include"
+     EDITLIB="-L${prefix}/lib -lreadline"
+  elif test -f /usr/include/readline/readline.h; then
+     EDITLIB="-lreadline"
+  else
+     AC_MSG_RESULT(no)
+  fi
+  if test ! -z "$EDITLIB" ; then
+	AC_DEFINE(HAVE_LIBREADLINE, 1, [Define if you have libreadline])
+	AC_MSG_RESULT(yes)
+  fi ]
+)
+AC_SUBST(EDITINC)
+AC_SUBST(EDITLIB)
+fi
+
+if test -z "$EDITLIB" ; then
+	AC_ERROR(need either libedit or libreadline; install one of them)
+fi
+
+dnl zlib is required
+ZLIB="-lz"
+AC_ARG_WITH(zlib,
+        [  --with-zlib=DIR        Use zlib in DIR],
+        [
+                if test "x$withval" = "xno" ; then
+                        AC_MSG_ERROR([zlib is required])
+                fi
+                if test -d "$withval/lib"; then
+                        ZLIB="-L${withval}/lib"
+                else
+                        ZLIB="-L${withval}"
+                fi
+                if test -d "$withval/include"; then
+                        ZINC="-I${withval}/include"
+                else
+                        ZINC="-I${withval}"
+                fi
+        ]
+)
+AC_SUBST(ZLIB)
+AC_SUBST(ZINC)
+
+LIBS=$ZLIB
+CFLAGS=$ZINC
+AC_CHECK_LIB(z, deflate,, AC_MSG_ERROR([zlib ismissing - you need to install it]))
+LIBS=""
+CFLAGS=""
+
+AC_CHECK_LIB(ncurses, tgetstr, [ LIBCURSES="-lncurses" ],,)
+if test -z "$LIBCURSES" ; then
+	AC_CHECK_LIB(curses, tgetstr, [ LIBCURSES="-lcurses" ],,)
+fi
+if test -z "$LIBCURSES" ; then
+	AC_CHECK_LIB(termcap, tgetstr, [ LIBCURSES="-ltermcap" ],,)
+fi
+AC_SUBST(LIBCURSES)
+
+AC_PATH_PROG(PATH_RRDTOOL, rrdtool)
+AC_SUBST(PATH_RRDTOOL)
+
+AC_ARG_WITH(python,
+[  --with-python           support for python services ],
+[ case "$withval" in
+  no)
+    DO_PYTHON=""
+    ;;
+  *)
+    DO_PYTHON=define
+    ;;
+ esac ], [])
+
+AC_PATH_PROG(PATH_PYTHON, python)
+if test x"$PATH_PYTHON" != x -a x"$DO_PYTHON" = xdefine ; then
+   pv_gv=`$PATH_PYTHON -c 'import sys; print sys.version[[:3]] > "2.3.0"'`
+   if test "$pv_gv" == "False" ; then
+      AC_PATH_PROG(PATH_PYTHON24, python2.4)
+      if test x"$PATH_PYTHON24" != x ; then
+        PATH_PYTHON=$PATH_PYTHON24
+        DO_PYTHON=define
+      else
+        AC_ERROR(need at least Python 2.4)
+      fi
+   else
+      DO_PYTHON=define
+   fi
+else
+  DO_PYTHON=""
+fi
+AC_SUBST(PATH_PYTHON)
+
+dnl Libraries and flags for embedded Python.
+dnl FIXME: I wish there was a less icky way to get this.
+if test x"$DO_PYTHON" = xdefine ; then
+    AC_MSG_CHECKING(for Python linkage)
+    py_prefix=`$PATH_PYTHON -c 'import sys; print sys.prefix'`
+    py_ver=`$PATH_PYTHON -c 'import sys; print sys.version[[:3]]'`
+    py_libdir="${py_prefix}/lib/python${py_ver}"
+    PYTHONINC="-I${py_prefix}/include/python${py_ver}"
+    py_libs=`grep '^LIBS=' $py_libdir/config/Makefile | sed -e 's/^.*=//'`
+    py_libc=`grep '^LIBC=' $py_libdir/config/Makefile | sed -e 's/^.*=//'`
+    py_libm=`grep '^LIBM=' $py_libdir/config/Makefile | sed -e 's/^.*=//'`
+    py_liblocalmod=`grep '^LOCALMODLIBS=' $py_libdir/config/Makefile | sed -e 's/^.*=//'`
+    py_libbasemod=`grep '^BASEMODLIBS=' $py_libdir/config/Makefile | sed -e 's/^.*=//'`
+    PYTHONLIB="-L$py_libdir/config $py_libs $py_libc $py_libm -lpython$py_ver $py_liblocalmod $py_libbasemod"
+    PYTHON_LIB=`echo $PYTHON_LIB | sed -e 's/[ \\t]*/ /g'`
+    AC_MSG_RESULT($py_libdir)
+    AC_DEFINE(HAVE_PYTHON, 1, [Define if we want to link with Python support])
+    PYEXTEND="pyextend.o pydataprocessing.o pydatahoneyd.o"
+
+    # Figure out if we have our modules
+    AC_MSG_CHECKING(for Python dnet module)
+    py_dnet=`$PATH_PYTHON -c 'import dnet; print "ok"' 2>/dev/null`
+    AM_CONDITIONAL([COND_REGRESS], [test x"$py_dnet" = xok])
+    if test x"$py_dnet" = xok; then
+        AC_DEFINE(HAVE_PYDNET, 1,
+	          [Define if Python knows about the dnet modules])
+	AC_MSG_RESULT(yes)
+    else
+        AC_MSG_RESULT(no - regression tests will not run)
+    fi
+
+    # run these tests only if the dnet python module is available
+    if test x"$py_dnet" = xok; then
+      AC_MSG_CHECKING(for Python pcap module)
+      py_pcap=`$PATH_PYTHON -c 'import pcap; print "ok"' 2>/dev/null`
+      AM_CONDITIONAL([COND_PYPCAP], [test x"$py_pcap" != xok])
+      if test x"$py_pcap" = xok; then
+  	AC_MSG_RESULT(yes)
+      else
+          AC_MSG_RESULT(no)
+      fi
+  
+      AC_MSG_CHECKING(for Python dpkt module)
+      py_dpkt=`$PATH_PYTHON -c 'import dpkt; print "ok"' 2>/dev/null`
+      AM_CONDITIONAL([COND_PYDPKT], [test x"$py_dpkt" != xok])
+      if test x"$py_dpkt" = xok; then
+  	AC_MSG_RESULT(yes)
+      else
+          AC_MSG_RESULT(no)
+      fi
+    else
+      AM_CONDITIONAL([COND_PYPCAP], [test x != x])
+      AM_CONDITIONAL([COND_PYDPKT], [test x != x])
+    fi
+  else
+    AM_CONDITIONAL([COND_PYPCAP], [test x != x])
+    AM_CONDITIONAL([COND_PYDPKT], [test x != x])
+    AM_CONDITIONAL([COND_REGRESS], [test x != x])
+    PYEXTEND=""
+    PYTHONLIB=""
+    PYTHONINC=""
+fi
+AC_SUBST(PYEXTEND)
+AC_SUBST(PYTHONLIB)
+AC_SUBST(PYTHONINC)
+
+# Checks for header files.
+AC_HEADER_STDC
+AC_HEADER_SYS_WAIT
+AC_CHECK_HEADERS(stdarg.h errno.h fcntl.h paths.h stdlib.h string.h time.h sys/ioctl.h sys/param.h sys/socket.h sys/time.h sys/ioccom.h sys/file.h syslog.h unistd.h assert.h)
+
+# Checks for typedefs, structures, and compiler characteristics.
+AC_C_CONST
+AC_TYPE_PID_T
+AC_TYPE_SIZE_T
+AC_TYPE_UID_T
+AC_CHECK_TYPE(u_int, unsigned int)
+AC_CHECK_TYPE(u_int64_t, unsigned long long)
+AC_CHECK_TYPE(u_int32_t, unsigned int)
+AC_CHECK_TYPE(u_int16_t, unsigned short)
+AC_CHECK_TYPE(u_int8_t, unsigned char)
+AC_HEADER_TIME
+
+# Checks for library functions.
+AC_PROG_GCC_TRADITIONAL
+AC_TYPE_SIGNAL
+AC_FUNC_VPRINTF
+AC_CHECK_FUNCS(asprintf dup2 fgetln gettimeofday memmove memset strcasecmp strchr strdup strncasecmp strtoul strspn getaddrinfo getnameinfo freeaddrinfo setgroups sendmsg recvmsg setregid setruid kqueue)
+AC_REPLACE_FUNCS(daemon err strsep strlcpy strlcat getopt_long)
+needsha1=no
+AC_CHECK_FUNCS(SHA1Update, , [needsha1=yes])
+if test $needsha1 = yes; then
+   AC_LIBOBJ(sha1)
+fi
+
+dnl make sure we're using the real structure members and not defines
+AC_CACHE_CHECK([for msg_accrights field in struct msghdr],
+		ac_cv_have_accrights_in_msghdr, [
+	AC_TRY_RUN(
+		[
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <sys/uio.h>
+int main() {
+#ifdef msg_accrights
+exit(1);
+#endif
+struct msghdr m;
+m.msg_accrights = 0;
+exit(0);
+}
+		],
+		[ ac_cv_have_accrights_in_msghdr="yes" ],
+		[ ac_cv_have_accrights_in_msghdr="no" ]
+	)
+])
+if test "x$ac_cv_have_accrights_in_msghdr" = "xyes" ; then
+	AC_DEFINE(HAVE_ACCRIGHTS_IN_MSGHDR,1 ,
+		[Define if your system uses access rights style file descriptor passing])
+fi
+
+AC_MSG_CHECKING([for sun_len in socketaddr_un])
+AC_TRY_COMPILE([
+ #include <sys/types.h>
+ #include <sys/socket.h>
+ #include <sys/un.h>],
+  [struct sockaddr_un x; x.sun_len = 0],
+  [AC_MSG_RESULT([yes])
+   AC_DEFINE(HAVE_SUN_LEN, 1, [Set if you have sun_len in socketaddr_un])
+  ],
+  AC_MSG_RESULT([no])
+)
+
+AC_CACHE_CHECK([for msg_control field in struct msghdr],
+		ac_cv_have_control_in_msghdr, [
+	AC_TRY_RUN(
+		[
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <sys/uio.h>
+int main() {
+#ifdef msg_control
+exit(1);
+#endif
+struct msghdr m;
+m.msg_control = 0;
+exit(0);
+}
+		],
+		[ ac_cv_have_control_in_msghdr="yes" ],
+		[ ac_cv_have_control_in_msghdr="no" ]
+	)
+])
+if test "x$ac_cv_have_control_in_msghdr" = "xyes" ; then
+	AC_DEFINE(HAVE_CONTROL_IN_MSGHDR,1,
+	[Define if your system uses ancillary data style file descriptor passing])
+fi
+
+AC_MSG_CHECKING([for timeradd in sys/time.h])
+AC_EGREP_CPP(yes,
+[
+#include <sys/time.h>
+#ifdef timeradd
+yes
+#endif
+],	[ AC_DEFINE(HAVE_TIMERADD, 1,
+		[Define if timeradd is define in <sys/time.h>])
+	  AC_MSG_RESULT([yes])], AC_MSG_RESULT([no])
+)
+AC_MSG_CHECKING([for isblank in ctype.h])
+AC_EGREP_CPP(yes,
+[
+#include <ctype.h>
+#ifdef isblank
+yes
+#endif
+],	[ AC_DEFINE(HAVE_ISBLANK, 1,
+		[Define if isblank is defined in <ctype.h>])
+	  AC_MSG_RESULT([yes])],
+	[ AC_MSG_RESULT([no])
+	  AC_CHECK_FUNCS(isblank)
+	]
+)
+
+if test -z "$DNETCOMPAT"
+then
+	CFLAGS="$DNETINC"
+else
+	CFLAGS="-I$DNETCOMPAT $DNETINC"
+fi
+LIBS=$DNETLIB
+
+        AC_MSG_CHECKING(for working addr_cmp in libdnet)
+        AC_TRY_RUN(
+#include <sys/types.h>
+#include <stdlib.h>
+#include <dnet.h>
+int
+main(int argc, char **argv)
+{
+	struct addr a1;
+	struct addr a2;
+
+	memset(&a1, 0, sizeof(a1));
+	memset(&a2, 0, sizeof(a2));
+
+	a1.addr_type = a2.addr_type = ADDR_TYPE_IP;
+	a1.addr_bits = a2.addr_bits = IP_ADDR_BITS;
+	memset(&a2.addr_ip, 1, sizeof(a2.addr_ip));
+
+        exit(addr_cmp(&a1, &a2) > 0);
+}, AC_MSG_RESULT(yes), [
+        AC_ERROR(you need to install a more recent version of libdnet)
+], AC_MSG_RESULT(yes))
+
+        AC_MSG_CHECKING(for addr_net in libdnet)
+        AC_TRY_LINK([
+#include <sys/types.h>
+#include <stdlib.h>
+#include <dnet.h>
+],[
+	struct addr a1;
+	struct addr a2;
+
+	addr_net(&a1, &a2);
+], AC_MSG_RESULT(yes), [
+        AC_ERROR(you need to install a more recent version of libdnet)
+], AC_MSG_RESULT(yes))
+
+CFLAGS=""
+LIBS=""
+
+AC_CACHE_CHECK([for struct sockaddr_storage], ac_cv_have_struct_sockaddr_storage, [
+	AC_TRY_COMPILE(
+		[
+#include <sys/types.h>
+#include <sys/socket.h>
+		],
+		[ struct sockaddr_storage s; ],
+		[ ac_cv_have_struct_sockaddr_storage="yes" ],
+		[ ac_cv_have_struct_sockaddr_storage="no" ]
+	)
+])
+if test "x$ac_cv_have_struct_sockaddr_storage" = "xyes" ; then
+	AC_DEFINE(HAVE_STRUCT_SOCKADDR_STORAGE, 1,
+		[Define if your system defines struct sockaddr_storage])
+fi
+
+if test "$ac_cv_header_sys_socket_h" = yes ; then
+AC_MSG_CHECKING(for sa_len in sockaddr struct)
+    AC_CACHE_VAL(ac_cv_sockaddr_has_sa_len,
+        AC_TRY_COMPILE([
+#       include <sys/types.h>
+#       include <sys/socket.h>],
+        [u_int i = sizeof(((struct sockaddr *)0)->sa_len)],
+        ac_cv_sockaddr_has_sa_len=yes,
+        ac_cv_sockaddr_has_sa_len=no))
+    AC_MSG_RESULT($ac_cv_sockaddr_has_sa_len)
+    if test $ac_cv_sockaddr_has_sa_len = yes ; then
+            AC_DEFINE(HAVE_SOCKADDR_SA_LEN, 1,
+                      [Define if sockaddr struct has sa_len.])
+    fi
+fi
+
+dnl check if underscores are needed
+AC_MSG_CHECKING(if underscores are needed for symbols)
+AC_TRY_RUN(
+#include <dlfcn.h>
+#include <stdio.h>
+
+int underscoreprobe(void) { return (31415); }
+
+int
+main(int argc, char **argv)
+{
+	void *dh;
+
+	if ((dh = dlopen(NULL, 0)) == NULL)
+		exit(1);
+
+	if (dlsym(dh, "_underscoreprobe") != NULL)
+		exit(0);
+
+	exit(1);	
+}, [AC_MSG_RESULT(yes)
+   AC_DEFINE(DL_NEED_UNDERSCORE, 1, [Do symbols need underscores?])],
+    AC_MSG_RESULT(no), AC_MSG_RESULT(no))
+
+HAVEMETHOD=no
+
+AC_MSG_CHECKING(if we can access libc without dlopen)
+AC_TRY_RUN(
+#include <dlfcn.h>
+#include <stdio.h>
+
+int
+main(int argc, char **argv)
+{
+	void *dh;
+
+	dh = (void *)-1L;
+
+	if (dlsym(dh, "printf") != NULL || dlsym(dh, "_printf") != NULL)
+		exit(0);
+
+	exit(1);
+}, [AC_MSG_RESULT(yes)
+    AC_DEFINE(NODLOPEN, 1, [Do we need to call dlopen()?])
+    HAVEMETHOD=yes], AC_MSG_RESULT(no), AC_MSG_RESULT(no))
+
+if test "$HAVEMETHOD" = "no"; then
+
+    dnl Make sure we use libld if necessary -- CPK
+    LIBS="$LIBDL $LIBS"
+
+    dnl ugly, ugly hack		     
+    LIBCGUESS=`echo /lib/libc.so.*`
+    USRLIBCGUESS=`echo /usr/lib/libc.so*`
+    
+    if test "$USRLIBCGUESS" = "/usr/lib/libc.so.*"; then
+       USRLIBCGUESS=""
+    fi
+    
+    if test "$LIBCGUESS" = "/lib/libc.so.*"; then
+       LIBCGUESS=""
+    fi
+    
+    for TESTLIB in libc.so `echo $USRLIBCGUESS` `echo $LIBCGUESS`
+    do
+        AC_MSG_CHECKING(if we can access libc with $TESTLIB)
+        AC_TRY_RUN(
+        #include <dlfcn.h>
+        #include <stdio.h>
+    
+        int
+        main(int argc, char **argv)
+        {
+    	    void *dh;
+    
+    	    if (dlopen("$TESTLIB", RTLD_LAZY) != NULL)
+    	           exit(0);
+    
+            exit(1);
+        }, [AC_MSG_RESULT(yes)
+            AC_DEFINE_UNQUOTED(DLOPENLIBC, "$TESTLIB", 
+	    [Defines which libc to preload])
+	    HAVEMETHOD=yes], AC_MSG_RESULT(no), AC_MSG_RESULT(no))
+
+	if test "$HAVEMETHOD" = "yes"; then
+	   break
+	fi
+    done
+fi
+
+if test "$HAVEMETHOD" = "no"; then
+   AC_MSG_ERROR(Couldn't figure out how to access libc)
+fi
+
+dnl ##################################################
+dnl # Plugin setup
+dnl ##################################################
+AC_MSG_CHECKING(for plugins to build in)
+AC_ARG_WITH(plugins,
+[  --with-plugins=LIST     use the list of libraries given as plugins.
+
+Specify any libraries you want to build into honeyd as plugins using
+the --with-plugins option. Pass a list of the library names as used
+when linking, separated by commas. For example, if you have two plugin
+libraries called libhum and libbee, you would use --with-plugins=hum,bee.],
+[ for name in `echo "$withval" | sed -e 's/,/\n/g'`
+  do
+	PLUGINLIB="$PLUGINLIB -l$name"
+	PLUGINS="$PLUGINS &plugin_$name,"
+	PLUGINSDECLARE="$PLUGINSDECLARE extern struct honeyd_plugin plugin_$name;"
+  done
+  PLUGINS=`echo $PLUGINS | sed -e 's/ //g'`
+  AC_MSG_RESULT(using$PLUGINLIB) ],
+[ AC_MSG_RESULT(none) ])
+
+AC_SUBST(PLUGINLIB)
+AC_SUBST(PLUGINS)
+AC_SUBST(PLUGINSDECLARE)
+
+AC_CONFIG_FILES([Makefile regress/Makefile pypcap/Makefile])
+AC_OUTPUT

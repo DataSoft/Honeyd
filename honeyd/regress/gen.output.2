@@ -1,0 +1,30 @@
+SRC=192.0.2.254
+DST=192.18.0.10
+ID=5624
+TTL=64
+DATA=TCP(seq=10000L, sum=829, dport=80, sport=555)
+
+SRC=192.18.0.10
+DST=192.0.2.254
+ID=22168
+TTL=64
+DATA=TCP(seq=194595107L, off_x2=160, ack=10001L, win=31800, sum=32532, flags=18, dport=555, sport=80)
+
+SRC=192.0.2.254
+DST=192.18.0.10
+ID=5625
+TTL=64
+DATA=TCP(seq=10001L, ack=194595108L, sum=44656, flags=16, dport=80, sport=555)
+
+SRC=192.0.2.254
+DST=192.18.0.10
+ID=5625
+TTL=64
+DATA=TCP(seq=10001L, ack=194595108L, sum=61935, flags=16, dport=80, sport=555, data='Honeyd fools you')
+
+SRC=192.18.0.10
+DST=192.0.2.254
+ID=22169
+TTL=64
+DATA=TCP(seq=194595108L, ack=10017L, win=31800, sum=12840, flags=16, dport=555, sport=80)
+

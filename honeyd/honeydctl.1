@@ -1,0 +1,58 @@
+.\"
+.\" Copyright (c) 2004 Niels Provos <provos@citi.umich.edu>
+.\"
+.Dd March 21, 2004
+.Dt HONEYDCTL 1
+.Sh NAME
+.Nm honeydctl
+.Nd Honey Control
+.Sh SYNOPSIS
+.Nm honeyd
+.Op Fl v
+.Op Fl t Ar seconds
+.Op Ar socket
+.Sh DESCRIPTION
+.Nm Honeydctl
+is used to connect to
+.Nm Honeyd's
+management console.
+.Pp
+The options are as follows:
+.Bl -tag -width Dssecondss
+.It Fl v
+Tells
+.Nm
+to output all conversations.
+.It Fl t Ar seconds
+Specifies the timeout in seconds when connection to
+.Nm Honeyd .
+.El
+.Pp
+Using
+.Nm ,
+it is possible to dynamically configure
+.Nm Honeyd . 
+All commands that can be specified in a regular
+.Nm Honeyd
+configuration file, may also be specified on the console.
+The tool understand the following additional commands:
+.Bl -tag -width listatemplateaa
+.It list Op template
+Outputs a list of all configured templates.
+If a template is specified as argument, specific information
+about the template is returned.
+The command also matches templates based on wild cards similar
+to file system globbing.
+.El
+.Sh FILES
+.Bl -tag -width /var/run/honeyd.sock
+.It Pa /var/run/honeyd.pid
+The default socket that
+.Nm
+connects to.
+.El
+.Sh SEE ALSO
+.Xr honeyd 8
+.Sh AUTHORS
+Niels Provos
+.Aq provos@citi.umich.edu

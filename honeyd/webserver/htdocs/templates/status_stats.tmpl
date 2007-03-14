@@ -1,0 +1,22 @@
+<div class="status">
+<h1><TMPL_VAR title></h1>
+<p>
+<TMPL_VAR explanation>
+</p>
+    <table>
+      <tr>
+	<td class="tableHeadingInside">Variable</td>
+	<td class="tableHeadingInside">Minute</td>
+	<td class="tableHeadingInside">Hour</td>
+	<td class="tableHeadingInside">Day</td>
+      </tr>
+      <TMPL_LOOP Stats>
+	<tr>
+	  <td><TMPL_VAR name></td>
+	  <td><TMPL_VAR minute></td>
+	  <td><TMPL_VAR hour></td>
+	  <td><TMPL_VAR day></td>
+	</tr>
+      </TMPL_LOOP>
+    </table>
+</div>

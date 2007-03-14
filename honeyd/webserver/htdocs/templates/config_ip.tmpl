@@ -1,0 +1,66 @@
+<script type="text/javascript"><!--
+var imageRight = new Image();
+imageRight.src = "images/arrow_right.gif";
+var imageDown = new Image();
+imageDown.src = "images/arrow_down.gif";
+
+function el(id) {
+ if (document.getElementById) {
+    return document.getElementById(id);
+ }
+ return false;
+}
+
+function toggle(id) {
+  if (el(id).style.display == "none") {
+    el(id+"_image").src = imageDown.src;
+    el(id).style.display = "inline";
+  } else {
+    el(id+"_image").src = imageRight.src;
+    el(id).style.display = "none";
+  }
+}
+//--> </script>
+<div class="status">
+  <h1>
+  <TMPL_VAR title>
+  </h1>
+    <p>
+    <TMPL_VAR explanation>
+    </p>
+      <table cellspacing="0" cellpadding="0">
+	<tr>
+	  <td class="tableHeadingInside"><b>IP Address</b></td>
+	  <td class="tableHeadingInside"><b>Personality</b></td>
+	  <td class="tableHeadingInside"><b>Op</b></td>
+	</tr>
+	<TMPL_LOOP Ips>
+	  <tr>
+	    <td><TMPL_VAR address></td>
+	    <td><TMPL_VAR personality>&nbsp;<a href=""
+		onclick="toggle('<TMPL_VAR address>'); return false"><img src="/images/arrow_right.gif" alt="" id="<TMPL_VAR address>_image"></a>
+	    <div class="person" id=<TMPL_VAR address> style="display: none;">
+		<table cellspacing="0" cellpadding="0">
+		  <tr><td>Ethernet Address</td>
+			<td><TMPL_VAR ethernet></td></tr>
+		  <tr><td>Default ICMP Action</td>
+			<td><TMPL_VAR icmp_action></td></tr>
+		  <tr><td>Default UDP Action</td>
+			<td><TMPL_VAR udp_action></td></tr>
+		  <tr><td>Default TCP Action</td>
+			<td><TMPL_VAR tcp_action></td></tr>
+		</table>
+	    </div>
+	    </td>
+	    <td>
+	      <a href=/config.py?edit_ip=<TMPL_VAR address>><img src=/images/edit.gif height=20 width=20 border=0></a>
+	      <a href=/config.py?delete_ip=<TMPL_VAR address>><img src=/images/delete.gif height=20 width=20 border=0></a>
+	    </td>
+	  </tr>
+	</TMPL_LOOP>
+	<tr>
+	  <td colspan="3" align="right">
+	    <a href=/config.py?add_ip=true><img src=/images/add.gif height=20 width=20 border=0></a></td>
+	</tr>
+      </table>
+</div>

@@ -1,0 +1,19 @@
+route entry 192.18.0.1 #network 192.18.0.0/15
+route 192.18.0.1 link 192.18.0.0/24
+route 192.18.0.1 add net 192.18.1.0/24 192.18.1.1 latency 5ms bandwidth 1Mbps drop between 1000ms - 2000ms
+route 192.18.0.1 add net 192.18.2.0/24 192.18.2.1 latency 5ms bandwidth 56Kbps drop between 5000ms - 10000ms
+route 192.18.0.1 add net 192.18.3.0/24 192.18.2.1 latency 20ms loss 0.1
+route 192.18.1.1 link 192.18.1.0/25
+route 192.18.2.1 link 192.18.2.0/26
+route 192.18.2.1 link 192.18.2.64/26
+route 192.18.2.1 link 192.18.2.128/26
+route 192.18.2.1 link 192.18.2.192/26
+route 192.18.2.1 add net 192.18.3.0/14 192.18.3.1 latency 5ms bandwidth 56Kbps
+route 192.18.3.1 link 192.18.3.0/24
+route 192.18.3.1 add net 192.18.3.64/26 192.18.3.2 latency 10ms
+route 192.18.3.1 add net 192.18.3.238/28 192.18.3.240 latency 5ms
+
+create default
+set default personality "Linux 2.2.14"
+set default default tcp action reset
+add default tcp port 80 open

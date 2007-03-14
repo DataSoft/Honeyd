@@ -1,0 +1,123 @@
+Honeyd 1.1
+Copyright (c) 2002, 2003, 2004, 2005 Niels Provos <provos@citi.umich.edu>
+-------------------------------------------------------------------------
+
+About Honeyd:
+-------------
+
+Honeyd is a small daemon that creates virtual hosts on a network.  The
+hosts can be configured to run arbitrary services, and their TCP
+personality can be adapted so that they appear to be running certain
+versions of operating systems.  Honeyd enables a single host to claim
+multiple addresses - I have tested up to 65536 - on a LAN for network
+simulation.
+
+It is possible to ping the virtual machines, or to traceroute them.
+Any type of service on the virtual machine can be simulated according
+to a simple configuration file.  Instead of simulating a service, it
+is also possible to proxy it to another machine.
+
+Installation:
+-------------
+
+Honeyd depends on several libraries:
+
+ - libevent  - event notification
+ - libdnet   - packet creation
+ - libpcap   - packet sniffing
+ - libdnsres - non-blocking DNS resolver
+ - libpcre   - perl regular expression library
+
+Make sure that you have them installed.
+
+For the regression framework to run, you need to install the Python
+module for libdnet.  You might need Python 2.4 for the best results.
+
+To build honeyd, run the following commands:
+
+$ ./configure
+$ make
+$ make install
+
+If your compilation stops due to Python related errors, you can try to
+run configure as
+
+$ ./configure --without-python
+
+If you get compilation warnings on Linux bitch to the people responsible
+for the conditional header file idioticy.
+
+Documentation:
+--------------
+
+You can find documentation as part of this release.  The manual
+page can be accessed with the following commands:
+
+$ man honeyd
+
+or in the source directory
+
+$ nroff -mdoc honeyd.8
+
+More information can be found at http://www.honeyd.org/
+
+Running:
+--------
+
+Honeyd requires root-privileges for execution.  Normally, you run it
+with arguments similiar to the following:
+
+$ sudo ./honeyd -d -f config.sample 10.0.0.0/8
+
+It is strongly recommend that you run Honeyd in a chroot environment
+under a sandbox like systrace.  If possible, Honeyd drops privileges
+after creating its raw sockets.  This depends on your configuration
+file.  You can force privileges to be dropped by setting Honeyd's uid
+and gid via the -u <uid> and -g <gid> flags.
+
+License:
+--------
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+Acknowledgments:
+----------------
+
+The following people have helped with suggestions, ideas or code:
+
+  Dug Song <dugsong@monkey.org>
+  Jamie Van Randwyk <jvanran@sandia.gov>
+  Eric Thomas <edthoma@sandia.gov>
+  Christopher Kolina
+  Derek Cotton
+  Yuqing Mai
+  Lance Spitzner <lance@honeynet.org>
+  Christian Kreibich <christian.kreibich@cl.cam.ac.uk>
+  Bill Cheswick <ches@lumeta.com>
+  Lauren Oudot <oudot@rstack.org>
+  Jon Oberheide <jonojono@merit.edu>

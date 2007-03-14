@@ -1,0 +1,103 @@
+#
+# $Id: README.mydoom,v 1.1 2004/03/16 17:02:09 provos Exp $
+#
+
+1. Description
+
+   mydoom.pl is a simple Perl script, that works with honeyd, to
+   emulate the backdoor installed by the Mydoom virus.  It saves
+   uploaded files and also logs attempts to use the Mydoom backdoor
+   proxy capability (socks4).  For more information about Mydoom, see
+   section 5 below.
+
+
+2. Dependencies
+
+   mydoom.pl needs Perl and a working honeyd environment.  For
+   instructions on how to compile and configure honeyd, please refer
+   to the honeyd website:
+
+   http://www.citi.umich.edu/u/provos/honeyd/
+
+
+3. Installation
+
+   a. copy the mydoom.pl script:
+
+      # cp mydoom.pl /full/path/mydoom.pl
+      # chmod 755 /full/path/mydoom.pl
+
+   b. create the LOGDIR directory:
+
+      # mkdir -p /full/path/mydoom
+      # chown nobody:nobody /full/path/mydoom
+
+   c. edit your honeyd configuration file, adding something like:
+
+      ###
+      create mydoom
+      set mydoom personality "Microsoft Windows XP Professional"
+      # on honeyd-0.7, use the line below instead:
+      #set mydoom personality "Windows XP Pro"
+      set mydoom default tcp action reset
+      set mydoom default udp action reset
+      set mydoom default icmp action open
+      set mydoom uid 32767 gid 32767
+      add mydoom tcp port  1080 "/full/path/mydoom.pl -l /full/path/mydoom"
+      add mydoom tcp port  3127 "/full/path/mydoom.pl -l /full/path/mydoom"
+      add mydoom tcp port  3128 "/full/path/mydoom.pl -l /full/path/mydoom"
+      add mydoom tcp port 10080 "/full/path/mydoom.pl -l /full/path/mydoom"
+
+      bind 192.0.2.1 mydoom
+      ### change the IP above -- this is only an example.
+
+
+   d. restart honeyd.
+
+
+4. Logging
+
+   mydoom.pl logs all its activities to LOGDIR/logfile.  LOGDIR can be
+   specified using the `-l' option.  If this option is not provided,
+   LOGDIR defaults to `/var/mydoom'.  The log verbosity can be
+   increased with the `-d' (debug mode) option.  All downloaded files
+   are stored inside the LOGDIR directory.
+
+
+5. Additional information
+
+   Additional information about Mydoom is available at:
+
+   * CERT/CC Incident Note IN-2004-01
+     http://www.cert.org/incident_notes/IN-2004-01.html
+
+   * CERT/CC Advisory CA-2004-02 Email-borne Viruses
+     http://www.cert.org/advisories/CA-2004-02.html
+
+
+6. License Information
+
+   mydoom.pl is Free Software.  For license details, please refer to
+   the source code.
+
+
+7. Obtaining new versions
+
+   New versions of my mydoom.pl are available at:
+   http://www.honeynet.org.br/tools/
+
+
+8. Reports and questions
+
+   Please send comments, questions and bug reports to
+   jessen@nic.br.
+
+
+9. Acknowledgments
+
+   The author would like to thank the Honeynet.BR Team and the
+   Brazilian Honeypots Alliance for their ideas and help testing this
+   tool.
+
+
+# README ends here.

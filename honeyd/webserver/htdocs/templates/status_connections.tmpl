@@ -1,0 +1,41 @@
+<table cellspacing=1 cellpadding=0 bgcolor="#000000">
+<tr><td>
+  <table width=100%% cellspacing=0 cellpadding=2 bgcolor=#dddddd>
+  <tr><td bgcolor="#cc7777">
+  <center><font face="vardana,ariel,helvetica" color="#445588" size="+1">
+  <strong><TMPL_VAR title></strong>
+  </font></center>
+  </tr></td>
+    <tr><td bgcolor="#dddddd">
+	<center><TMPL_VAR explanation></center>
+    </tr></td>
+    <tr><td bgcolor=#dddddd align=middle>
+	<table border="0" bgcolor="#000000" cellspacing="1" cellpadding="2" width="100%%">
+	  <table border="0" bgcolor="#000000" cellspacing="1" cellpadding="2" width="100%%">
+	    <tr>
+	      <td bgcolor="#ddbbbb" align=middle><b>Src IP</b></td>
+	      <td bgcolor="#ddbbbb" align=middle><b>Src Port</b></td>
+	      <td bgcolor="#ddbbbb" align=middle><b>Dst IP</b></td>
+	      <td bgcolor="#ddbbbb" align=middle><b>Dst Port</b></td>
+	      <td bgcolor="#ddbbbb" align=middle><b>Received</b></td>
+	      <td bgcolor="#ddbbbb" align=middle><b>Sent</b></td>
+	      <td bgcolor="#ddbbbb" align=middle><b>Op</b></td>
+	    </tr>
+	    <TMPL_LOOP Connections>
+	      <tr>
+		<td bgcolor="#cccccc"><TMPL_VAR src></td>
+		<td bgcolor="#cccccc"><TMPL_VAR sport></td>
+		<td bgcolor="#cccccc"><TMPL_VAR dst></td>
+		<td bgcolor="#cccccc"><TMPL_VAR dport></td>
+		<td bgcolor="#cccccc"><TMPL_VAR received></td>
+		<td bgcolor="#cccccc"><TMPL_VAR sent></td>
+		<td bgcolor="#cccccc">
+		  <a href=/index.py?delete_connection=<TMPL_VAR id>><img src=/images/delete.gif height=20 width=20 border=0></a></td>
+	      </tr>
+	    </TMPL_LOOP>
+	  </table>
+      </td>
+    </tr>
+</table>
+</td></tr>
+</table>

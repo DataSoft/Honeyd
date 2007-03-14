@@ -1,0 +1,12 @@
+SRC=192.0.2.254
+DST=192.18.0.10
+ID=5624
+TTL=64
+DATA=ICMP(sum=9399, data=Echo(id=123, seq=1, data='12345690'))
+
+SRC=192.18.0.10
+DST=192.0.2.254
+ID=48701
+TTL=255
+DATA=ICMP(sum=11446, code=1, type=0, data=Echo(id=123, seq=1, data='12345690'))
+

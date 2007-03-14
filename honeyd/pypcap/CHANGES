@@ -1,0 +1,21 @@
+
+pypcap-1.1:
+
+- better lookupdev() on win32, as requested by Zack Payton
+  <zack@tek-pros.com>
+
+- add Linux SLL datalink type
+
+- better threading support from Olaf Matuschek
+  <olaf.matuschek@uni-freiburg.de>
+
+pypcap-1.0:
+
+- API CHANGE: require 'cnt' as first parameter to pcap.dispatch(),
+  shadowing libpcap pcap_dispatch().
+	
+- add pcap.{get,set}nonblock(), to work around broken BPF select()
+  on certain platforms (MacOS X, older FreeBSD, etc.).
+
+# $Id: CHANGES,v 1.1.1.1 2005/10/29 18:25:02 provos Exp $
+

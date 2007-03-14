@@ -1,0 +1,80 @@
+# $Id: README.kuang2,v 1.1 2004/12/31 18:54:22 provos Exp $
+
+1. Description
+
+   kuang2.pl is a Honeyd module that emulates the backdoor installed
+   by the Kuang2 virus.  It saves uploaded files and also logs
+   attempts to use Kuang2 backdoor commands, like file download,
+   execution, deletion, etc.  For more information about Kuang2, see
+   sections 5 below.
+
+
+2. Dependencies
+
+   kuang2.pl needs Perl, the Digest::SHA1 module and a working Honeyd
+   environment.  For instructions on how to compile and configure
+   Honeyd, please refer to the Honeyd website:
+
+   http://www.citi.umich.edu/u/provos/honeyd/
+
+
+3. Installation
+
+   Please refer to the INSTALL file.
+
+
+4. Logging
+
+   kuang2.pl logs all its activities to LOGDIR/logfile.  LOGDIR can be
+   specified at the configuration file.  If not specified, LOGDIR
+   defaults to `/var/kuang2'.  The log verbosity can be increased with
+   the `-d' (debug mode) option.  All uploaded files are stored inside
+   the LOGDIR directory.
+
+
+5. Additional information
+
+   Nowadays several bots and other malware are using existing Kuang2
+   infected machines to spread.  Being able to capture these uploaded
+   files is a good way to get new specimens to study as well as
+   keeping AV vendors up to date with their signatures.  Additional
+   information about Kuang2 and Spybots is available at:
+
+   * Virus Profile
+     http://us.mcafee.com/virusInfo/default.asp?id=description&virus_k=10213
+
+   * Internet Storm Center -- port 17300/tcp details
+     http://isc.incidents.org/port_details.html?port=17300
+
+   * Milkit: An Innovator of Old Technology
+     http://www.lurhq.com/sig-milkit.html
+
+   * Worm.P2P.SpyBot
+     http://www.viruslist.com/eng/viruslist.html?id=60639
+
+
+6. License Information
+
+    kuang2.pl is free software.  Please refer to its source code for
+    detailed information.
+
+
+7. Availability
+
+   The latest version of kuang2.pl is available from
+   http://www.honeynet.org.br/tools/
+
+
+8. Reports and questions
+
+   Please send comments, questions and bug reports to
+   jessen@nic.br.
+
+
+9. Acknowledgments
+
+   The author would like to thank the Honeynet.BR Team, the Brazilian
+   Honeypots Alliance and Stephen Gill for their ideas and help
+   testing this tool.
+
+# README ends here.

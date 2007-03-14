@@ -1,0 +1,17 @@
+(dp1
+S'libraries'
+p2
+(lp3
+S'pcap'
+p4
+asS'library_dirs'
+p5
+(lp6
+S'/usr/lib'
+p7
+asS'include_dirs'
+p8
+(lp9
+S'/usr/include'
+p10
+as.
