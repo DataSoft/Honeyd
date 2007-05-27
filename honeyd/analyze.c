@@ -27,7 +27,7 @@
 
 #include <dnet.h>
 #include <event.h>
-#include <dnsres.h>
+#include <evdns.h>
 
 #include "tagging.h"
 #include "histogram.h"
@@ -42,8 +42,6 @@ char *country_report_file = NULL;
 
 static int checkpoint_doreplay;		/* externally set by honeydstats */
 static struct event ev_analyze;
-
-struct dnsres dnsres;	/* used for async DNS lookups */
 
 struct kctree oses;
 struct kctree ports;
@@ -259,7 +257,7 @@ analyze_init(void)
 	SPLAY_INIT(&countries);
 	SPLAY_INIT(&country_cache);
 
-	dnsres_init(&dnsres);
+	evdns_init();
 }
 
 void
@@ -321,14 +319,15 @@ struct country_state {
 };
 
 void
-analyze_country_enter_cb(struct dnsres_hostent *he, int err, void *arg)
+analyze_country_enter_cb(int result, char type, int count, int ttl,
+    void *addresses, void *arg)
 {
 	struct country_state *state = arg;
 	struct addr *src = &state->src;
 	struct keycount tmpkey, *key;
 	char tld[20];
 
-	if (he == NULL) {
+	if (result != DNS_ERR_NONE || count != 1 || type != DNS_PTR) {
 		/* Enter into our negative cache */
 		if (!state->result_from_cache) {
 			tmpkey.key = &src->addr_ip;
@@ -346,7 +345,7 @@ analyze_country_enter_cb(struct dnsres_hostent *he, int err, void *arg)
 
 		strlcpy(tld, "unknown", sizeof(tld));
 	} else {
-		const char *hostname = he->h_name;
+		const char *hostname = *(char **)addresses;
 		int i;
 		/* Extract the country key */
 		for (i = strlen(hostname) - 1; i >= 0; --i) {
@@ -400,15 +399,16 @@ analyze_country_enter(const struct addr *addr, const struct addr *dst)
 		if (count_get_minute(key->count) ||
 		    count_get_hour(key->count)) {
 			state->result_from_cache = 1;
-			analyze_country_enter_cb(NULL, 1, state);
+			analyze_country_enter_cb(DNS_ERR_NOTEXIST, DNS_PTR,
+			    0, 0, NULL, state);
 			return;
 		}
 	}
 
 	if (!checkpoint_doreplay) {
-		dnsres_gethostbyaddr(&dnsres,
-		    (const char *)&addr->addr_ip, IP_ADDR_LEN, AF_INET,
-		    analyze_country_enter_cb, state);
+		struct in_addr in;
+		in.s_addr = addr->addr_ip;
+		evdns_resolve_reverse(&in, 0, analyze_country_enter_cb, state);
 	} else {
 		/*
 		 * If we are replaying a checkpoint, we do not want to do
@@ -416,7 +416,13 @@ analyze_country_enter(const struct addr *addr, const struct addr *dst)
 		 */
 		struct hostent *hp = gethostbyaddr(
 			(const char *)&addr->addr_ip, IP_ADDR_LEN, AF_INET);
-		analyze_country_enter_cb(hp, 1, state);
+		if (hp == NULL) {
+			analyze_country_enter_cb(DNS_ERR_NOTEXIST, DNS_PTR,
+			    0, 0, NULL, state);
+		} else {
+			analyze_country_enter_cb(DNS_ERR_NONE, DNS_PTR,
+			    1, 1200 /* ttl */, (void *)&hp->h_name, state);
+		}
 	}
 }
 
