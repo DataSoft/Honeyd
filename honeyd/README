@@ -1,5 +1,5 @@
-Honeyd 1.1
-Copyright (c) 2002, 2003, 2004, 2005 Niels Provos <provos@citi.umich.edu>
+Honeyd 1.5b
+Copyright (c) 2002 - 2007 Niels Provos <provos@citi.umich.edu>
 -------------------------------------------------------------------------
 
 About Honeyd:
@@ -25,8 +25,7 @@ Honeyd depends on several libraries:
  - libevent  - event notification
  - libdnet   - packet creation
  - libpcap   - packet sniffing
- - libdnsres - non-blocking DNS resolver
- - libpcre   - perl regular expression library
+ - libpcre   - perl regular expression library (optional; for subsystems)
 
 Make sure that you have them installed.
 
