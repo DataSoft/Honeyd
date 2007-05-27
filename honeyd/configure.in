@@ -4,7 +4,7 @@ AC_CONFIG_SRCDIR(honeyd.c)
 
 AC_CANONICAL_SYSTEM
 
-AM_INIT_AUTOMAKE(honeyd, 1.5a)
+AM_INIT_AUTOMAKE(honeyd, 1.5b)
 AM_CONFIG_HEADER(config.h)
 AM_MAINTAINER_MODE
 
@@ -164,49 +164,6 @@ AC_CHECK_LIB(event, event_priority_init,, AC_MSG_ERROR(["libevent is too old - y
 LIBS=""
 CFLAGS=""
 
-dnl Checks for libdnsres
-AC_MSG_CHECKING(for libdnsres)
-AC_ARG_WITH(libdnsres,
-[  --with-libdnsres=DIR     use libdnsres build directory],
-[ case "$withval" in
-  yes|no)
-     AC_MSG_RESULT(no)
-     ;;
-  *)
-     AC_MSG_RESULT($withval)
-     if test -f $withval/dnsres.h -a -f $withval/libdnsres.a; then
-        owd=`pwd`
-        if cd $withval; then withval=`pwd`; cd $owd; fi
-        DNSRESINC="-I$withval"
-        DNSRESLIB="-L$withval -ldnsres"
-     elif test -f $withval/include/dnsres.h -a -f $withval/lib/libdnsres.a
-     then
-        owd=`pwd`
-        if cd $withval; then withval=`pwd`; cd $owd; fi
-	DNSRESINC="-I$withval/include"
-	DNSRESLIB="-L$withval/lib -ldnsres"
-     else
-        AC_ERROR(dnsres.h or libdnsres.a not found in $withval)
-     fi
-     ;;
-  esac ],
-[ if test -f ${prefix}/include/dnsres.h; then
-     DNSRESINC="-I${prefix}/include"
-     DNSRESLIB="-L${prefix}/lib -ldnsres"
-  elif test -f /usr/include/dnsres/dnsres.h; then
-     DNSRESINC="-I/usr/include/dnsres"
-     DNSRESLIB="-ldnsres"
-  elif test -f /usr/include/dnsres.h; then
-     DNSRESLIB="-ldnsres"
-  else
-     AC_MSG_RESULT(no)
-     AC_ERROR(libdnsres not found)
-  fi
-  AC_MSG_RESULT(yes) ]
-)
-AC_SUBST(DNSRESINC)
-AC_SUBST(DNSRESLIB)
-
 dnl Checks for libpcre
 AC_MSG_CHECKING(for libpcre)
 AC_ARG_WITH(libpcre,
@@ -214,6 +171,7 @@ AC_ARG_WITH(libpcre,
 [ case "$withval" in
   yes|no)
      AC_MSG_RESULT(no)
+     AC_DEFINE(HAVE_LIBPCRE, 0, [Define if your systen has libpcre])
      ;;
   *)
      AC_MSG_RESULT($withval)
@@ -229,7 +187,7 @@ AC_ARG_WITH(libpcre,
 	PCREINC="-I$withval/include"
 	PCRELIB="-L$withval/lib -lpcre"
      else
-        AC_ERROR(pcre.h or libpcre.a not found in $withval)
+	AC_DEFINE(HAVE_LIBPCRE, 0, [Define if your systen has libpcre])
      fi
      ;;
   esac ],
@@ -243,10 +201,17 @@ AC_ARG_WITH(libpcre,
      PCRELIB="-lpcre"
   else
      AC_MSG_RESULT(no)
-     AC_ERROR(libpcre not found)
+     AC_DEFINE(HAVE_LIBPCRE, 0, [Define if your systen has libpcre])
   fi
-  AC_MSG_RESULT(yes) ]
+  AC_MSG_RESULT(yes) 
+  AC_DEFINE(HAVE_LIBPCRE, 1, [Define if your systen has libpcre]) ]
 )
+
+if test x"$HAVE_LIBPCRE" == x"1" ; then
+  AC_SUBST([SMTP_BIN], ['smtp${EXEEXT}'])
+  AC_SUBST([PROXY_BIN], ['proxy${EXEEXT}'])
+fi
+
 AC_SUBST(PCREINC)
 AC_SUBST(PCRELIB)
 

@@ -60,7 +60,8 @@ honeydpluginsdeclare = @PLUGINSDECLARE@
 ########################################################################
 
 bin_PROGRAMS = honeyd honeydctl honeydstats hsniff
-honeyddata_PROGRAMS = smtp proxy
+honeyddata_PROGRAMS = $(SMTP_BIN) $(PROXY_BIN)
+EXTRA_PROGRAMS = smtp proxy
 
 # Install the header files in a separate subdirectory. Note that
 # honeydincludedir is the directory reported to the user, who has to
@@ -98,9 +99,9 @@ honeydstats_SOURCES = honeydstats.c honeydstats.h \
 	honeydstats_main.c tagging.c tagging.h \
 	stats.c stats.h util.c histogram.c histogram.h analyze.c analyze.h \
 	untagging.c untagging.h filter.c filter.h keycount.c keycount.h
-honeydstats_LDADD = @LIBOBJS@ @DNETLIB@ @EVENTLIB@ @ZLIB@ @DNSRESLIB@
+honeydstats_LDADD = @LIBOBJS@ @DNETLIB@ @EVENTLIB@ @ZLIB@
 honeydstats_CPPFLAGS = -I$(top_srcdir)/@DNETCOMPAT@ -I$(top_srcdir)/compat \
-	@EVENTINC@ @DNETINC@ @ZINC@ @DNSRESINC@
+	@EVENTINC@ @DNETINC@ @ZINC@
 honeydstats_CFLAGS = -O0 -Wall
 
 # <-- cut start -->
@@ -144,9 +145,9 @@ smtp_SOURCES = subsystems/smtp.c subsystems/smtp.h subsystems/smtp_main.c \
 	subsystems/smtp_messages.h atomicio.c \
 	util.c util.h honeyd_overload.h
 
-smtp_LDADD = @LIBOBJS@ @EVENTLIB@ @DNETLIB@ @PCAPLIB@ @DNSRESLIB@ @PCRELIB@
+smtp_LDADD = @LIBOBJS@ @EVENTLIB@ @DNETLIB@ @PCAPLIB@ @PCRELIB@
 smtp_CPPFLAGS = -I$(top_srcdir)/@DNETCOMPAT@ -I$(top_srcdir)/compat \
-	@EVENTINC@ @DNETINC@ @DNSRESINC@ @PCREINC@
+	@EVENTINC@ @DNETINC@ @PCREINC@
 smtp_CFLAGS = -O2 -Wall
 
 proxy_SOURCES = subsystems/proxy.c subsystems/proxy.h subsystems/proxy_main.c \
@@ -154,9 +155,9 @@ proxy_SOURCES = subsystems/proxy.c subsystems/proxy.h subsystems/proxy_main.c \
 	subsystems/smtp_messages.h atomicio.c \
 	util.c util.h honeyd_overload.h
 
-proxy_LDADD = @LIBOBJS@ @EVENTLIB@ @DNETLIB@ @PCAPLIB@ @DNSRESLIB@ @PCRELIB@
+proxy_LDADD = @LIBOBJS@ @EVENTLIB@ @DNETLIB@ @PCAPLIB@ @PCRELIB@
 proxy_CPPFLAGS = -I$(top_srcdir)/@DNETCOMPAT@ -I$(top_srcdir)/compat \
-	@EVENTINC@ @DNETINC@ @DNSRESINC@ @PCREINC@
+	@EVENTINC@ @DNETINC@ @PCREINC@
 proxy_CFLAGS = -O2 -Wall
 
 ########################################################################
