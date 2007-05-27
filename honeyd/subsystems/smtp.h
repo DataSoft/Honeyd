@@ -34,7 +34,8 @@ struct smtp_ta {
 	struct sockaddr_storage lsa;	/* local host */
 	socklen_t lsalen;
 
-	void *dnsres_handle;		/* can be used to cancel a callback */
+	int dns_pending;
+	int dns_canceled;
 };
 
 struct smtp_ta *smtp_ta_new(int fd, struct sockaddr *sa, socklen_t salen,

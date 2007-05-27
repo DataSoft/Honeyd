@@ -39,14 +39,13 @@
 #include <sha1.h>
 
 #include <event.h>
-#include <dnsres.h>
+#include <evdns.h>
 
 #include "util.h"
 #include "smtp.h"
 #include "smtp_messages.h"
 #include "honeyd_overload.h"
 
-extern struct dnsres dnsres;
 extern int debug;
 
 #define DFPRINTF(x, y)	do { \
@@ -208,15 +207,22 @@ smtp_response(struct smtp_ta *ta, struct keyvalue data[]) {
 }
 
 void
-smtp_handle_helo_cb(struct dnsres_hostent *he, int error, void *arg)
+smtp_handle_helo_cb(int result, char type, int count, int ttl,
+    void *addresses, void *arg)
 {
 	struct smtp_ta *ta = arg;
 	char *response;
 
-	ta->dnsres_handle = NULL;
+	if (ta->dns_canceled) {
+		smtp_ta_free(ta);
+		return;
+	}
+	ta->dns_pending = 0;
 
-	if (he != NULL)
-		kv_replace(&ta->dictionary, "$srcname", he->h_name);
+	if (result == DNS_ERR_NONE && count == 1) {
+		char *hostname = *(char **)addresses;
+		kv_replace(&ta->dictionary, "$srcname", hostname);
+	}
 
 	response = smtp_response(ta, helo);
 	bufferevent_write(ta->bev, response, strlen(response));
@@ -241,9 +247,8 @@ smtp_handle_helo(struct smtp_ta *ta, char *line)
 	domainname = strsep(&line, " ");
 	kv_replace(&ta->dictionary, "$srcname", domainname);
 
-	ta->dnsres_handle = dnsres_gethostbyaddr(&dnsres,
-	    (const char *)&sin->sin_addr, sizeof(sin->sin_addr), AF_INET,
-	    smtp_handle_helo_cb, ta);
+	evdns_resolve_reverse(&sin->sin_addr, 0, smtp_handle_helo_cb, ta);
+	ta->dns_pending = 1;
 
 	return (0);
 }
@@ -861,8 +866,11 @@ smtp_ta_free(struct smtp_ta *ta)
 {
 	struct keyvalue *entry;
 
-	if (ta->dnsres_handle)
-		dnsres_cancel_lookup(ta->dnsres_handle);
+	if (ta->dns_pending && !ta->dns_canceled) {
+		/* if we have a pending dns lookup, tell it to cancel */
+		ta->dns_canceled = 1;
+		return;
+	}
 
 	while ((entry = TAILQ_FIRST(&ta->dictionary)) != NULL) {
 		TAILQ_REMOVE(&ta->dictionary, entry, next);

@@ -35,7 +35,7 @@
 #include <err.h>
 
 #include <event.h>
-#include <dnsres.h>
+#include <evdns.h>
 
 #include "util.h"
 #include "smtp.h"
@@ -45,7 +45,6 @@
 extern FILE *flog_email;	/* log the email transactions somewhere */
 extern const char *log_datadir;	/* log the email transactions somewhere */
 
-struct dnsres dnsres;		/* dns lookups */
 int debug;
 
 static void
@@ -100,7 +99,7 @@ main(int argc, char **argv)
 
 	event_init();
 
-	dnsres_init(&dnsres);
+	evdns_init();
 
 	smtp_bind_socket(&bind_ev, port);
 	
