@@ -32,7 +32,8 @@ struct proxy_ta {
 
 	int (*empty_cb)(struct proxy_ta *);
 
-	void *dnsres_handle;	/* used to cancel a pending callback */
+	int dns_pending;
+	int dns_canceled;
 };
 
 struct proxy_ta *proxy_ta_new(int fd, struct sockaddr *sa, socklen_t salen,

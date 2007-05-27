@@ -36,7 +36,7 @@
 
 #include <pcre.h>
 #include <event.h>
-#include <dnsres.h>
+#include <evdns.h>
 #include <dnet.h>
 
 #include "util.h"
@@ -45,7 +45,6 @@
 #include "smtp.h"
 #include "honeyd_overload.h"
 
-extern struct dnsres dnsres;
 extern int debug;
 
 #define DFPRINTF(x, y)	do { \
@@ -218,7 +217,7 @@ proxy_remote_readcb(struct bufferevent *bev, void *arg)
 {
 	struct proxy_ta *ta = arg;
 	struct evbuffer *buffer = EVBUFFER_INPUT(bev);
-	char *data = EVBUFFER_DATA(buffer);
+	unsigned char *data = EVBUFFER_DATA(buffer);
 	size_t len = EVBUFFER_LENGTH(buffer);
 
 	bufferevent_write(ta->bev, data, len);
@@ -365,16 +364,22 @@ proxy_connect(struct proxy_ta *ta, char *host, int port)
 }
 
 void
-proxy_handle_get_cb(struct dnsres_hostent *he, int error, void *arg)
+proxy_handle_get_cb(int result, char type, int count, int ttl,
+    void *addresses, void *arg)
 {
 	struct proxy_ta *ta = arg;
 	struct addr addr;
+	struct in_addr *in_addrs = addresses;
 	int port = atoi(kv_find(&ta->dictionary, "$port"));
 	char *response;
 
-	ta->dnsres_handle = NULL;
+	if (ta->dns_canceled) {
+		proxy_ta_free(ta);
+		return;
+	}
+	ta->dns_pending = 0;
 
-	if (he == NULL || he->h_length != IP_ADDR_LEN) {
+	if (result != DNS_ERR_NONE || type != DNS_IPv4_A || count == 0) {
 		response = proxy_response(ta, baddomain);
 		bufferevent_write(ta->bev, response, strlen(response));
 		ta->wantclose = 1;
@@ -384,8 +389,7 @@ proxy_handle_get_cb(struct dnsres_hostent *he, int error, void *arg)
 	/* Need to make a connection here */
 	bufferevent_disable(ta->bev, EV_READ);
 
-	addr_pack(&addr, ADDR_TYPE_IP, IP_ADDR_BITS,
-	    he->h_addr_list[0], IP_ADDR_LEN);
+	addr_pack(&addr, ADDR_TYPE_IP, IP_ADDR_BITS, &in_addrs[0], IP_ADDR_LEN);
 	proxy_connect(ta, addr_ntoa(&addr), port);
 }
 
@@ -421,14 +425,15 @@ proxy_handle_get(struct proxy_ta *ta)
 	}
 
 	/* Try to resolve the domain name */
-	ta->dnsres_handle = dnsres_gethostbyname(&dnsres,
-	    kv_find(&ta->dictionary, "$host"),
+	evdns_resolve_ipv4(kv_find(&ta->dictionary, "$host"), 0,
 	    proxy_handle_get_cb, ta);
+	ta->dns_pending = 1;
 	return (0);
 }
 
 void
-proxy_handle_connect_cb(struct dnsres_hostent *he, int error, void *arg)
+proxy_handle_connect_cb(int result, char type, int count, int ttl,
+    void *addresses, void *arg)
 {
 	struct proxy_ta *ta = arg;
 	char *host = kv_find(&ta->dictionary, "$host");
@@ -436,9 +441,13 @@ proxy_handle_connect_cb(struct dnsres_hostent *he, int error, void *arg)
 	char *response;
 	fprintf(stderr, "Connecting to %s port %d\n", host, port);
 
-	ta->dnsres_handle = NULL;
+	if (ta->dns_canceled) {
+		proxy_ta_free(ta);
+		return;
+	}
+	ta->dns_pending = 0;
 
-	if (he == NULL) {
+	if (result != DNS_ERR_NONE) {
 		response = proxy_response(ta, baddomain);
 		bufferevent_write(ta->bev, response, strlen(response));
 		ta->wantclose = 1;
@@ -505,9 +514,9 @@ proxy_handle_connect(struct proxy_ta *ta)
 	}
 
 	/* Try to resolve the domain name */
-	ta->dnsres_handle = dnsres_gethostbyname(&dnsres,
-	    kv_find(&ta->dictionary, "$host"),
+	evdns_resolve_ipv4(kv_find(&ta->dictionary, "$host"), 0,
 	    proxy_handle_connect_cb, ta);
+	ta->dns_pending = 1;
 	return (0);
 }
 
@@ -672,8 +681,11 @@ proxy_ta_free(struct proxy_ta *ta)
 {
 	struct keyvalue *entry;
 
-	if (ta->dnsres_handle != NULL)
-		dnsres_cancel_lookup(ta->dnsres_handle);
+	if (ta->dns_pending && !ta->dns_canceled) {
+		/* if we have a pending dns lookup, tell it to cancel */
+		ta->dns_canceled = 1;
+		return;
+	}
 
 	while ((entry = TAILQ_FIRST(&ta->dictionary)) != NULL) {
 		TAILQ_REMOVE(&ta->dictionary, entry, next);

@@ -36,7 +36,7 @@
 #include <err.h>
 
 #include <event.h>
-#include <dnsres.h>
+#include <evdns.h>
 
 #include "util.h"
 #include "proxy.h"
@@ -49,7 +49,6 @@ extern FILE *flog_email;	/* log SMTP transactions somewhere */
 extern const char *log_datadir;	/* log the email transactions somewhere */
 
 int debug;
-struct dnsres dnsres;		/* dns lookups */
 
 static void
 usage(char *progname)
@@ -123,7 +122,7 @@ main(int argc, char **argv)
 
 	event_init();
 
-	dnsres_init(&dnsres);
+	evdns_init();
 
 	if (ports == NULL) {
 		/* Just a single port to connect to */
