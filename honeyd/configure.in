@@ -58,7 +58,8 @@ AC_ARG_WITH(libpcap,
      AC_MSG_RESULT(no)
      AC_ERROR(libpcap not found)
   fi
-  AC_MSG_RESULT(yes) ]
+  AC_MSG_RESULT(yes)
+]
 )
 AC_SUBST(PCAPINC)
 AC_SUBST(PCAPLIB)
@@ -164,50 +165,40 @@ AC_CHECK_LIB(event, event_priority_init,, AC_MSG_ERROR(["libevent is too old - y
 LIBS=""
 CFLAGS=""
 
-dnl Checks for libpcre
-AC_MSG_CHECKING(for libpcre)
+dnl Checks for (installed) libpcre
 AC_ARG_WITH(libpcre,
-[  --with-libpcre=DIR     use libpcre build directory],
+[  --with-libpcre=DIR      use libpcre in DIR],
 [ case "$withval" in
   yes|no)
+     AC_MSG_CHECKING(for libpcre)
      AC_MSG_RESULT(no)
-     AC_DEFINE(HAVE_LIBPCRE, 0, [Define if your systen has libpcre])
      ;;
   *)
+     AC_MSG_CHECKING(for libpcre)
      AC_MSG_RESULT($withval)
-     if test -f $withval/pcre.h -a -f $withval/libpcre.a; then
-        owd=`pwd`
-        if cd $withval; then withval=`pwd`; cd $owd; fi
-        PCREINC="-I$withval"
-        PCRELIB="-L$withval -lpcre"
-     elif test -f $withval/include/pcre.h -a -f $withval/lib/libpcre.a
-     then
-        owd=`pwd`
-        if cd $withval; then withval=`pwd`; cd $owd; fi
+     if test -f $withval/src/libpcre.a; then
 	PCREINC="-I$withval/include"
-	PCRELIB="-L$withval/lib -lpcre"
+	PCRELIB="-L$withval/src -lpcre `$withval/pcre-config --libs`"
+     elif test -x $withval/bin/pcre-config; then
+	PCREINC="`$withval/bin/pcre-config --cflags`"
+	PCRELIB="`$withval/bin/pcre-config --libs`"
      else
-	AC_DEFINE(HAVE_LIBPCRE, 0, [Define if your systen has libpcre])
+        AC_MSG_RESULT(no)
      fi
      ;;
-  esac ],
-[ if test -f ${prefix}/include/pcre.h; then
-     PCREINC="-I${prefix}/include"
-     PCRELIB="-L${prefix}/lib -lpcre"
-  elif test -f /usr/include/pcre/pcre.h; then
-     PCREINC="-I/usr/include/pcre"
-     PCRELIB="-lpcre"
-  elif test -f /usr/include/pcre.h; then
-     PCRELIB="-lpcre"
-  else
-     AC_MSG_RESULT(no)
-     AC_DEFINE(HAVE_LIBPCRE, 0, [Define if your systen has libpcre])
-  fi
-  AC_MSG_RESULT(yes) 
-  AC_DEFINE(HAVE_LIBPCRE, 1, [Define if your systen has libpcre]) ]
+  esac
+  if test x"$PCREINC" != x ; then
+    AC_MSG_RESULT(yes)
+  fi ],
+[ dnl This is the default case so let's just use AC_PATH_PROG! --CPK.
+  AC_PATH_PROG(pcreconfig, pcre-config, "no")
+  if test "$pcreconfig" != "no"; then
+     PCREINC="`$pcreconfig --cflags`"
+     PCRELIB="`$pcreconfig --libs`"
+  fi]
 )
 
-if test x"$HAVE_LIBPCRE" == x"1" ; then
+if test x"$PCREINC" != x ; then
   AC_SUBST([SMTP_BIN], ['smtp${EXEEXT}'])
   AC_SUBST([PROXY_BIN], ['proxy${EXEEXT}'])
 fi
