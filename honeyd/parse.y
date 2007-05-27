@@ -717,7 +717,7 @@ action		: flags STRING
 		$$.aitop = NULL;
 		$$.flags = $1;
 
-		snprintf(proxy, sizeof(proxy), "%s:%s", add_ntoa(&$3), $5);
+		snprintf(proxy, sizeof(proxy), "%s:%s", addr_ntoa(&$3), $5);
 		$$.action = strdup(proxy);
 		if ($$.action == NULL)
 				yyerror("Out of memory");
