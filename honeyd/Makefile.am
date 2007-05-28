@@ -239,9 +239,6 @@ install-data-local:
 	find $(DESTDIR)$(honeyddatadir)/webserver -type f | xargs chmod a+r
 	find $(DESTDIR)$(honeyddatadir)/webserver -type d | xargs chmod a+xr
 
-dist-hook:
-	./distribute.py $(distdir)/
-
 CLEANFILES = *.so
 DISTCLEANFILES = *~
 
