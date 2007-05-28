@@ -64,6 +64,7 @@
 #include "router.h"
 #include "interface.h"
 #include "arp.h"
+#include "debug.h"
 
 #define ARP_MAX_ACTIVE		600
 
@@ -311,15 +312,13 @@ arp_recv_cb(u_char *u, const struct pcap_pkthdr *pkthdr, const u_char *pkt)
 
 		/* Check if we are responsible for this network or address */
 		req = arp_find(&dst.arp_pa);
-		if (network_lookup(reverse, &dst.arp_pa) == NULL ||
+		if (network_lookup(reverse, &dst.arp_pa) == NULL && 
 		    req == NULL) {
 		ignore:
-			/*
-			syslog(LOG_DEBUG,
-			    "ignoring arp request on %s for %s",
-			    inter->if_ent.intf_name,
-			    addr_ntoa(&dst.arp_pa));
-			*/
+			DFPRINTF(2, (stderr,
+				"ignoring arp request on %s for %s: %p\n",
+				inter->if_ent.intf_name,
+				addr_ntoa(&dst.arp_pa), req));
 			return;
 		}
 
@@ -327,7 +326,7 @@ arp_recv_cb(u_char *u, const struct pcap_pkthdr *pkthdr, const u_char *pkt)
 		 * If we discovered this address ourselves, we do not
 		 * want to send a reply - although we could.
 		 */
-		if (req->flags & ARP_EXTERNAL)
+		if (req != NULL && (req->flags & ARP_EXTERNAL))
 			goto ignore;
 
 		tmpl = template_find(addr_ntoa(&dst.arp_pa));

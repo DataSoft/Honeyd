@@ -47,12 +47,7 @@
 #include "pyextend.h"
 #include "histogram.h"
 #include "osfp.h"
-
-#ifdef PYTHON_DEBUG
-#define DFPRINTF(x) fprintf x
-#else
-#define DFPRINTF(x)
-#endif
+#include "debug.h"
 
 int make_socket(int (*f)(int, const struct sockaddr *, socklen_t), int type,
     char *, uint16_t);
@@ -562,7 +557,7 @@ pyextend_selector(PyObject *args, struct event *ev, const char *name)
 
 	if(!PyArg_ParseTuple(args, "i:read_selector", &on))
 		return (NULL);
-	DFPRINTF((stderr, "%s: called selector with %d\n", name, on));
+	DFPRINTF(1, (stderr, "%s: called selector with %d\n", name, on));
 
 	if (on)
 		event_add(ev, NULL);

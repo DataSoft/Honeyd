@@ -27,6 +27,13 @@
 #ifndef _DEBUG_H_
 #define _DEBUG_H_
 
+extern int honeyd_debug;
+
+/* Standard debug printf */
+#define DFPRINTF(x, y) do { \
+	if (honeyd_debug >= x) fprintf y; \
+} while (0)
+
 #ifdef HONEYD_DEBUG
 
 /**
