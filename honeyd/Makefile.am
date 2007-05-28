@@ -104,7 +104,6 @@ honeydstats_CPPFLAGS = -I$(top_srcdir)/@DNETCOMPAT@ -I$(top_srcdir)/compat \
 	@EVENTINC@ @DNETINC@ @ZINC@
 honeydstats_CFLAGS = -O0 -Wall
 
-# <-- cut start -->
 #
 # Honeyd stats sniffer
 #
@@ -116,7 +115,6 @@ hsniff_LDADD = @LIBOBJS@ @PCAPLIB@ @DNETLIB@ @EVENTLIB@ @ZLIB@
 hsniff_CPPFLAGS = -I$(top_srcdir)/@DNETCOMPAT@ -I$(top_srcdir)/compat \
 	@EVENTINC@ @PCAPINC@ @DNETINC@ @ZINC@
 hsniff_CFLAGS = -O2 -Wall -DPATH_HONEYDDATA="\"$(honeyddatadir)\""
-# <-- cut end -->
 
 #
 # Honeyd control application

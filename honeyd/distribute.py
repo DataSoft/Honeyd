@@ -79,6 +79,6 @@ license = m.sub(" *", license)
 
 scandir(sys.argv[1])
 
-remove_cut(sys.argv[1]+"/Makefile.am")
+#remove_cut(sys.argv[1]+"/Makefile.am")
 
-recompute(sys.argv[1])
+#recompute(sys.argv[1])
