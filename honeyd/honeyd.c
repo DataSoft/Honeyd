@@ -3232,6 +3232,13 @@ main(int argc, char *argv[])
 	if (setrand)
 		rand_set(honeyd_rand, &setrand, sizeof(setrand));
 
+#ifdef DISABLE_KQUEUE
+	setenv("EVENT_NOKQUEUE", "yes", 1);
+#endif
+#ifdef DISABLE_POLL
+	setenv("EVENT_NOPOLL", "yes", 1);
+#endif
+
 	/* Initalize libevent */
 	event_init();
 

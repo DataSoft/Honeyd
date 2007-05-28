@@ -3,6 +3,7 @@ AC_INIT(honeyd)
 AC_CONFIG_SRCDIR(honeyd.c)
 
 AC_CANONICAL_SYSTEM
+AC_CANONICAL_HOST
 
 AM_INIT_AUTOMAKE(honeyd, 1.5b)
 AM_CONFIG_HEADER(config.h)
@@ -13,6 +14,24 @@ AM_PROG_LIBTOOL
 dnl Initialize prefix.
 if test "$prefix" = "NONE"; then
    prefix="/usr/local"
+fi
+
+disable_kqueue=no
+disable_poll=no
+case $host in
+  *-*-darwin* )
+    # Don't use kqueue or poll on bfp interface
+    AC_MSG_NOTICE([You are running Mac OS X; disable kqueue and poll for
+libevent, we can only use select on pcap file descriptors])
+    disable_kqueue=yes
+    disable_poll=yes
+esac
+
+if test x"$disable_kqueue" == x"yes"; then
+  AC_DEFINE(DISABLE_KQUEUE, 1, [Define kqueue should be disabled for libevent])
+fi
+if test x"$disable_poll" == x"yes"; then
+  AC_DEFINE(DISABLE_POLL, 1, [Define poll should be disabled for libevent])
 fi
 
 # Checks for programs.
