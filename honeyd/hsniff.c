@@ -52,10 +52,12 @@
 #include "interface.h"
 #include "tagging.h"
 #include "stats.h"
+#include "debug.h"
+
+int			honeyd_debug;
 
 static int		hsniff_show_version;
 static int		hsniff_show_usage;
-static int		hsniff_debug;
 static int		hsniff_useudp;
 static uid_t		hsniff_uid = 32767;
 static gid_t		hsniff_gid = 32767;
@@ -563,7 +565,7 @@ main(int argc, char *argv[])
 			interface_dopoll = 1;
 			break;
 		case 'd':
-			hsniff_debug++;
+			honeyd_debug++;
 			break;
 		case 'i':
 			if (ninterfaces >= HSNIFF_MAX_INTERFACES)
@@ -673,7 +675,7 @@ main(int argc, char *argv[])
 		err(1, "fopen");
 
 	/* Start Hsniff in the background if necessary */
-	if (!hsniff_debug) {
+	if (!honeyd_debug) {
 		setlogmask(LOG_UPTO(LOG_INFO));
 		
 		fprintf(stderr, "Hsniff starting as background process\n");

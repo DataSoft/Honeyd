@@ -38,6 +38,7 @@
 #include "personality.h"
 #include "xprobe_assoc.h"
 #include "template.h"
+#include "debug.h"
 
 /* ET - Moved SPLAY_HEAD to personality.h so xprobe_assoc.c could use it. */
 int npersons;
@@ -1276,14 +1277,12 @@ struct personality *
 personality_config_new(const char *name, int lineno)
 {
 	struct personality *pers;
-	extern int honeyd_debug;
 
 	if ((pers = personality_new(name)) != NULL)
 		return (pers);
 
-	if (honeyd_debug > 1)
-		fprintf(stderr, "%d: Overwriting old fingerprint \"%s\"\n",
-		    lineno, name);
+	DFPRINTF(2, (stderr, "%d: Overwriting old fingerprint \"%s\"\n",
+		lineno, name));
 
 	/* Find the old personality, and remove it */
 	pers = personality_find(name);
@@ -1438,6 +1437,7 @@ parse_and_load_ttl_pair(char *p)
 	struct ttl_pair to_load;
 	char *tmp_p = p;
 
+	to_load.gt_lt = 0;
 	if (p[0] == '>') {
 		to_load.gt_lt = 1;
 		strsep (&tmp_p, ">");

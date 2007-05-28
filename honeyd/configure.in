@@ -64,6 +64,18 @@ AC_ARG_WITH(libpcap,
 AC_SUBST(PCAPINC)
 AC_SUBST(PCAPLIB)
 
+LIB=$PCAPLIB
+CLFAGS=$PCAPINC
+have_pcap_get_selectable_fd="no"
+AC_CHECK_LIB([pcap], [pcap_get_selectable_fd],
+	[have_pcap_get_selectable_fd="yes"],,)
+if test x"$have_pcap_get_selectable_fd" == x"yes"; then
+	AC_DEFINE(HAVE_PCAP_GET_SELECTABLE_FD, 1,	
+		[Define if libpcap has pcap_get_selectable_fd])
+fi
+LIB=""
+CFLAGS=""
+
 dnl Checks for (installed) libdnet
 AC_ARG_WITH(libdnet,
 [  --with-libdnet=DIR      use libdnet in DIR],
@@ -428,7 +440,7 @@ AC_SUBST(PYTHONINC)
 # Checks for header files.
 AC_HEADER_STDC
 AC_HEADER_SYS_WAIT
-AC_CHECK_HEADERS(stdarg.h errno.h fcntl.h paths.h stdlib.h string.h time.h sys/ioctl.h sys/param.h sys/socket.h sys/time.h sys/ioccom.h sys/file.h syslog.h unistd.h assert.h)
+AC_CHECK_HEADERS(stdarg.h errno.h fcntl.h paths.h stdlib.h string.h time.h sys/ioctl.h sys/param.h sys/socket.h sys/time.h sys/ioccom.h sys/file.h net/bpf.h syslog.h unistd.h assert.h)
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST

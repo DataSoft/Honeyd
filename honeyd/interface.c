@@ -19,6 +19,10 @@
 #include <sys/time.h>
 #endif
 
+#ifdef HAVE_NET_BPF_H
+#include <net/bpf.h>
+#endif
+
 #include <err.h>
 #include <errno.h>
 #include <stdio.h>
@@ -35,6 +39,7 @@
 #include "interface.h"
 #include "network.h"
 #include "router.h"			/* for network compare */
+#include "debug.h"
 
 /* Prototypes */
 int pcap_dloff(pcap_t *);
@@ -248,6 +253,7 @@ interface_init(char *dev, int naddresses, char **addresses)
 	char ebuf[PCAP_ERRBUF_SIZE];
 	struct interface *inter;
 	int time, promisc = 0;
+	int pcap_fd;
 
 	if (dev != NULL && interface_find(dev) != NULL) {
 		fprintf(stderr, "Warning: Interface %s already configured\n",
@@ -307,16 +313,24 @@ interface_init(char *dev, int naddresses, char **addresses)
 	if (pcap_compile(inter->if_pcap, &fcode, inter->if_filter, 1, 0) < 0 ||
 	    pcap_setfilter(inter->if_pcap, &fcode) < 0)
 		errx(1, "bad pcap filter: %s", pcap_geterr(inter->if_pcap));
-#if defined(BSD) && defined(BIOCIMMEDIATE)
+
+#ifdef HAVE_PCAP_GET_SELECTABLE_FD
+	pcap_fd = pcap_get_selectable_fd(inter->if_pcap);
+#else
+	pcap_fd = pcap_fileno(inter->if_pcap);
+#endif
+#if defined(BIOCIMMEDIATE)
 	{
 		int on = 1;
-		if (ioctl(pcap_fileno(inter->if_pcap), BIOCIMMEDIATE, &on) < 0)
+		DFPRINTF(2, (stderr, "%s: Setting BIOCIMMEDIATE on %d\n",
+			__func__, pcap_fd));
+		if (ioctl(pcap_fd, BIOCIMMEDIATE, &on) < 0)
 			warn("BIOCIMMEDIATE");
 	}
 #endif
 
 	if (!interface_dopoll) {
-		event_set(&inter->if_recvev, pcap_fileno(inter->if_pcap),
+		event_set(&inter->if_recvev, pcap_fd,
 		    EV_READ, interface_recv, inter);
 		event_add(&inter->if_recvev, NULL);
 	} else {
