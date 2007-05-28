@@ -59,6 +59,19 @@ static intf_t *intf;
 static pcap_handler if_recv_cb = NULL;
 
 void
+interface_prevent_init(void)
+{
+#ifdef DISABLE_KQUEUE
+	if (!interface_dopoll) 
+		setenv("EVENT_NOKQUEUE", "yes", 1);
+#endif
+#ifdef DISABLE_POLL
+	if (!interface_dopoll) 
+		setenv("EVENT_NOPOLL", "yes", 1);
+#endif
+}
+
+void
 interface_initialize(pcap_handler cb)
 {
 	TAILQ_INIT(&interfaces);

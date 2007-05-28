@@ -635,11 +635,12 @@ main(int argc, char *argv[])
 		/* NOTREACHED */
 	}
 
-	fprintf(stderr, "Hsniff V%s Copyright (c) 2004 Niels Provos\n",
+	fprintf(stderr, "Hsniff V%s Copyright (c) 2004-2007 Niels Provos\n",
 	    VERSION);
 
-	/* Initalize libevent but without kqueue because of bpf */
-	setenv("EVENT_NOKQUEUE", "yes", 0);
+	/* disabled event methods that don't work with bpf */
+	interface_prevent_init();
+
 	event_init();
 
 	syslog_init(orig_argc, orig_argv);

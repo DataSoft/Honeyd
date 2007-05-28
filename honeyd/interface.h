@@ -21,6 +21,9 @@ struct interface {
 	char if_filter[1024];
 };
 
+/* disables event methods that do not work with bpf */
+void interface_prevent_init(void);
+
 void interface_initialize(pcap_handler);
 void interface_init(char *, int, char **);
 struct interface *interface_get(int);
