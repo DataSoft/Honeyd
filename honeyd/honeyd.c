@@ -1840,7 +1840,7 @@ generic_timeout(struct event *ev, int seconds)
 		if (!has_ack) \
 			goto drop; \
 		if (TCP_SEQ_LT(th_ack, con->snd_una)) { \
-			if (tcp->th_flags & TH_RST) \
+			/* we used to drop only RST packets, now we drop everything */ \
 				goto drop; \
 		}\
 		/* Don't accept out of order data */ \
@@ -2955,7 +2955,7 @@ honeyd_recv_cb(u_char *ag, const struct pcap_pkthdr *pkthdr, const u_char *pkt)
 	    inter->if_ent.intf_link_addr.addr_type == ADDR_TYPE_ETH) {
 		struct arp_req *req;
 		struct addr eth_sha;
-
+		
 		/* Mark this packet as being delivered via ethernet */
 		is_etherpkt = 1;
 

@@ -321,7 +321,7 @@ arp_recv_cb(u_char *u, const struct pcap_pkthdr *pkthdr, const u_char *pkt)
 	if (pkthdr->caplen < ETH_HDR_LEN + ARP_HDR_LEN + ARP_ETHIP_LEN)
 		return;
 
-	arp = (struct arp_hdr *)(pkt + ETH_HDR_LEN);	/* XXX */
+	arp = (struct arp_hdr *)(pkt + inter->if_dloff);	
 	ethip = (struct arp_ethip *)(arp + 1);
 	
 	addr_pack(&src.arp_ha, ADDR_TYPE_ETH, ETH_ADDR_BITS,

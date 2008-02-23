@@ -1,2 +1,4 @@
 Changes since 1.5:
-
+	- Packets that arrive out of order and have the ACK flag set will be dropped
+	- ARP callback function now handles packets that have not DL10ENMB datalink type
+	
