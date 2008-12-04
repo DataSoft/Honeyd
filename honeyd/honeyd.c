@@ -434,9 +434,12 @@ honeyd_init(void)
 	/* Record our start time */
 	gettimeofday(&honeyd_uptime, NULL);
 
-	/* Find the correct ids for nobody */
-	if ((pwd = getpwnam("nobody")) != NULL) {
+	/* Find the correct ids for nobody, if the uid was not set in the
+         * command line */
+	if ( honeyd_uid == 32767 && (pwd = getpwnam("nobody")) != NULL) {
 		honeyd_uid = pwd->pw_uid;
+	}
+	if ( honeyd_gid == 32767 && (pwd = getpwnam("nobody")) != NULL) {
 		honeyd_gid = pwd->pw_gid;
 	}
 
