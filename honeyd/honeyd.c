@@ -129,7 +129,7 @@ struct spoof no_spoof;	/* spoof settings for default packet processing */
 
 struct config config = {
 	NULL,
-	PATH_HONEYDDATA "/nmap.prints",
+	PATH_HONEYDDATA "/nmap-os-db",
 	PATH_HONEYDDATA "/xprobe2.conf",
 	PATH_HONEYDDATA "/nmap.assoc",
 	PATH_HONEYDDATA "/pf.os"

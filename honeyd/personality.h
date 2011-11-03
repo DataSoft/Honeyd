@@ -132,16 +132,37 @@ struct personality {
 	/* DC & CK added XProbe structures */
 	struct xp_fingerprint *xp_fprint;
 
-	enum ipidtype idt;
-	uint32_t seqindex_min;
-	uint32_t seqindex_max;
-	/* ET - improve TCP ISN calculation */
-	uint32_t gcd;
+	/* The three IPID type tests */
+	enum ipidtype IPID_type_TI;
+	enum ipidtype IPID_type_CI;
+	enum ipidtype IPID_type_II;
 
-	uint32_t val;		/* Used for constant ISNs */
+	uint32_t IPID_constant_val_TI;
+	uint32_t IPID_constant_val_CI;
+	uint32_t IPID_constant_val_II;
+
+	int ipid_shared_sequence;
 
 	uint8_t valset:1,
 	        unused:7;
+
+	/* Used for constant ISNs */
+	uint32_t TCP_ISN_constant_val;
+
+	/* TCP ISN gcd */
+	uint32_t gcd;
+
+	/* Upper and lower bound for TCP ISN Counter Rate (ISR)*/
+	uint32_t TCP_ISR_min;
+	uint32_t TCP_ISR_max;
+
+	/* Upper and lower bound for TCP ISN Sequence Predictability Index (SP)*/
+	uint32_t TCP_SP_min;
+	uint32_t TCP_SP_max;
+
+
+	uint32_t seqindex_min;
+	uint32_t seqindex_max;
 
 	double seqindex_amin;	/* Values calculated from seqindex_{min,max} */
 	double seqindex_amax;

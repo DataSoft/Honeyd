@@ -211,17 +211,17 @@ ip_personality(struct template *tmpl, uint16_t *pid)
 	while (!tmpl->id)
 		tmpl->id = rand_uint16(honeyd_rand);
 
-	if (person->idt == ID_SEQUENTIAL)
+	if (person->IPID_type_TI == ID_SEQUENTIAL)
 		*pid = tmpl->id++;
-	else if (person->idt == ID_SEQUENTIAL_BROKEN)
+	else if (person->IPID_type_TI == ID_SEQUENTIAL_BROKEN)
 		*pid = htons(tmpl->id++);
-	else if (person->idt == ID_ZERO)
+	else if (person->IPID_type_TI == ID_ZERO)
 		*pid = 0;
-	else if (person->idt == ID_RPI) {
+	else if (person->IPID_type_TI == ID_RPI) {
 		/* Apparently needs to be at least 1000 */
 		tmpl->id += 1000 + (rand_uint16(honeyd_rand) % 1024);
 		*pid = tmpl->id;
-	} else if (person->idt == ID_CONSTANT)
+	} else if (person->IPID_type_TI == ID_CONSTANT)
 		*pid = tmpl->id;
 }
 
@@ -506,7 +506,7 @@ tcp_personality_seq(struct template *tmpl, struct personality *person)
 			tmpl->timestamp = rand_uint32(honeyd_rand) % 1728000;
 		if (tmpl->seq == 0) {
 			if (person->seqt == SEQ_CONSTANT && person->valset)
-				tmpl->seq = person->val;
+				tmpl->seq = person->TCP_ISN_constant_val;
 			else
 				tmpl->seq = rand_uint32(honeyd_rand);
 		}
@@ -771,7 +771,7 @@ icmp_error_personality(struct template *tmpl,
  */
 
 int
-parse_tseq_gcd(char *s, char *end)
+parse_seq_gcd(char *s, char *end)
 {
 	char *next, *endptr, *quantifier;
 	unsigned int val, minval;
@@ -939,7 +939,7 @@ parse_tseq_si(struct personality *pers, char *s, char *end)
 }
 
 int
-parse_tseq(struct personality *pers, int off, char *line)
+parse_seq(struct personality *pers, int off, char *line)
 {
 	char *p = line, *p2, *end;
 	int setsi = 0;
@@ -963,7 +963,7 @@ parse_tseq(struct personality *pers, int off, char *line)
 				st = SEQ_RI;
 			else if (strcasecmp(p2, "C") == 0) {
 				st = SEQ_CONSTANT;
-				pers->val = 0;
+				pers->TCP_ISN_constant_val = 0;
 			} else if (strcasecmp(p2, "64K") == 0)
 				st = SEQ_CLASS64K;
 			else if (strcasecmp(p2, "i800") == 0)
@@ -972,72 +972,227 @@ parse_tseq(struct personality *pers, int off, char *line)
 				return (-1);
 
 			pers->seqt = st;
-		} else if (strncasecmp(p2, "SI=", 3) == 0) {
+		} else if (strncasecmp(p2, "BO=", 3) == 0) {  //TODO: Nope, wrong. try again... "SI"
 			p2 += 3;
 			if (p == NULL)
 				p = p2 + strlen(p2);
 			setsi = parse_tseq_si(pers, p2, p);
-		} else if (strncasecmp(p2, "gcd=", 4) == 0) {
+		}
+		else if (strncasecmp(p2, "SP=", 3) == 0) {
+			p2 += 3;
+			if (p == NULL)
+				p = p2 + strlen(p2);
+			char *endPtr;
+			pers->TCP_SP_min = strtol(p2, &endPtr, 16);
+			/* Expect a - (dash) delimiter */
+			if( *endPtr == '-' )
+			{
+				p2 = endPtr + 1;
+				pers->TCP_SP_max = strtol(p2, &endPtr, 16);
+				if( *endPtr != '\0' )
+				{
+					return -1;
+				}
+			}
+			else
+			{
+				return -1;
+			}
+		}
+		else if (strncasecmp(p2, "GCD=", 4) == 0) {
 			p2 += 4;
 			if (p == NULL)
 				p = p2 + strlen(p2);
-			pers->gcd = parse_tseq_gcd(p2, p);
-		} else if (strncasecmp(p2, "Val=", 4) == 0) {
-			/* Some SEQ_CONSTANT's have a specific value */
-			char *e;
-			p2 = strsep(&end, "|");
-
+			pers->gcd = parse_seq_gcd(p2, p);
+		}
+		else if (strncasecmp(p2, "ISR=", 4) == 0) {
 			p2 += 4;
-			pers->val = strtol(p2, &e, 16);	
-			pers->valset = 1;
+			if (p == NULL)
+				p = p2 + strlen(p2);
+			char *endPtr;
+			pers->TCP_ISR_min = strtol(p2, &endPtr, 16);
+			/* Expect a - (dash) delimiter */
+			if( *endPtr == '-' )
+			{
+				p2 = endPtr + 1;
+				pers->TCP_ISR_max = strtol(p2, &endPtr, 16);
+				if( *endPtr != '\0' )
+				{
+					return -1;
+				}
+			}
+			else
+			{
+				return -1;
+			}
+
 		}
 		/* Improve IPID sequencing capability */
-		else if (strncasecmp(p2, "IPID=", 5) == 0) {
+		else if (strncasecmp(p2, "TI=", 3) == 0) {
 			int done = 0;
 
-			end += 5;
+			end += 3;
 			while (!done) {
 				done = 1;
 				p2 = strsep(&end, "|");
 				if (strcasecmp(p2, "I") == 0) {
-					pers->idt = ID_SEQUENTIAL;
+					pers->IPID_type_TI = ID_SEQUENTIAL;
 				} else if (strcasecmp(p2, "BI") == 0) {
-					pers->idt = ID_SEQUENTIAL_BROKEN;
+					pers->IPID_type_TI = ID_SEQUENTIAL_BROKEN;
 				} else if (strcasecmp(p2, "Z") == 0) {
 					if (end != NULL) {
 						done = 0;
 						continue;
 					}
-					pers->idt = ID_ZERO;
+					pers->IPID_type_TI = ID_ZERO;
 				} else if (strcasecmp(p2, "RD") == 0) {
-					pers->idt = ID_RANDOM; 
-				} else if (strcasecmp(p2, "C") == 0) {
-					pers->idt = ID_CONSTANT;
-				} else if (strcasecmp(p2, "RPI") == 0) {
-					pers->idt = ID_RPI;
-				} else
-					return -1;
+					pers->IPID_type_TI = ID_RANDOM; 
+				} else if (strcasecmp(p2, "RI") == 0) {
+					pers->IPID_type_TI = ID_RPI;
+				}
+				/* Assume p2 must be a hex value for constant IPID */
+				else {
+					char *temp;
+					uint32_t IPID_constant = strtol(p2, &temp, 16);
+					if ( (*temp == '\0') && (p2 != NULL) ) /* IE: Conversion was successful */
+					{
+						pers->IPID_type_TI = ID_CONSTANT;
+						pers->IPID_constant_val_TI = IPID_constant;
+					}
+					else
+					{
+						return -1;
+					}
+				}
 			}
 
-		} else if (strncasecmp(p2, "TS=", 3) == 0) {
+		}
+		else if (strncasecmp(p2, "CI=", 3) == 0) {
+			int done = 0;
+
+			end += 3;
+			while (!done) {
+				done = 1;
+				p2 = strsep(&end, "|");
+				if (strcasecmp(p2, "I") == 0) {
+					pers->IPID_type_CI = ID_SEQUENTIAL;
+				} else if (strcasecmp(p2, "BI") == 0) {
+					pers->IPID_type_CI = ID_SEQUENTIAL_BROKEN;
+				} else if (strcasecmp(p2, "Z") == 0) {
+					if (end != NULL) {
+						done = 0;
+						continue;
+					}
+					pers->IPID_type_CI = ID_ZERO;
+				} else if (strcasecmp(p2, "RD") == 0) {
+					pers->IPID_type_CI = ID_RANDOM;
+				} else if (strcasecmp(p2, "RI") == 0) {
+					pers->IPID_type_CI = ID_RPI;
+				}
+				/* Assume p2 must be a hex value for constant IPID */
+				else {
+					char *temp;
+					uint32_t IPID_constant = strtol(p2, &temp, 16);
+					if ( (*temp == '\0') && (p2 != NULL) ) /* IE: Conversion was successful */
+					{
+						pers->IPID_type_CI = ID_CONSTANT;
+						pers->IPID_constant_val_CI = IPID_constant;
+					}
+					else
+					{
+						return -1;
+					}
+				}
+			}
+		}
+		else if (strncasecmp(p2, "II=", 3) == 0) {
+			int done = 0;
+
+			end += 3;
+			while (!done) {
+				done = 1;
+				p2 = strsep(&end, "|");
+				if (strcasecmp(p2, "I") == 0) {
+					pers->IPID_type_II = ID_SEQUENTIAL;
+				} else if (strcasecmp(p2, "BI") == 0) {
+					pers->IPID_type_II = ID_SEQUENTIAL_BROKEN;
+				} else if (strcasecmp(p2, "Z") == 0) {
+					if (end != NULL) {
+						done = 0;
+						continue;
+					}
+					pers->IPID_type_II = ID_ZERO;
+				} else if (strcasecmp(p2, "RD") == 0) {
+					pers->IPID_type_II = ID_RANDOM;
+				} else if (strcasecmp(p2, "RI") == 0) {
+					pers->IPID_type_II = ID_RPI;
+				}
+				/* Assume p2 must be a hex value for constant IPID */
+				else {
+					char *temp;
+					uint32_t IPID_constant = strtol(p2, &temp, 16);
+					if ( (*temp == '\0') && (p2 != NULL) ) /* IE: Conversion was successful */
+					{
+						pers->IPID_type_II = ID_CONSTANT;
+						pers->IPID_constant_val_II = IPID_constant;
+					}
+					else
+					{
+						return -1;
+					}
+				}
+			}
+		}
+		else if (strncasecmp(p2, "TS=", 3) == 0) {
 			/* TCP timestamp sequencing capability */
 			p2 = strsep(&end, "|");
 			p2 += 3;
+
+			//TODO: Handle the other values after the OR symbol. Choose one at random.
 		  
-			if (strcasecmp(p2, "2HZ") == 0)
+			/* Hit some of the most common ones manually first */
+			if (strcasecmp(p2, "1") == 0)
 				pers->tstamphz = 2;
-			else if (strcasecmp(p2, "100HZ") == 0)
+			else if (strcasecmp(p2, "7") == 0)
 				pers->tstamphz = 100;
-			else if (strcasecmp(p2, "1000HZ") == 0)
-				pers->tstamphz = 1000;
+			else if (strcasecmp(p2, "8") == 0)
+				pers->tstamphz = 200;
 			else if (strcasecmp(p2, "0") == 0)
 				pers->tstamphz = 0;
+			else if (strcasecmp(p2, "A") == 0)
+				pers->tstamphz = 1000;
 			else if (strcasecmp(p2, "U") == 0)
 				pers->tstamphz = -1;
 			else
-				return (-1);
-
+			{
+				/* Try to convert to int */
+				char *endpt;
+				int exponent = strtol(p2, &endpt, 16);
+				/* If conversion worked without fail */
+				if( *endpt == '\0')
+				{
+					pers->tstamphz = pow(2, exponent);
+					//TODO: Watch for integer overflow here
+				}
+				else
+				{
+					return (-1);
+				}
+			}
  		}
+		else if (strncasecmp(p2, "SS=", 3) == 0) {
+			p2 = strsep(&end, "|");
+			p2 += 3;
+
+			if (strcasecmp(p2, "S") == 0)
+				pers->ipid_shared_sequence = 1;
+			else if (strcasecmp(p2, "O") == 0)
+				pers->tstamphz = 0;
+			else
+			{
+				return -1;
+			}
+		}
 	}
 
 	if (pers->gcd == 0)
@@ -1258,7 +1413,7 @@ struct parse_test {
 	int offset;
 	int (*parse_test)(struct personality *, int, char *);
 } parse_tests[] = {
-	{"TSeq", 0, parse_tseq},
+	{"SEQ", 0, parse_seq},
 	{"T1", 0, parse_tl},
 	{"T2", 1, parse_tl},
 	{"T3", 2, parse_tl},
@@ -1277,8 +1432,7 @@ personality_line(struct personality *pers, char *line)
 	char *p, *p2;
 
 	/* Ignore additional nmap output */
-	if (strncasecmp(line, "SInfo", 5) == 0 ||
-	    strncasecmp(line, "Class", 5) == 0)
+	if (strncasecmp(line, "Class", 5) == 0)
 		return (0);
 
 	p2 = line;
