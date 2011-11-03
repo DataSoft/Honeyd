@@ -71,4 +71,4 @@ def make_configuration(filename):
 
 xprobe = []
 get_xprobe("xprobe2.conf")
-make_configuration("nmap.prints")
+make_configuration("nmap-os-db")

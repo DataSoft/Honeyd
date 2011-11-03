@@ -45,7 +45,7 @@ libhoneyd_DATA = libhoneyd.so
 honeyddatadir = $(datadir)/honeyd
 honeydlibdir = $(libdir)/honeyd
 honeydincludedir = $(includedir)/honeyd
-honeyddata_DATA = README nmap.assoc xprobe2.conf nmap.prints config.sample \
+honeyddata_DATA = README nmap.assoc xprobe2.conf nmap-os-db config.sample \
 		config.ethernet pf.os
 
 honeydplugins = @PLUGINS@
