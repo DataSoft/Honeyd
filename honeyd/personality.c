@@ -214,9 +214,9 @@ ip_personality(struct template *tmpl, uint16_t *pid, enum ipid_protocol proto)
 	enum ipidtype ourType;
 	if( proto == TCP_UDP)
 	{
-		//TODO: What are we supposed to do with the TI test? It's unused. Also, we're assuming UDP
+		//TODO: What are we supposed to do with the CI test? It's unused. Also, we're assuming UDP
 		//	should be handled the same as TCP.
-		ourType = person->IPID_type_CI;
+		ourType = person->IPID_type_TI;
 	}
 	else
 	{
@@ -254,7 +254,7 @@ ip_personality(struct template *tmpl, uint16_t *pid, enum ipid_protocol proto)
 		}
 		case(ID_RANDOM):
 		{
-			*pid = tmpl->id;
+			*pid = rand_uint16(honeyd_rand);
 			break;
 		}
 	}
