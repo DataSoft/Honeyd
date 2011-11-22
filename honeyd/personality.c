@@ -312,16 +312,36 @@ tcp_personality_test(const struct tcp_con *con, struct personality *person,
 	return (NULL);
 }
 
-void
-tcp_personality_seqinit(struct personality *person)
+//Retrieved from: http://en.literateprograms.org/Box-Muller_transform_(C)?oldid=7011
+double rand_normal(double mean, double stddev)
 {
-	uint32_t simin = person->seqindex_min;
-	uint32_t simax = person->seqindex_max;
-	
-        person->seqindex_amin = sqrt(((double)simin * simin - simin) / 2);
-        person->seqindex_amax = sqrt(((double)simax * simax - simax) / 2);
-        person->seqindex_aconst = sqrt((simax * simax - simax));
+    static double n2 = 0.0;
+    static int n2_cached = 0;
+    if (!n2_cached) {
+        double x, y, r;
+	do {
+	    x = 2.0*rand()/RAND_MAX - 1;
+	    y = 2.0*rand()/RAND_MAX - 1;
+
+	    r = x*x + y*y;
+	} while (r == 0.0 || r > 1.0);
+
+        {
+        double d = sqrt(-2.0*log(r)/r);
+	double n1 = x*d;
+	n2 = y*d;
+
+        double result = n1*stddev + mean;
+
+        n2_cached = 1;
+        return result;
+        }
+    } else {
+        n2_cached = 0;
+        return n2*stddev + mean;
+    }
 }
+
 
 /* This function computes ISNs for TD and RI.
  *
@@ -375,27 +395,22 @@ tcp_personality_seqinit(struct personality *person)
 static uint32_t
 get_next_isn(struct template *tmpl, const struct personality *person)
 {
-	uint32_t prev_isn = tmpl->seq;
-	uint32_t num_isns = tmpl->seqcalls;
-	uint32_t gcd = person->gcd;
-        double amin = person->seqindex_amin;
-        double amax = person->seqindex_amax;
-        double a;
+	double mean, std_dev;
 
-	if ((amax - amin) >= 2.0) {
-		/* Select an 'a' halfway between acceptable limits.  The
-		 * value of 'a' should always be the same, not random.
-		 */
-		a = ((amax - amin) / 2.0) + amin;
-	} else {
-		/* To get a valid number in a small range */
-                a = (uint32_t)ceil(((amax - amin) / 2.0) + amin);
+	/* if SEQ is constant */
+	if(person->TCP_ISR_max == 0)
+	{
+		//Do nothing
+		return (tmpl->seq);
 	}
-	/* Constant ISN difference */
-        if ((amax - amin) < 1 || gcd > (5 / 2 * person->seqindex_aconst))
-                return (prev_isn + gcd);
 
-        return (prev_isn + ((((num_isns - 1) % 5) + 1) * (uint32_t)a - 1)*gcd);
+	//Nmap saves the values as binary log times 8, so undo this.
+	//	(Supposedly, Nmap does this to prevent floating point rounding during calculations)
+	mean = pow(2,((double)person->TCP_ISR / 8));
+	std_dev = pow(2,((double)person->TCP_SP / 8));
+
+	return rand_normal(mean, std_dev);
+
 }
 
 #define TIME_CORRECT(x,y) do { \
@@ -409,12 +424,12 @@ get_next_isn(struct template *tmpl, const struct personality *person)
 void
 personality_time(struct template *tmpl, struct timeval *diff)
 {
-	uint32_t ms, old_ms;
+	uint32_t ms;
 
 	timersub(&tv_periodic, &tmpl->tv_real, diff);
 	tmpl->tv_real = tv_periodic;
 
-	old_ms = ms = diff->tv_sec * 10000 + (diff->tv_usec / 100);
+	ms = diff->tv_sec * 10000 + (diff->tv_usec / 100);
 	ms *= tmpl->drift;
 
 	diff->tv_sec = ms / 10000;
@@ -465,26 +480,33 @@ tcp_personality_time(struct template *tmpl, struct timeval *diff)
 	 * stored in tmpl->seq.  tmpl->seqcalls is the number of ISNs
 	 * generated so far.
 	 */
-	switch(person->seqt) {
-	case SEQ_TRIVIALTIME:
-	case SEQ_RI:
+
+	/* if constant SEQ. IE: gcd == 0 */
+	if( person->TCP_ISN_gcd_max == 0 )
+	{
+		/* do nothing to tmpl->seq */
+		return (slowhz);
+	}
+	/* If random TCP ISNs IE: low gcd */
+	else if( person->TCP_ISN_gcd_max < 11 )
+	{
 		/* No time component.  May be required for high latency */
 		if (diff->tv_sec > 2) {
-			uint32_t adjust;
+			uint32_t adjust, randGCD;
+
+			/* pick a random number between TCP_ISN_gcd_min and TCP_ISN_gcd_max */
+			uint32_t TCP_ISN_gcd_delta = person->TCP_ISN_gcd_max - person->TCP_ISN_gcd_min;
+			randGCD = (rand_uint32(honeyd_rand) % TCP_ISN_gcd_delta) + person->TCP_ISN_gcd_min;
 
 			adjust = rand_uint32(honeyd_rand) % 2048;
-			adjust *= (slowhz - 2) * person->gcd;
+			adjust *= (slowhz - 2) * randGCD;
 			tmpl->seq += adjust;
 		}
-		break;
-	case SEQ_CLASS64K:
-		tmpl->seq += slowhz * 64000;
-		break;
-	case SEQ_I800:
-		tmpl->seq += slowhz * 800;
-		break;
-	default:
-		break;
+	}
+	else
+	{
+		/* if not random, just increment the SEQ by the GCD */
+		tmpl->seq += slowhz * person->TCP_ISN_gcd_min;
 	}
 
 	return (slowhz);
@@ -499,13 +521,17 @@ tcp_personality_seq(struct template *tmpl, struct personality *person)
 
 	tmpl->seqcalls++;
 
-	if (!timerisset(&tmpl->tv)) {
+	if (!timerisset(&tmpl->tv))
+	{
 		gettimeofday(&tv_periodic, NULL);
 		tmpl->tv_real = tmpl->tv = tv_periodic;
 		if (tmpl->timestamp == 0)
+		{
 			tmpl->timestamp = rand_uint32(honeyd_rand) % 1728000;
-		if (tmpl->seq == 0) {
-			if (person->seqt == SEQ_CONSTANT && person->valset)
+		}
+		if (tmpl->seq == 0)
+		{
+			if (person->TCP_ISN_gcd_max == 0 && person->valset)
 				tmpl->seq = person->TCP_ISN_constant_val;
 			else
 				tmpl->seq = rand_uint32(honeyd_rand);
@@ -520,23 +546,10 @@ tcp_personality_seq(struct template *tmpl, struct personality *person)
 	 * stored in tmpl->seq.  tmpl->seqcalls is the number of ISNs
 	 * generated so far.
 	 */
-	switch(person->seqt) {
-	case SEQ_CONSTANT:
-		return (tmpl->seq);
-	case SEQ_TRIVIALTIME:
-	case SEQ_RI:
-		tmpl->seq = get_next_isn(tmpl, person);
-		return (tmpl->seq);
-	case SEQ_CLASS64K:
-		tmpl->seq += 64000;
-		return (tmpl->seq);
-	case SEQ_I800:
-		tmpl->seq += 800;
-		return (tmpl->seq);
-	case SEQ_RANDOM:
-	default:
-		return (rand_uint32(honeyd_rand));
-	}
+
+	tmpl->seq = get_next_isn(tmpl, person);
+	return (tmpl->seq);
+
 }
 
 /* Default TCP options is timestamp, noop, noop */
@@ -770,10 +783,10 @@ icmp_error_personality(struct template *tmpl,
  * gcd values and selecting the smallest one.
  */
 
-int
-parse_seq_gcd(char *s, char *end)
+void
+parse_seq_gcd(char *s, char *end, struct personality *pers)
 {
-	char *next, *endptr, *quantifier;
+	char *next, *endptr, *quantifier, *secondValue;
 	unsigned int val, minval;
 	int orexp;
 
@@ -802,6 +815,20 @@ parse_seq_gcd(char *s, char *end)
 		if ((quantifier = strpbrk(s, "<>")) != NULL)
 			s++;
 
+		/* If this value is actually a range of values */
+		//TODO: Maybe we should look harder when we find a range. But it seems
+		//	like for all instances in the db file, a range means random ISN
+		if( (secondValue = strpbrk(s, "-")) != NULL )
+		{
+			*secondValue++ = '\0';
+			pers->TCP_ISN_gcd_min = strtol(s, &endptr, 16);
+			pers->TCP_ISN_gcd_max = strtol(secondValue, &endptr, 16);
+			//Choose value to be halfway between min and max
+			//TODO: Should this be chosen randomly between min and max?
+			pers->TCP_ISN_gcd = ((pers->TCP_ISN_gcd_max - pers->TCP_ISN_gcd_min)/2) + pers->TCP_ISN_gcd_min;
+			return;
+		}
+
 		val = strtol(s, &endptr, 16);
 
 		s = next;
@@ -828,157 +855,23 @@ parse_seq_gcd(char *s, char *end)
 	if (minval == 0 || minval == UINT_MAX)
 		minval = 1;
 
-	return (minval);
-}
-
-/* Determine minimal and maximal SI value from fingerprint */
-
-int
-parse_tseq_si(struct personality *pers, char *s, char *end)
-{
-	char *next, *endptr, *quantifier;
-	int orexp, setsimin, setsimax;
-	unsigned int val, minval, maxval;
-
-	orexp = val = setsimin = setsimax = 0;
-	endptr = quantifier = NULL;
-	maxval = 1;
-	minval = UINT_MAX;
-
-	/* Determine if the values are or'd or and'd */
-	if (*s && strpbrk(s, "|") != NULL)
-		orexp = 1;
-
-	/* Go through all &'d and |'d values */
-	while (s < end && s != NULL && *s) {
-		/* Get the next and'd or or'd number */
-		if ((next = strpbrk(s, "|&")))
-			*next++ = '\0';
-
-		/* Determine if field is non-zero */
-		if (*s == '+') {
-			minval = 1;
-			setsimin = 1;
-			s = next;
-			continue;
-		}
-
-		/* Determine value quantifier */
-		if ((quantifier = strpbrk(s, "<>")))
-			s++;
-
-		val = strtol(s, &endptr, 16);
-
-		s = next;
-			
-		if (quantifier != NULL) {
-			switch (*quantifier) {
-			case '>':
-				if (val < minval || !orexp) {
-					minval = val + 1;
-					setsimin = 1;
-				}
-				break;
-			case '<':
-				if (val > maxval || !orexp) {
-					maxval = val - 1;
-					setsimax = 1;
-				}
-				break;
-			}
-			continue;
-		}
-
-		if (!orexp) {
-			minval = maxval = val;
-			setsimin = 1;
-			setsimax = 1;
-		} else {
-			if (val < minval) {
-				minval = val;
-				setsimin = 1;
-			} else if (val > maxval) {
-				maxval = val;
-				setsimax = 1;
-			}
-		}
-	}
-
-	if (!setsimin)
-		minval = 0;
-
-	/* seqindex_max cannot be bigger than SEQ_RI_MAX,
-	 * or nmap says the difference in ISN is "truly random"
-	 */
-	if (!setsimax || maxval > SEQ_RI_MAX)
-		maxval = SEQ_RI_MAX;
-
-	/* For TD, seqindex_max cannot be larger than 75 */
-	if (pers->seqt == SEQ_TRIVIALTIME && maxval > SEQ_TRIVIALTIME_MAX)
-		maxval = SEQ_TRIVIALTIME_MAX;
-
-	/* For RI, seqindex_min must be larger than 75 */
-	if (pers->seqt == SEQ_RI && minval <= SEQ_TRIVIALTIME_MAX)
-		minval = SEQ_TRIVIALTIME_MAX + 1;
-
-	/*
-	 * With the mods above, this is now possible, even though it
-	 * is not supposed to happen.  This means the fingerprints
-	 * file is wrong.
-	 */
-	if (minval > maxval) {
-		fprintf(stderr, "Warning: "
-		    "Impossible SI range in Class fingerprint \"%s\"\n",
-		    pers->name);
-	}
-
-	pers->seqindex_min = minval;
-	pers->seqindex_max = maxval;
-
-	return (setsimin || setsimax);
+	pers->TCP_ISN_gcd_min = minval;
+	pers->TCP_ISN_gcd_max = minval;
+	//Choose value to be halfway between min and max
+	//TODO: Should this be chosen randomly between min and max?
+	pers->TCP_ISN_gcd = ((pers->TCP_ISN_gcd_max - pers->TCP_ISN_gcd_min)/2) + pers->TCP_ISN_gcd_min;
 }
 
 int
 parse_seq(struct personality *pers, int off, char *line)
 {
 	char *p = line, *p2, *end;
-	int setsi = 0;
 
 	while (p != NULL && strlen(p)) {
 		p2 = strsep(&p, "%");
 		end = p2;
 
-		if (strncasecmp(p2, "Class=", 6) == 0) {
-			/* TCP ISN calculation */
-			enum seqtype st = 0;
-
-			p2 = strsep(&end, "|");
-			p2 = line + 6;
-	   
-			if (strcasecmp(p2, "TD") == 0)
-				st = SEQ_TRIVIALTIME;
-			else if (strcasecmp(p2, "TR") == 0)
-				st = SEQ_RANDOM;
-			else if (strcasecmp(p2, "RI") == 0)
-				st = SEQ_RI;
-			else if (strcasecmp(p2, "C") == 0) {
-				st = SEQ_CONSTANT;
-				pers->TCP_ISN_constant_val = 0;
-			} else if (strcasecmp(p2, "64K") == 0)
-				st = SEQ_CLASS64K;
-			else if (strcasecmp(p2, "i800") == 0)
-				st = SEQ_I800;
-			else
-				return (-1);
-
-			pers->seqt = st;
-		} else if (strncasecmp(p2, "BO=", 3) == 0) {  //TODO: Nope, wrong. try again... "SI"
-			p2 += 3;
-			if (p == NULL)
-				p = p2 + strlen(p2);
-			setsi = parse_tseq_si(pers, p2, p);
-		}
-		else if (strncasecmp(p2, "SP=", 3) == 0) {
+		if (strncasecmp(p2, "SP=", 3) == 0) {
 			p2 += 3;
 			if (p == NULL)
 				p = p2 + strlen(p2);
@@ -989,6 +882,9 @@ parse_seq(struct personality *pers, int off, char *line)
 			{
 				p2 = endPtr + 1;
 				pers->TCP_SP_max = strtol(p2, &endPtr, 16);
+				//Chose value to be halfway between min and max
+				//TODO: Should this be chosen randomly between min and max?
+				pers->TCP_SP = ((pers->TCP_SP_max - pers->TCP_SP_min)/2) + pers->TCP_SP_min;
 				if( *endPtr != '\0' )
 				{
 					return -1;
@@ -1003,7 +899,7 @@ parse_seq(struct personality *pers, int off, char *line)
 			p2 += 4;
 			if (p == NULL)
 				p = p2 + strlen(p2);
-			pers->gcd = parse_seq_gcd(p2, p);
+			parse_seq_gcd(p2, p, pers);
 		}
 		else if (strncasecmp(p2, "ISR=", 4) == 0) {
 			p2 += 4;
@@ -1016,6 +912,9 @@ parse_seq(struct personality *pers, int off, char *line)
 			{
 				p2 = endPtr + 1;
 				pers->TCP_ISR_max = strtol(p2, &endPtr, 16);
+				//Chose value to be halfway between min and max
+				//TODO: Should this be chosen randomly between min and max?
+				pers->TCP_ISR = ((pers->TCP_ISR_max - pers->TCP_ISR_min)/2) + pers->TCP_ISR_min;
 				if( *endPtr != '\0' )
 				{
 					return -1;
@@ -1187,7 +1086,7 @@ parse_seq(struct personality *pers, int off, char *line)
 			if (strcasecmp(p2, "S") == 0)
 				pers->ipid_shared_sequence = 1;
 			else if (strcasecmp(p2, "O") == 0)
-				pers->tstamphz = 0;
+				pers->ipid_shared_sequence = 0;
 			else
 			{
 				return -1;
@@ -1195,20 +1094,9 @@ parse_seq(struct personality *pers, int off, char *line)
 		}
 	}
 
-	if (pers->gcd == 0)
-		pers->gcd = 1;
+	if (pers->TCP_ISN_gcd_min == 0)
+		pers->TCP_ISN_gcd_min = 1;
 
-	if (!setsi) {
-		if (pers->seqt == SEQ_TRIVIALTIME)
-			pers->seqindex_max = SEQ_TRIVIALTIME_MAX;
-		else if (pers->seqt == SEQ_RI) {
-			pers->seqindex_min = SEQ_TRIVIALTIME_MAX + 1;
-			pers->seqindex_max = SEQ_RI_MAX;
-		}
-	}
-
-	/* Calculate variables for sequence number generation */
-	tcp_personality_seqinit(pers);
 
 	return (0);
 }

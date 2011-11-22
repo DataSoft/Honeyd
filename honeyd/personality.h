@@ -150,25 +150,24 @@ struct personality {
 	uint32_t TCP_ISN_constant_val;
 
 	/* TCP ISN gcd */
-	uint32_t gcd;
+	uint32_t TCP_ISN_gcd_min;
+	uint32_t TCP_ISN_gcd_max;
+	//Value chosen between min and max
+	uint32_t TCP_ISN_gcd;
 
 	/* Upper and lower bound for TCP ISN Counter Rate (ISR)*/
 	uint32_t TCP_ISR_min;
 	uint32_t TCP_ISR_max;
+	//Value chosen between min and max
+	uint32_t TCP_ISR;
 
 	/* Upper and lower bound for TCP ISN Sequence Predictability Index (SP)*/
 	uint32_t TCP_SP_min;
 	uint32_t TCP_SP_max;
+	//Value chosen between min and max
+	uint32_t TCP_SP;
 
-
-	uint32_t seqindex_min;
-	uint32_t seqindex_max;
-
-	double seqindex_amin;	/* Values calculated from seqindex_{min,max} */
-	double seqindex_amax;
-	double seqindex_aconst;
-
-	enum seqtype seqt;
+	//enum seqtype seqt;
         int tstamphz;		/* -1 indicates undefined */
 
 	enum fragpolicy fragp;
