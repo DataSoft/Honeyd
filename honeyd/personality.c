@@ -198,7 +198,7 @@ personality_find(const char *name)
 /* Not much here, set up ip id accordingly */
 
 void
-ip_personality(struct template *tmpl, uint16_t *pid)
+ip_personality(struct template *tmpl, uint16_t *pid, enum ipid_protocol proto)
 {
 	extern rand_t *honeyd_rand;
 	struct personality *person;
@@ -211,18 +211,53 @@ ip_personality(struct template *tmpl, uint16_t *pid)
 	while (!tmpl->id)
 		tmpl->id = rand_uint16(honeyd_rand);
 
-	if (person->IPID_type_TI == ID_SEQUENTIAL)
-		*pid = tmpl->id++;
-	else if (person->IPID_type_TI == ID_SEQUENTIAL_BROKEN)
-		*pid = htons(tmpl->id++);
-	else if (person->IPID_type_TI == ID_ZERO)
-		*pid = 0;
-	else if (person->IPID_type_TI == ID_RPI) {
-		/* Apparently needs to be at least 1000 */
-		tmpl->id += 1000 + (rand_uint16(honeyd_rand) % 1024);
-		*pid = tmpl->id;
-	} else if (person->IPID_type_TI == ID_CONSTANT)
-		*pid = tmpl->id;
+	enum ipidtype ourType;
+	if( proto == TCP_UDP)
+	{
+		//TODO: What are we supposed to do with the TI test? It's unused. Also, we're assuming UDP
+		//	should be handled the same as TCP.
+		ourType = person->IPID_type_CI;
+	}
+	else
+	{
+		ourType = person->IPID_type_II;
+	}
+
+	switch(ourType)
+	{
+		case(ID_SEQUENTIAL):
+		{
+			*pid = tmpl->id++;
+			break;
+		}
+		case(ID_SEQUENTIAL_BROKEN):
+		{
+			*pid = htons(tmpl->id++);
+			break;
+		}
+		case(ID_ZERO):
+		{
+			*pid = 0;
+			break;
+		}
+		case(ID_RPI):
+		{
+			/* Apparently needs to be at least 1000 */
+			tmpl->id += 1000 + (rand_uint16(honeyd_rand) % 1024);
+			*pid = tmpl->id;
+			break;
+		}
+		case(ID_CONSTANT):
+		{
+			*pid = tmpl->id;
+			break;
+		}
+		case(ID_RANDOM):
+		{
+			*pid = tmpl->id;
+			break;
+		}
+	}
 }
 
 struct personate *
@@ -594,7 +629,7 @@ tcp_personality(struct tcp_con *con, uint8_t *pflags, int *pwindow, int *pdf,
 
 	if ((pers = tcp_personality_test(con, person, flags)) == NULL) {
 		/* Not a test case - but we still want to pretend */
-		ip_personality(tmpl, pid);
+		ip_personality(tmpl, pid, TCP_UDP);
 
 		/* Set the sequence number only on SYN segments */
 		if (con->snd_una == 0 && (flags & TH_SYN))
@@ -623,7 +658,7 @@ tcp_personality(struct tcp_con *con, uint8_t *pflags, int *pwindow, int *pdf,
 		break;
 	}
 
-	ip_personality(tmpl, pid);
+	ip_personality(tmpl, pid, TCP_UDP);
 
 	if (con->snd_una == 0)
 		con->snd_una = tcp_personality_seq(tmpl, person);

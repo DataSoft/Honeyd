@@ -1542,7 +1542,7 @@ icmp_send(struct template *tmpl,
 	ip.ip_len = 0;
 
 	if (tmpl != NULL)
-		ip_personality(tmpl, &ipid);
+		ip_personality(tmpl, &ipid, ICMP);
 	else
 		ipid = rand_uint16(honeyd_rand);
 
@@ -2295,7 +2295,7 @@ udp_send(struct udp_con *con, u_char *payload, u_int len)
 	/* Statistics */
 	con->conhdr.sent += len;
 
-	ip_personality(tmpl, &id);
+	ip_personality(tmpl, &id, TCP_UDP);
 
 	pkt = pool_alloc(pool_pkt);
 
