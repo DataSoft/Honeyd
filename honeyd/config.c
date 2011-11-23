@@ -910,7 +910,7 @@ template_print(struct evbuffer *buffer, struct template *tmpl)
 	if (tmpl->ethernet_addr != NULL)
 		evbuffer_add_printf(buffer, "  ethernet address: %s\n",
 		    addr_ntoa(tmpl->ethernet_addr));
-	evbuffer_add_printf(buffer, "  IP id: %u\n", tmpl->id);
+	evbuffer_add_printf(buffer, "  IP id: %u\n", tmpl->ipid);
 	evbuffer_add_printf(buffer, "  TCP seq: %lx\n", tmpl->seq);
 	evbuffer_add_printf(buffer, "  TCP drop: in: %d syn: %d\n",
 	    tmpl->drop_inrate, tmpl->drop_synrate);

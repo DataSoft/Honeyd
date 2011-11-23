@@ -208,8 +208,18 @@ ip_personality(struct template *tmpl, uint16_t *pid, enum ipid_protocol proto)
 	if ((person = tmpl->person) == NULL)
 		return;
 
-	while (!tmpl->id)
-		tmpl->id = rand_uint16(honeyd_rand);
+	int *ipid_cached, *ipid_cached_TCP, *ipid_cached_ICMP;
+	//If it's a shared sequence...
+	if( person->ipid_shared_sequence == 1 )
+	{
+		ipid_cached_TCP = &tmpl->ipid;
+		ipid_cached_ICMP = &tmpl->ipid;
+	}
+	else
+	{
+		ipid_cached_TCP = &tmpl->IPID_last_TCP;
+		ipid_cached_ICMP = &tmpl->IPID_last_ICMP;
+	}
 
 	enum ipidtype ourType;
 	if( proto == TCP_UDP)
@@ -217,22 +227,27 @@ ip_personality(struct template *tmpl, uint16_t *pid, enum ipid_protocol proto)
 		//TODO: What are we supposed to do with the CI test? It's unused. Also, we're assuming UDP
 		//	should be handled the same as TCP.
 		ourType = person->IPID_type_TI;
+		ipid_cached = ipid_cached_TCP;
 	}
 	else
 	{
 		ourType = person->IPID_type_II;
+		ipid_cached = ipid_cached_ICMP;
 	}
+
+	while (!*ipid_cached)
+		*ipid_cached = rand_uint16(honeyd_rand);
 
 	switch(ourType)
 	{
 		case(ID_SEQUENTIAL):
 		{
-			*pid = tmpl->id++;
+			*pid = *ipid_cached++;
 			break;
 		}
 		case(ID_SEQUENTIAL_BROKEN):
 		{
-			*pid = htons(tmpl->id++);
+			*pid = htons(*ipid_cached++);
 			break;
 		}
 		case(ID_ZERO):
@@ -243,13 +258,13 @@ ip_personality(struct template *tmpl, uint16_t *pid, enum ipid_protocol proto)
 		case(ID_RPI):
 		{
 			/* Apparently needs to be at least 1000 */
-			tmpl->id += 1000 + (rand_uint16(honeyd_rand) % 1024);
-			*pid = tmpl->id;
+			*ipid_cached += 1000 + (rand_uint16(honeyd_rand) % 1024);
+			*pid = *ipid_cached;
 			break;
 		}
 		case(ID_CONSTANT):
 		{
-			*pid = tmpl->id;
+			*pid = *ipid_cached;
 			break;
 		}
 		case(ID_RANDOM):

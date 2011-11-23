@@ -142,7 +142,7 @@ struct personality {
 	uint32_t IPID_constant_val_CI;
 	uint32_t IPID_constant_val_II;
 
-	int ipid_shared_sequence;
+	int ipid_shared_sequence; //boolean
 
 	uint8_t valset:1,
 	        unused:7;
