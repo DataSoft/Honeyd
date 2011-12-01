@@ -1349,7 +1349,7 @@ parse_u1(struct personality *pers, int off, char *line)
 int
 parse_ops(struct personality *pers, int off, char *line)
 {
-
+	return 0;
 	char *p = line, *p2 = line, *end;
 
 	while (p != NULL && strlen(p))
@@ -1374,19 +1374,30 @@ parse_ops(struct personality *pers, int off, char *line)
 int
 parse_win(struct personality *pers, int off, char *line)
 {
+	char * p = line, *p2 = line, *end;
+	int i = 0;
+	end = p;
+	while(end != NULL && strlen(p) && i < 6) //TODO Currently only takes first value in window line, does not account for OR'd values
+	{
+		p2 = strsep(&end, "=");
+		p2 = end;
+		pers->seq_tests[i].window = strtoul(p2, &end, 16);
 
+		if(((end-p2) > 4 ) || (end-p2) < 1) //should be between 1 and 4 digits
+			return -1;
+		i++;
+	}
+	return 0;
 }
 
 int
 parse_ecn(struct personality *pers, int off, char *line)
 {
-
 }
 
 int
 parse_ie(struct personality *pers, int off, char *line)
 {
-
 }
 
 
