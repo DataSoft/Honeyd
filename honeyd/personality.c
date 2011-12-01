@@ -295,7 +295,7 @@ tcp_personality_test(const struct tcp_con *con, struct personality *person,
 		switch (con->state) {
 		case TCP_STATE_LISTEN:
 		case TCP_STATE_SYN_RECEIVED: {
-			struct personate *test = &person->tests[0];
+			struct personate *test = &person->t_tests[0];
 			if (sndflags & TH_RST) 
 				return (NULL);
 			
@@ -311,14 +311,14 @@ tcp_personality_test(const struct tcp_con *con, struct personality *person,
 		case TCP_STATE_CLOSED:
 			if (hasece)
 				return (NULL);
-			return (&person->tests[4]);
+			return (&person->t_tests[4]);
 		default:
 			return (NULL);
 		}
 	} else if (flags == 0) {
 		switch (con->state) {
 		case TCP_STATE_LISTEN:
-			return (&person->tests[1]);
+			return (&person->t_tests[1]);
 		default:
 			return (NULL);
 		}
@@ -326,7 +326,7 @@ tcp_personality_test(const struct tcp_con *con, struct personality *person,
 		switch (con->state) {
 		case TCP_STATE_LISTEN:
 		case TCP_STATE_SYN_RECEIVED:
-			return (&person->tests[2]);
+			return (&person->t_tests[2]);
 		default:
 			return (NULL);
 		}
@@ -334,16 +334,16 @@ tcp_personality_test(const struct tcp_con *con, struct personality *person,
 		switch (con->state) {
 		case TCP_STATE_LISTEN:
 		case TCP_STATE_SYN_RECEIVED:
-			return (&person->tests[3]);
+			return (&person->t_tests[3]);
 		case TCP_STATE_CLOSED:
-			return (&person->tests[5]);
+			return (&person->t_tests[5]);
 		default:
 			return (NULL);
 		}
 	} else if (flags == (TH_FIN|TH_PUSH|TH_URG)) {
 		switch (con->state) {
 		case TCP_STATE_CLOSED:
-			return (&person->tests[6]);
+			return (&person->t_tests[6]);
 		default:
 			return (NULL);
 		}
@@ -1154,7 +1154,7 @@ parse_seq(struct personality *pers, int off, char *line)
 int
 parse_tl(struct personality *pers, int off, char *line)
 {
-	struct personate *test = &pers->tests[off];
+	struct personate *test = &pers->t_tests[off];
 	char *p = line, *p2, *end;
 
 	if (strncasecmp(line, "R=N", 3) == 0) {

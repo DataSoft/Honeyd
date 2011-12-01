@@ -127,7 +127,9 @@ struct personality {
 	SPLAY_ENTRY(personality) node;
 	char *name;
 
-	struct personate tests[7];
+	struct personate t_tests[7];
+	struct personate seq_tests[6];
+
 	struct persudp udptest;
 
 	/* DC & CK added XProbe structures */
