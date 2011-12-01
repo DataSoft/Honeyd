@@ -1371,6 +1371,25 @@ parse_ops(struct personality *pers, int off, char *line)
 	}
 }
 
+int
+parse_win(struct personality *pers, int off, char *line)
+{
+
+}
+
+int
+parse_ecn(struct personality *pers, int off, char *line)
+{
+
+}
+
+int
+parse_ie(struct personality *pers, int off, char *line)
+{
+
+}
+
+
 struct parse_test {
 	char *start;
 	int offset;
