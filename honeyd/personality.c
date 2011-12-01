@@ -1157,14 +1157,14 @@ parse_tl(struct personality *pers, int off, char *line)
 	struct personate *test = &pers->tests[off];
 	char *p = line, *p2, *end;
 
-	if (strncasecmp(line, "Resp=N", 6) == 0) {
+	if (strncasecmp(line, "R=N", 3) == 0) {
 		test->flags = 0;
 		return (0);
 	}
 
 
 	/* Permits Y|N, too */
-	if (strncasecmp(line, "Resp=Y", 6) == 0) {
+	if (strncasecmp(line, "R=Y", 3) == 0) {
 		p = strchr(p, '%');
 		if (p == NULL)
 			return (-1);
@@ -1279,7 +1279,7 @@ parse_tl(struct personality *pers, int off, char *line)
 } while (0)
 
 int
-parse_pu(struct personality *pers, int off, char *line)
+parse_u1(struct personality *pers, int off, char *line)
 {
 	struct persudp *test = &pers->udptest;
 	char *p = line, *p2, *end;
@@ -1346,12 +1346,40 @@ parse_pu(struct personality *pers, int off, char *line)
 	return (0);
 }
 
+int
+parse_ops(struct personality *pers, int off, char *line)
+{
+
+	char *p = line, *p2 = line, *end;
+
+	while (p != NULL && strlen(p))
+	{
+		//p2 = strsep(&p, "%");
+
+		if (strcasecmp(p2, "O") == 0)
+		{
+			p2++;
+			uint testNumber = strtoul(p2, &end, 10);
+			//The number should have been just one digit
+			if( end+1 != p2 )
+			{
+				return -1;
+			}
+			end = p2;
+			p2 = strsep(&end, "=");
+		}
+	}
+}
+
 struct parse_test {
 	char *start;
 	int offset;
 	int (*parse_test)(struct personality *, int, char *);
 } parse_tests[] = {
 	{"SEQ", 0, parse_seq},
+	{"OPS", 0, parse_ops},
+	{"WIN", 0, parse_win},
+	{"ECN", 0, parse_ecn},
 	{"T1", 0, parse_tl},
 	{"T2", 1, parse_tl},
 	{"T3", 2, parse_tl},
@@ -1359,7 +1387,8 @@ struct parse_test {
 	{"T5", 4, parse_tl},
 	{"T6", 5, parse_tl},
 	{"T7", 6, parse_tl},
-	{"PU", 0, parse_pu},
+	{"U1", 0, parse_u1},
+	{"IE", 0, parse_ie},
 	{NULL, 0, NULL}
 };
 
