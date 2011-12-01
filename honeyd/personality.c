@@ -1349,7 +1349,6 @@ parse_u1(struct personality *pers, int off, char *line)
 int
 parse_ops(struct personality *pers, int off, char *line)
 {
-	return 0;
 	char *p = line, *p2 = line, *end;
 
 	while (p != NULL && strlen(p))
