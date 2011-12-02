@@ -22,7 +22,7 @@ set default default udp action block
 set default default icmp action block
 
 create router
-set router personality "Cisco 1601R router running IOS 12.1(5)"
+set router personality "Cisco 2514 router (IOS 12.1)"
 set router default tcp action reset
 add router tcp port 22 "scripts/test.sh"
 add router tcp port 23 "scripts/router-telnet.pl"

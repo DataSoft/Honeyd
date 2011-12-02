@@ -878,7 +878,7 @@ parse_seq(struct personality *pers, int off, char *line)
 				p = p2 + strlen(p2);
 			char *endPtr;
 			pers->TCP_SP_min = strtol(p2, &endPtr, 16);
-			/* Expect a - (dash) delimiter */
+
 			if( *endPtr == '-' )
 			{
 				p2 = endPtr + 1;
@@ -893,7 +893,12 @@ parse_seq(struct personality *pers, int off, char *line)
 			}
 			else
 			{
-				return -1;
+				pers->TCP_SP_max = pers->TCP_SP_min;
+				pers->TCP_SP = pers->TCP_SP_min;
+				if( *endPtr != '\0' )
+				{
+					return -1;
+				}
 			}
 		}
 		else if (strncasecmp(p2, "GCD=", 4) == 0) {
@@ -908,7 +913,7 @@ parse_seq(struct personality *pers, int off, char *line)
 				p = p2 + strlen(p2);
 			char *endPtr;
 			pers->TCP_ISR_min = strtol(p2, &endPtr, 16);
-			/* Expect a - (dash) delimiter */
+
 			if( *endPtr == '-' )
 			{
 				p2 = endPtr + 1;
@@ -923,7 +928,12 @@ parse_seq(struct personality *pers, int off, char *line)
 			}
 			else
 			{
-				return -1;
+				pers->TCP_ISR = pers->TCP_ISR_min;
+				pers->TCP_ISR_max = pers->TCP_ISR_min;
+				if( *endPtr != '\0' )
+				{
+					return -1;
+				}
 			}
 
 		}
