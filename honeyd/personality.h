@@ -32,7 +32,17 @@
 #ifndef _PERSONALITY_H_
 #define _PERSONALITY_H_
 
-enum ackchange { ACK_KEEP = 0, ACK_ZERO, ACK_DECREMENT };
+//ACK_KEEP means ack# = sequence of probe+1
+//ACK_DECREMENT means ack# = sequence of probe
+//ACK_ZERO means ack# is 0
+//ACK_OTHER means ack# is something else
+enum ackchange { ACK_KEEP = 0, ACK_ZERO, ACK_DECREMENT, ACK_OTHER };
+
+//SEQ_KEEP means seq# = ack of probe+1
+//SEQ_DECREMENT means seq# = ack of probe
+//SEQ_ZERO means seq# is 0
+//SEQ_OTHER means seq# is something else
+enum seqchange { SEQ_KEEP = 0, SEQ_ZERO, SEQ_DECREMENT, SEQ_OTHER };
 
 //A single TCP option in the options field
 struct tcp_option
@@ -52,18 +62,27 @@ struct tcp_option
 	char TSval; //'0' or '1'
 	char TSecr; //'0' or '1'
 };
+//NONE = "", RESERVED = "R", URGENT = "U", BOTH = "RU"
+//These are the only options Q=<options> may contain
+enum q_test {NONE = 0, RESERVED = 1, URGENT = 2, BOTH = 3};
 
 struct personate {
 	int window;
 	u_char flags;
 	u_char df;
+	uint ttl_min;				//the minimum range for TTL
+	uint ttl_max; 				//The maximum range for TTL, if TTL is a flat value this == ttl_min
+	uint ttl_guess; 			//The TTL initial guess
 	struct tcp_option *options;
-	enum ackchange forceack;
+	enum ackchange forceack;	//This is a comparison of the TCP Ack # of the host against the TCP Seq # of the probe
+	enum q_test q;				//The Q test flag, more important in ECN than most tests
+	enum seqchange forceseq;	//This is a comparison of the TCP Seq # of the host against the TCP Ack # of the probe
+	uint resetDatChkSum;		//The best way to explain this is from Nmap:
+								/* Some operating systems return ASCII data such as error messages in reset packets.
+								 * When Nmap encounters such data, it performs a CRC32 checksum and reports the results.
+								 * When there is no data, RD is set to zero.*/
 };
 
-//NONE = "", RESERVED = "R", URGENT = "U", BOTH = "RU"
-//These are the only options Q=<options> may contain
-enum q_test {NONE = 0, RESERVED = 1, URGENT = 2, BOTH = 3};
 struct personate_ecn {
 	int window; 				//Window Size
 	u_char response; 			//Response Y = 1, N = 0

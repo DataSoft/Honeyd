@@ -1155,114 +1155,212 @@ int
 parse_tl(struct personality *pers, int off, char *line)
 {
 	struct personate *test = &pers->t_tests[off];
-	char *p = line, *p2, *end;
 
-	if (strncasecmp(line, "R=N", 3) == 0) {
+	char *p = line, *p2 = line, *end = line;
+	char c;
+
+	//We can always expect an R = field
+	if(!strncasecmp(line, "R=N", 3))
+	{
 		test->flags = 0;
 		return (0);
 	}
-
-
-	/* Permits Y|N, too */
-	if (strncasecmp(line, "R=Y", 3) == 0) {
-		p = strchr(p, '%');
-		if (p == NULL)
-			return (-1);
-		p++;
+	if(!strncasecmp(line, "R=Y", 3))
+	{
+		strsep(&p2, "%");
 	}
-		
-	while (p != NULL && strlen(p)) {
-		p2 = strsep(&p, "%");
-		/* We ignore all other values, only take the first */
-		end = p2;
-		p2 = strsep(&end, "|");
-
-		if (strcasecmp(p2, "DF=Y") == 0) {
-			test->df = 1;
-		} else if (strcasecmp(p2, "DF=N") == 0) {
-			test->df = 0;
-		} else if (strncasecmp(p2, "W=", 2) == 0) {
-			int smaller = 0;
-			p2 += 2;
-
-			/* Special cases */
-			if (strcasecmp(p2, "O") == 0)
-				continue;
-			if (*p2 == '<') {
-				p2++;
-				smaller = 1;
-			}
-
-			test->window = strtoul(p2, &end, 16);
-			if (end == NULL || *end != '\0')
-				return (-1);
-
-			if (smaller)
-				test->window--;
-		} else if (strncasecmp(p2, "ACK=", 4) == 0) {
-			p2 += 4;
-			/* Try to use S++ if that is an option */
-			do {
-				if (strcasecmp(p2, "O") == 0)
-					test->forceack = ACK_ZERO;
-				else if (strcasecmp(p2, "S") == 0)
-					test->forceack = ACK_DECREMENT;
-				else if (strcasecmp(p2, "S++") == 0)
+	while (p2 != NULL && strlen(p))
+	{
+		c = *p2;
+		switch(c)
+		{
+			case 'A':
+				strsep(&p2, "=");
+				c = *p2;
+				switch(c)
+				{
+					case 'S':
+						if(*(p2+1) == '+')
+							test->forceack = ACK_KEEP;
+						else
+							test->forceack = ACK_DECREMENT;
+						break;
+					case 'Z':
+						test->forceack = ACK_ZERO;
+						break;
+					case 'O':
+						test->forceack = ACK_OTHER;
+						break;
+					default:
+						return -1;
+				}
+				if(strstr(p2, "S+") != NULL)
 					test->forceack = ACK_KEEP;
-				else
-					return (-1);
-			} while (test->forceack != ACK_KEEP &&
-			    (p2 = strsep(&end, "|")) != NULL);
-		} else if (strncasecmp(p2, "Flags=", 6) == 0) {
-			p2 += 6;
+				break;
 
-			/* Special case. A|AS should result in AS */
-			if (end != NULL && *end != '\0')
-				p2 = strsep(&end, "|");
-			
-			test->flags = 0;
-			for (; *p2; p2++) {
-				*p2 = tolower(*p2);
-				switch (*p2) {
-				case 'a':
+			case 'D':
+				//Only D should be DF= field
+				if(!strncasecmp(p2,"DF=N", 4))
+					test->df = 0;
+
+				else if(!strncasecmp(p2,"DF=Y", 4))
+					test->df = 1;
+
+				else return -1;
+
+				break;
+
+			case 'F':
+				strsep(&p2, "=");
+				if(strstr(p2, "A|AS") != NULL)
+				{
 					test->flags |= TH_ACK;
-					break;
-				case 's':
 					test->flags |= TH_SYN;
 					break;
-				case 'f':
-					test->flags |= TH_FIN;
-					break;
-				case 'r':
-					test->flags |= TH_RST;
-					break;
-				case 'p':
-					test->flags |= TH_PUSH;
-					break;
-				case 'u':
-					test->flags |= TH_URG;
-					break;
-				case 'b':
-					test->flags |= TH_ECE;
-					break;
-				default:
-					return (-1);
 				}
-			}
-		} else if (strncasecmp(p2, "O=", 2) == 0) {
-			char *p3;
-			p2 += 4;
-			if (strlen(p2)) {
-				for (p3 = p2; *p3; p3++)
-					*p3 = tolower(*p3);
-				if ((test->options = strdup(p2)) == NULL)
-					err(1, "%s: strdup", __FUNCTION__);
-			}
-		} else
-		      return (-1);
+				if(*p2 == 'E')
+				{
+					test->flags |= TH_ECE;
+					p2++;
+				}
+				if(*p2 == 'U')
+				{
+					test->flags |= TH_ECE;
+					p2++;
+				}
+				if(*p2 == 'A')
+				{
+					test->flags |= TH_ECE;
+					p2++;
+				}
+				if(*p2 == 'P')
+				{
+					test->flags |= TH_ECE;
+					p2++;
+				}
+				if(*p2 == 'R')
+				{
+					test->flags |= TH_ECE;
+					p2++;
+				}
+				if(*p2 == 'S')
+				{
+					test->flags |= TH_ECE;
+					p2++;
+				}
+				if(*p2 == 'F')
+				{
+					test->flags |= TH_ECE;
+					p2++;
+				}
+				if((*p2 != '%') && (*p2 != '|') && (*p2 != ')'))
+					return -1;
+				break;
+
+			case 'T':
+				//TTL Guess
+				if(*(p2+1) == 'G')
+				{
+					strsep(&p2, "=");
+					test->ttl_guess = strtoul(p2, &end, 16);
+				}
+				//Actual TTL
+				else if(*(p2+1) == '=')
+				{
+					strsep(&p2, "=");
+					test->ttl_min = strtoul(p2, &end, 16);
+					//If the TTL has a range and is not a flat value
+					if(*end == '-')
+					{
+						strsep(&p2, "-");
+						test->ttl_max = strtoul(p2, &end, 16);
+					}
+					//If there isn't a second value the TTL is flat
+					else
+						test->ttl_max = test->ttl_min;
+				}
+				else return -1;
+				break;
+
+			case 'W':
+				strsep(&p2, "=");
+				test->window = strtoul(p2, &end, 16);
+				break;
+
+			case 'O':
+				//allocates the memory for char * ecn->options and copies the options into them
+				strsep(&p2, "=");
+				end = p2;
+				//Ignore the | at front of options
+				if(*p2 == '|')
+					strsep(&p2, "|");
+
+				end = strsep(&p2, "%");
+				end = strsep(&end,"|");
+
+				if(parse_option(&(test->options), end) == -1)
+				{
+					return -1;
+				}
+
+				break;
+
+			case 'Q':
+				strsep(&p2, "=");
+				c = *p2;
+				test->q = 0;
+				switch(c)
+				{
+					//Vals of corresponding enum:"" = 0 "R" = 1, "U" = 2, "RU" = 3
+					//R must be first, if there is R, enum val is either 1 or 3.
+					case 'R':
+						test->q++;
+						//The only other option U must occur after R if R is present
+						if(*(p2+1) != 'U') //break it it is not
+							break;
+					case 'U':
+						//If U is present the enum val is either 2 or 3
+						test->q += 2;
+					default:
+						//break by default since Q is always present but may not have a value.
+						break;
+				}
+				break;
+
+			case 'R':
+				strsep(&p2, "=");
+				test->resetDatChkSum = strtoul(p2, &end, 16);
+				break;
+			case 'S':
+				strsep(&p2, "=");
+				c = *p2;
+				switch(c)
+				{
+					case 'A':
+						if(*(p2+1) == '+')
+							test->forceseq = SEQ_KEEP;
+						else
+							test->forceseq = SEQ_DECREMENT;
+						break;
+					case 'Z':
+						test->forceseq = SEQ_ZERO;
+						break;
+					case 'O':
+						test->forceseq = SEQ_OTHER;
+						break;
+					default:
+						return -1;
+				}
+				if(strstr(p2, "A+") != NULL)
+					test->forceseq = SEQ_KEEP;
+				break;
+
+			default: //Anything other than these options after a '%' is unexpected
+				return -1;
+		}
+		strsep(&p2, "%");
 	}
-	
-	return (0);
+	return 0;
 }
 
 #define RVAL_TRANS(x, p) do { \
@@ -1687,22 +1785,12 @@ parse_ecn(struct personality *pers, int off, char *line)
 					if(*p2 == '|')
 						strsep(&p2, "|");
 
-					//returns pointer to null byte if char not found rather than null
-					//this will prevent huge memory allocations
-					end = strchrnul(p2, '%');
-					if(end > strchrnul(p2, '|'))
-						end = strchrnul(p2,'|');
-					uint i = end - p2;
-
-					//If options is the last field, remove the parenthesis that was included
-					if(*end == ')') i--;
-					char *ops = malloc(i);
-					memcpy(ops, p2, i);
-					if(parse_option(&(ecn->options), ops) == -1)
+					end = strsep(&p2, "%");
+					end = strsep(&end,"|");
+					if(parse_option(&(ecn->options), end) == -1)
 					{
 						return -1;
 					}
-					free(ops);
 					break;
 
 				case 'C':
