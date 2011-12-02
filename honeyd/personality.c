@@ -1249,7 +1249,7 @@ parse_tl(struct personality *pers, int off, char *line)
 					return (-1);
 				}
 			}
-		} else if (strncasecmp(p2, "Ops=", 4) == 0) {
+		} else if (strncasecmp(p2, "O=", 2) == 0) {
 			char *p3;
 			p2 += 4;
 			if (strlen(p2)) {
@@ -1349,26 +1349,112 @@ parse_u1(struct personality *pers, int off, char *line)
 int
 parse_ops(struct personality *pers, int off, char *line)
 {
-
 	char *p = line, *p2 = line, *end;
 
 	while (p != NULL && strlen(p))
 	{
-		//p2 = strsep(&p, "%");
+		p2 = strsep(&p, "%");
+		/* We ignore all other values, only take the first */
+		end = p2;
+		p2 = strsep(&end, "|");
 
-		if (strcasecmp(p2, "O") == 0)
+		if (strncasecmp(p2, "O", 1) == 0)
 		{
 			p2++;
 			uint testNumber = strtoul(p2, &end, 10);
-			//The number should have been just one digit
-			if( end+1 != p2 )
+			if( (testNumber >= 1) && (testNumber <= 6) )
+			{
+				testNumber--;
+			}
+			else
 			{
 				return -1;
 			}
-			end = p2;
-			p2 = strsep(&end, "=");
+
+			//The number should have been just one digit
+			if( end != p2+1 )
+			{
+				return -1;
+			}
+			p2 += 2;
+			//Some OPS lines start with an OR for some reason... just ignore it.
+			//	IS it trying to say that sometimes the options aren't present?
+			if( *p2 == '|')
+			{
+				p2++;
+			}
+
+			//Allocate memory for the Options array
+			uint numOptions = CountCharsInString(p2, "LNSMWT");
+			uint dataSize = sizeof(struct tcp_option) * numOptions;
+			pers->seq_tests[testNumber].options = (struct tcp_option *)malloc(dataSize);
+
+			uint i = 0;
+			while( *p2 != '\0')
+			{
+				pers->seq_tests[testNumber].options[i].opt_type = *p2;
+				switch (*p2)
+				{
+					case 'L':
+					case 'N':
+					case 'S':
+					{
+						p2++;
+						break;
+					}
+					case 'M':
+					case 'W':
+					{
+						p2++;
+						pers->seq_tests[testNumber].options[i].value = strtoul(p2, &end, 16);
+						p2 = end;
+						break;
+					}
+					case 'T':
+					{
+						pers->seq_tests[testNumber].options[i].TSval = *(p2+1);
+						pers->seq_tests[testNumber].options[i].TSecr = *(p2+2);
+						p2 += 3;
+						break;
+					}
+					default:
+					{
+						//Error
+						return -1;
+					}
+				}
+				i++;
+			}
 		}
 	}
+
+	return 0;
+}
+
+//Helper function.
+//Counts the number instances of the characters in *chars in the string *string
+uint
+CountCharsInString(char *string, char *chars)
+{
+	uint charsLength = strlen(chars);
+	uint count = 0;
+	uint i = 0;
+	uint num = 0;
+	while(*(string + i) != '\0')
+	{
+		uint j=0;
+		for(; j < charsLength; j++)
+		{
+			num++;
+			if( string[i] == chars[j] )
+			{
+				count++;
+			}
+		}
+		i++;
+	}
+
+	return count;
 }
 
 int
