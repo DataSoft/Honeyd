@@ -65,15 +65,15 @@ struct personate {
 //These are the only options Q=<options> may contain
 enum q_test {NONE = 0, RESERVED = 1, URGENT = 2, BOTH = 3};
 struct personate_ecn {
-	int window; 		//Window Size
-	u_char response; 	//Response Y = 1, N = 0
-	u_char df; 			//Don't Fragement Y = 1, N = 0
-	char *options; 		//TODO options will be populated later by code from parse_ops
-	uint ttl_min;		//the minimum range for TTL
-	uint ttl_max; 		//The maximum range for TTL, if TTL is a flat value this == ttl_min
-	uint ttl_guess; 	//The TTL initial guess
-	char cc_flag; 		//The Special CC flag for the ECN test, can be N, Y, S, O
-	enum q_test q;		//The Q test flag, more important in ECN than most tests
+	int window; 				//Window Size
+	u_char response; 			//Response Y = 1, N = 0
+	u_char df; 					//Don't Fragement Y = 1, N = 0
+	struct tcp_option *options;
+	uint ttl_min;				//the minimum range for TTL
+	uint ttl_max; 				//The maximum range for TTL, if TTL is a flat value this == ttl_min
+	uint ttl_guess; 			//The TTL initial guess
+	char cc_flag; 				//The Special CC flag for the ECN test, can be N, Y, S, O
+	enum q_test q;				//The Q test flag, more important in ECN than most tests
 };
 struct personate_ie {
 	u_char response; 	//Response Y = 1, N = 0

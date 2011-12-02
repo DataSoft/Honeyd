@@ -1683,17 +1683,26 @@ parse_ecn(struct personality *pers, int off, char *line)
 					//allocates the memory for char * ecn->options and copies the options into them
 					strsep(&p2, "=");
 					end = p2;
+					//Ignore the | at front of options
+					if(*p2 == '|')
+						strsep(&p2, "|");
 
 					//returns pointer to null byte if char not found rather than null
 					//this will prevent huge memory allocations
 					end = strchrnul(p2, '%');
-					c = *end;
+					if(end > strchrnul(p2, '|'))
+						end = strchrnul(p2,'|');
 					uint i = end - p2;
 
 					//If options is the last field, remove the parenthesis that was included
-					if(c == ')') i--;
-					ecn->options = malloc(i);
-					memcpy(ecn->options, p2, i);
+					if(*end == ')') i--;
+					char *ops = malloc(i);
+					memcpy(ops, p2, i);
+					if(parse_option(&(ecn->options), ops) == -1)
+					{
+						return -1;
+					}
+					free(ops);
 					break;
 
 				case 'C':
