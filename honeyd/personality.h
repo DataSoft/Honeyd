@@ -34,11 +34,30 @@
 
 enum ackchange { ACK_KEEP = 0, ACK_ZERO, ACK_DECREMENT };
 
+//A single TCP option in the options field
+struct tcp_option
+{
+	//L == End of Options List
+	//N = NOP
+	//M = MSS
+	//W = Window Scale
+	//T = Timestamp
+	//S = Selectinve ACK permitted
+	char opt_type;
+
+	//Used by M and W
+	uint value;
+
+	//Used by T only
+	char TSval; //'0' or '1'
+	char TSecr; //'0' or '1'
+};
+
 struct personate {
 	int window;
 	u_char flags;
 	u_char df;
-	char *options;
+	struct tcp_option *options;
 	enum ackchange forceack;
 };
 
@@ -223,6 +242,10 @@ int tcp_personality_match(struct tcp_con *, int);
 
 int icmp_error_personality(struct template *, struct addr *,
     struct ip_hdr *ip, uint8_t *, uint8_t *, int *, uint8_t *);
+
+//Helper function.
+//Counts the number instances of the characters in *chars in the string *string
+uint CountCharsInString(char *string, char *chars);
 
 /* ET - This functions loads the Xprobe fingerprints */
 int xprobe_personality_parse(FILE *fp);
