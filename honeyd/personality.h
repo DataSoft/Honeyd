@@ -56,6 +56,17 @@ struct personate_ecn {
 	char cc_flag; //The Special CC flag for the ECN test, can be N, Y, S, O
 	enum q_test q; //The Q test flag, more important in ECN than most tests
 };
+struct personate_ie {
+	u_char response; //Response Y = 1, N = 0
+	uint ttl_min; //the minimum range for TTL
+	uint ttl_max; //The maximum range for TTL, if TTL is a flat value this == ttl_min
+	uint ttl_guess; //The TTL initial guess
+	int sharedSequence; // pers->ipid_shared_sequence, not parsed but needed in this test
+	char dfi_test; //The Special DFI for the dual ICMP prodbe test
+	//this is for the DF bit can be N:00, Y:11, S:echo probe, O:other (both toggle DF bit)
+	char replyCode; //Z = both val = 0, S = both vals = probe
+	uint replyVal;	//N = both use Non-zero number set in replyVal, O = anything else
+};
 
 enum rval { RVAL_OKAY = 0, RVAL_ZERO, RVAL_BAD };
 
@@ -146,6 +157,7 @@ struct personality {
 	struct personate seq_tests[6];
 
 	struct personate_ecn ecn_test;
+	struct personate_ie ie_test;
 	struct persudp udptest;
 
 	/* DC & CK added XProbe structures */

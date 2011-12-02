@@ -1393,7 +1393,7 @@ parse_win(struct personality *pers, int off, char *line)
 int
 parse_ecn(struct personality *pers, int off, char *line)
 {
-	char *p = line, *p2 = line, *end = line;
+	char *p = line, *p2 = line, *end;
 	char c;
 	//the personate_ecn struct is new and is specific to the ecn test only
 	struct personate_ecn * ecn = &pers->ecn_test;
@@ -1443,20 +1443,13 @@ parse_ecn(struct personality *pers, int off, char *line)
 						{
 							strsep(&p2, "-");
 							ecn->ttl_max = strtoul(p2, &end, 16);
-
-							//If we aren't done with T= option there has been a problem.
-							if(*end != '%') return -1;
 						}
 						//If there isn't a second value the TTL is flat
-						else if(*end == '%')
-						{
+						else
 							ecn->ttl_max = ecn->ttl_min;
-						}
-						// Unexpected character, something went wrong
-						else return -1;
 					}
 					else return -1;
-					 break;
+					break;
 
 				case 'W':
 					strsep(&p2, "=");
@@ -1514,6 +1507,94 @@ parse_ecn(struct personality *pers, int off, char *line)
 int
 parse_ie(struct personality *pers, int off, char *line)
 {
+	char *p = line, *p2 = line, *end;
+	struct personate_ie * ie = &pers->ie_test;
+	char c;
+
+	//Same value but stored here for convenience later since this test uses it
+	ie->sharedSequence = pers->ipid_shared_sequence;
+
+	// If R is present it always seems to be N, doesn't seem present if test is used
+	// we check for it anyway
+	if(!strncasecmp(line, "R=N", 3))
+	{
+		ie->response = 0;
+		return (0);
+	}
+	if(!strncasecmp(line, "R=Y", 3))
+	{
+		strsep(&p2, "%");
+	}
+	ie->response = 1;
+	while (p2 != NULL && strlen(p))
+	{
+		c = *p2;
+		switch(c)
+		{
+			case 'D': //DFI Test
+				strsep(&p2, "=");
+				c = *p2;
+				switch(c)
+				{	//As long as the character is any one of these 4 we can just use the char
+					// there should only ever one char in this field
+					case 'N':
+					case 'S':
+					case 'Y':
+					case 'O':
+						ie->dfi_test = c;
+						break;
+					default:
+						return -1;
+				}
+				break;
+			case 'T':
+				//TTL Guess
+				if(*(p2+1) == 'G')
+				{
+					strsep(&p2, "=");
+					ie->ttl_guess = strtoul(p2, &end, 16);
+				}
+				//Actual TTL
+				else if(*(p2+1) == '=')
+				{
+					strsep(&p2, "=");
+					ie->ttl_min = strtoul(p2, &end, 16);
+					//If the TTL has a range and is not a flat value
+					if(*end == '-')
+					{
+						strsep(&p2, "-");
+						ie->ttl_max = strtoul(p2, &end, 16);
+					}
+					//If there isn't a second value the TTL is flat
+					else
+						ie->ttl_max = ie->ttl_min;
+				}
+				else return -1;
+				break;
+			case 'C': //CD Test (ICMP Echo code)
+				strsep(&p2, "=");
+				c = *p2;
+				switch(c)
+				{	//As long as the character is any one of these 3 we can just use the char
+					// there should only be these three chars or a number
+					case 'Z':
+					case 'S':
+					case 'O':
+						ie->replyCode = c;
+						ie->replyVal = 0;
+						break;
+					default:
+						ie->replyCode = 'N';
+						ie->replyVal = strtoul(p2, &end, 16);
+						break;
+				}
+				break;
+			default:
+				return -1;
+		}
+		strsep(&p2,"%");
+	}
+	return 0;
 }
 
 
