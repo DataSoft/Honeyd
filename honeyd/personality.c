@@ -393,55 +393,6 @@ double rand_normal(double mean, double stddev)
 }
 
 
-/* This function computes ISNs for TD and RI.
- *
- * NMAP obtains six initial sequence number (ISN) samples when performing
- * an OS scan.  Most of the calculations for sequence number prediction
- * is based upon the differences of consecutive ISNs.  Thus there are
- * five sample differences.  If the differences are determined not be
- * be CONSTANT, RANDOM, Multiple of 64000, or Multiple of 800, statistical
- * calculations are performed on the differences.  The remaining cases, 
- * TRIVIALTIME (or time dependent) and RI (random increment) are dealt
- * with in this function.
- *
- * NMAP computes the greatest common denominator (GCD) and a slightly
- * modified standard deviation (modified so-as to prevent floating-point
- * calculations to be rounded down to zero, which is not as useful) of the
- * differences in the ISNs.  This function is the reverse, computing
- * ISNs which will produce a valid GCD and standard deviation for NMAP
- * to match to a fingerprint.
- *
- * First, if the standard deviation is zero, then the difference in ISNs
- * is constant.  The set of five differences whose GCD is X, and whose
- * standard deviation is not zero is { X, X, X, X, 2X }.  The NMAP
- * fingerprints file gives a valid range for the standard deviation.  If
- * no X can produce a standard deviation in the given range, then it is
- * assumed that the standard deviation must be zero. Mathematically, this
- * is the case if X > (2.5 + sqrt(simax^2 - simax)).  Unfortunately, this
- * series does not allow the ability to make sure the series is within
- * certain standard deviation range.
- *
- * Another less noticable, but less reliable way to generate a set of
- * five differences is to use a set
- *   { (A-1)X, (2A-1)X, (3A-1)X, (4A-1)X, (5A-1)X }
- * whose GCD is X, and the value of the integer A can be found to make
- * sure the standard deviation of the five numbers is within a given
- * range.  The range is Amin < A < Amax, where
- *   Amin = sqrt(simin * simin - simin) / 2) / X
- *   Amax = sqrt(simax * simax - simax) / 2) / X
- * One selects an integer in this range for the value of A, plugs the
- * number into the set of differences, and then adds the differences, in
- * order, to the previous ISN, looping around when all five differences
- * have been used.  Because the set of numbers is not optimal there are
- * cases when Amax - Amin < 1, in which case an integer in between 
- * Amin and Amax may not be able to be found.  In this case, the only
- * way to generate the ISN is to use constant differences, whose standard
- * deviation is zero.
- *
- * This discussion is a very short version of how this function generates
- * ISNs.
- */
-
 static uint32_t
 get_next_isn(struct template *tmpl, const struct personality *person)
 {
