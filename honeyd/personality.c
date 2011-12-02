@@ -1384,50 +1384,65 @@ parse_ops(struct personality *pers, int off, char *line)
 				p2++;
 			}
 
-			//Allocate memory for the Options array
-			uint numOptions = CountCharsInString(p2, "LNSMWT");
-			uint dataSize = sizeof(struct tcp_option) * numOptions;
-			pers->seq_tests[testNumber].options = (struct tcp_option *)malloc(dataSize);
-
-			uint i = 0;
-			while( *p2 != '\0')
+			if( parse_option(&(pers->seq_tests[testNumber].options), p2) == -1)
 			{
-				pers->seq_tests[testNumber].options[i].opt_type = *p2;
-				switch (*p2)
-				{
-					case 'L':
-					case 'N':
-					case 'S':
-					{
-						p2++;
-						break;
-					}
-					case 'M':
-					case 'W':
-					{
-						p2++;
-						pers->seq_tests[testNumber].options[i].value = strtoul(p2, &end, 16);
-						p2 = end;
-						break;
-					}
-					case 'T':
-					{
-						pers->seq_tests[testNumber].options[i].TSval = *(p2+1);
-						pers->seq_tests[testNumber].options[i].TSecr = *(p2+2);
-						p2 += 3;
-						break;
-					}
-					default:
-					{
-						//Error
-						return -1;
-					}
-				}
-				i++;
+				return -1;
 			}
 		}
 	}
 
+	return 0;
+}
+
+//Parses a single TCP options line, and stores it into a newly created array of tcp_option structs
+// options is the address of the pointer to where the array will be stored
+// line is the null terminated string to be parsed, such as:  WANM5B4T10S
+int
+parse_option(struct tcp_option **options, char *line)
+{
+	char *end;
+	uint i = 0;
+
+	//Allocate memory for the Options array
+	uint numOptions = CountCharsInString(line, "LNSMWT");
+	uint dataSize = sizeof(struct tcp_option) * numOptions;
+	*options = (struct tcp_option *)malloc(dataSize);
+
+	while( *line != '\0')
+	{
+		(*options)[i].opt_type = *line;
+		switch (*line)
+		{
+			case 'L':
+			case 'N':
+			case 'S':
+			{
+				line++;
+				break;
+			}
+			case 'M':
+			case 'W':
+			{
+				line++;
+				(*options)[i].value = strtoul(line, &end, 16);
+				line = end;
+				break;
+			}
+			case 'T':
+			{
+				(*options)[i].TSval = *(line+1);
+				(*options)[i].TSecr = *(line+2);
+				line += 3;
+				break;
+			}
+			default:
+			{
+				//Error
+				return -1;
+			}
+		}
+		i++;
+	}
 	return 0;
 }
 

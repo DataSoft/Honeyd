@@ -247,6 +247,9 @@ int icmp_error_personality(struct template *, struct addr *,
 //Counts the number instances of the characters in *chars in the string *string
 uint CountCharsInString(char *string, char *chars);
 
+
+int parse_option(struct tcp_option **option, char *line);
+
 /* ET - This functions loads the Xprobe fingerprints */
 int xprobe_personality_parse(FILE *fp);
 void xprobe_personality_init(void);
