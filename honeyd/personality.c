@@ -1373,13 +1373,14 @@ parse_ops(struct personality *pers, int off, char *line)
 int
 parse_win(struct personality *pers, int off, char *line)
 {
-	char * p = line, *p2 = line, *end;
+	//This line is very uniform, W1 through W6 followed by = then 1-4 hex digits denoting the value
+	// Occasionally there are alternate values specified by '|' then 1-4 hex digits
+	// Currently just choosing the first is sufficient to fool nmap
+	char * p = line, *p2 = line, *end = line;
 	int i = 0;
-	end = p;
 	while(end != NULL && strlen(p) && i < 6) //TODO Currently only takes first value in window line, does not account for OR'd values
 	{
-		p2 = strsep(&end, "=");
-		p2 = end;
+		strsep(&p2, "=");
 		pers->seq_tests[i].window = strtoul(p2, &end, 16);
 
 		if(((end-p2) > 4 ) || (end-p2) < 1) //should be between 1 and 4 digits
@@ -1392,6 +1393,122 @@ parse_win(struct personality *pers, int off, char *line)
 int
 parse_ecn(struct personality *pers, int off, char *line)
 {
+	char *p = line, *p2 = line, *end = line;
+	char c;
+	//the personate_ecn struct is new and is specific to the ecn test only
+	struct personate_ecn * ecn = &pers->ecn_test;
+
+	//Can always expect R= first
+	//We can assume there are no white spaces and all letters are caps
+	if(!strncasecmp(line, "R=N", 3))
+	{
+		ecn->response = 0;
+		return (0);
+	}
+	else if(!strncasecmp(line, "R=Y", 3))
+	{
+		ecn->response = 1;
+		strsep(&p2, "%");
+		while (p2 != NULL && strlen(p))
+		{
+			c = *p2;
+			switch(c)
+			{
+				case 'D':
+					//Only D should be DF= field
+					if(!strncasecmp(p2,"DF=N", 4))
+						ecn->df = 0;
+
+					else if(!strncasecmp(p2,"DF=Y", 4))
+						ecn->df = 1;
+
+					else return -1;
+
+					break;
+
+				case 'T':
+					//TTL Guess
+					if(*(p2+1) == 'G')
+					{
+						strsep(&p2, "=");
+						ecn->ttl_guess = strtoul(p2, &end, 16);
+					}
+					//Actual TTL
+					else if(*(p2+1) == '=')
+					{
+						strsep(&p2, "=");
+						ecn->ttl_min = strtoul(p2, &end, 16);
+						//If the TTL has a range and is not a flat value
+						if(*end == '-')
+						{
+							strsep(&p2, "-");
+							ecn->ttl_max = strtoul(p2, &end, 16);
+
+							//If we aren't done with T= option there has been a problem.
+							if(*end != '%') return -1;
+						}
+						//If there isn't a second value the TTL is flat
+						else if(*end == '%')
+						{
+							ecn->ttl_max = ecn->ttl_min;
+						}
+						// Unexpected character, something went wrong
+						else return -1;
+					}
+					else return -1;
+					 break;
+
+				case 'W':
+					strsep(&p2, "=");
+					ecn->window = strtoul(p2, &end, 16);
+					break;
+
+				case 'O': //TODO when parse_ops is complete.
+					break;
+
+				case 'C':
+					strsep(&p2, "=");
+					c = *p2;
+					switch(c)
+					{	//As long as the character is any one of these 4 we can just use the char
+						// there should only ever one char in this field
+						case 'N':
+						case 'S':
+						case 'Y':
+						case 'O':
+							ecn->cc_flag = c;
+							break;
+						default:
+							return -1;
+					}
+					break;
+
+				case 'Q':
+					strsep(&p2, "=");
+					c = *p2;
+					ecn->q = 0;
+					switch(c) //Vals of corresponding enum:"" = 0 "R" = 1, "U" = 2, "RU" = 3
+					{
+						//R must be first, if there is R, enum val is either 1 or 3.
+						case 'R':
+							ecn->q++;
+							//The only other option U must occur after R if R is present
+							if(*(p2+1) != 'U') //break it it is not
+								break;
+						case 'U'://If U is present the enum val is either 2 or 3
+							ecn->q += 2;
+						default: //break by default since Q is always present but may not have a value.
+							break;
+					}
+					break;
+				default: //Anything other than these options after a '%' is unexpected
+					return -1;
+			}
+			strsep(&p2, "%");
+		}
+		return 0;
+	}
+	else return -1;
 }
 
 int
