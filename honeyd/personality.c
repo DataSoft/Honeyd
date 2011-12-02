@@ -1456,7 +1456,15 @@ parse_ecn(struct personality *pers, int off, char *line)
 					ecn->window = strtoul(p2, &end, 16);
 					break;
 
-				case 'O': //TODO when parse_ops is complete.
+				case 'O': //allocates the memory for char * ecn->options and copies the options into them
+					strsep(&p2, "=");
+					end = p2;
+					end = strchrnul(p2, '%'); //returns pointer to null byte if char not found rather than null
+					c = *end;					//this will prevent huge memory allocations
+					uint i = end - p2;
+					if(c == ')') i--; //If options is the last field, remove the parenthesis that was included
+					ecn->options = malloc(i);
+					memcpy(ecn->options, p2, i);
 					break;
 
 				case 'C':
