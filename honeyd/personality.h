@@ -65,26 +65,26 @@ struct personate {
 //These are the only options Q=<options> may contain
 enum q_test {NONE = 0, RESERVED = 1, URGENT = 2, BOTH = 3};
 struct personate_ecn {
-	int window; //Window Size
-	u_char response; //Response Y = 1, N = 0
-	u_char df; //Don't Fragement Y = 1, N = 0
-	char *options; //TODO options will be populated later by code from parse_ops
-	uint ttl_min; //the minimum range for TTL
-	uint ttl_max; //The maximum range for TTL, if TTL is a flat value this == ttl_min
-	uint ttl_guess; //The TTL initial guess
-	char cc_flag; //The Special CC flag for the ECN test, can be N, Y, S, O
-	enum q_test q; //The Q test flag, more important in ECN than most tests
+	int window; 		//Window Size
+	u_char response; 	//Response Y = 1, N = 0
+	u_char df; 			//Don't Fragement Y = 1, N = 0
+	char *options; 		//TODO options will be populated later by code from parse_ops
+	uint ttl_min;		//the minimum range for TTL
+	uint ttl_max; 		//The maximum range for TTL, if TTL is a flat value this == ttl_min
+	uint ttl_guess; 	//The TTL initial guess
+	char cc_flag; 		//The Special CC flag for the ECN test, can be N, Y, S, O
+	enum q_test q;		//The Q test flag, more important in ECN than most tests
 };
 struct personate_ie {
-	u_char response; //Response Y = 1, N = 0
-	uint ttl_min; //the minimum range for TTL
-	uint ttl_max; //The maximum range for TTL, if TTL is a flat value this == ttl_min
-	uint ttl_guess; //The TTL initial guess
+	u_char response; 	//Response Y = 1, N = 0
+	uint ttl_min; 		//the minimum range for TTL
+	uint ttl_max; 		//The maximum range for TTL, if TTL is a flat value this == ttl_min
+	uint ttl_guess; 	//The TTL initial guess
 	int sharedSequence; // pers->ipid_shared_sequence, not parsed but needed in this test
-	char dfi_test; //The Special DFI for the dual ICMP prodbe test
-	//this is for the DF bit can be N:00, Y:11, S:echo probe, O:other (both toggle DF bit)
-	char replyCode; //Z = both val = 0, S = both vals = probe
-	uint replyVal;	//N = both use Non-zero number set in replyVal, O = anything else
+	char dfi_test; 		//The Special DFI for the dual ICMP prodbe test this is for the
+						//DF bit can be N:00, Y:11, S:echo probe, O:other (both toggle DF bit)
+	char replyCode; 	//Z = both val = 0, S = both vals = probe
+	uint replyVal;		//N = both use Non-zero number set in replyVal, O = anything else
 };
 
 enum rval { RVAL_OKAY = 0, RVAL_ZERO, RVAL_BAD };
@@ -93,12 +93,19 @@ struct persudp {
 	uint8_t response;
 	uint8_t tos;
 	uint8_t df;
+	uint un;			//The last 4 bits in the ICMP port unreachable header
+	uint ttl_min;		//the minimum range for TTL
+	uint ttl_max;		//The maximum range for TTL, if TTL is a flat value this == ttl_min
+	uint ttl_guess;		//The TTL initial guess
 	enum rval rid;
+	uint ridVal; 		//If RID isn't good, 'G', value is stored here.
 	enum rval ripck;
 	enum rval uck;
+	uint uckVal;		//If RUCK isn't good, 'G', value is stored here.
 	enum rval dat;
 	int riplen;
 	int quotelen;
+
 };
 
 #define WHITESPACE	" \t\n"
