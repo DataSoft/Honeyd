@@ -1266,11 +1266,11 @@ parse_tl(struct personality *pers, int off, char *line)
 }
 
 #define RVAL_TRANS(x, p) do { \
-	if (strcasecmp(p, "0") == 0) \
+	if (strcasecmp(p, "Z") == 0) \
 		(x) = RVAL_ZERO; \
-	else if (strcasecmp(p, "E") == 0) \
+	else if (strcasecmp(p, "G") == 0) \
 		(x) = RVAL_OKAY; \
-	else if (strcasecmp(p, "F") == 0) \
+	else if (strcasecmp(p, "I") == 0) \
 		(x) = RVAL_BAD; \
 	else if (*p == '\0') \
 		(x) = RVAL_OKAY;	/* Fill in default */ \
@@ -1281,69 +1281,169 @@ parse_tl(struct personality *pers, int off, char *line)
 int
 parse_u1(struct personality *pers, int off, char *line)
 {
-	struct persudp *test = &pers->udptest;
-	char *p = line, *p2, *end;
 
-	if (strncasecmp(line, "Resp=N", 6) == 0) {
+	char *p = line, *p2 = line, *end;
+	struct persudp * test = &pers->udptest;
+	char c;
+
+	// If R is present it always seems to be N, doesn't seem present if test is used
+	// we check for it anyway
+	if(!strncasecmp(line, "R=N", 3))
+	{
 		test->response = 0;
 		return (0);
 	}
-	test->response = 1;
-
-	if (strncasecmp(line, "Resp=Y%", 7) == 0)
-		p += 7;
-		
-	while (p != NULL && strlen(p)) {
-		p2 = strsep(&p, "%");
-		/* We ignore all other values, only take the first */
-		end = p2;
-		p2 = strsep(&end, "|");
-
-		if (strcasecmp(p2, "DF=Y") == 0) {
-			test->df = 1;
-		} else if (strcasecmp(p2, "DF=N") == 0) {
-			test->df = 0;
-		} else if (strcasecmp(p2, "DF=") == 0) {
-			/* Fill in default */
-			test->df = 0;
-		} else if (strncasecmp(p2, "ULEN=", 5) == 0) {
-			continue;
-		} else if (strncasecmp(p2, "TOS=", 4) == 0) {
-			p2 += 4;
-
-			test->tos = strtoul(p2, &end, 16);
-			if (end == NULL || *end != '\0')
-				return (-1);
-		} else if (strncasecmp(p2, "IPLEN=", 6) == 0) {
-			p2 += 6;
-
-			test->quotelen = strtoul(p2, &end, 16);
-			if (end == NULL || *end != '\0')
-				return (-1);
-			test->quotelen -= IP_HDR_LEN + ICMP_HDR_LEN + 4;
-		} else if (strncasecmp(p2, "RIPTL=", 6) == 0) {
-			p2 += 6;
-
-			test->riplen = strtoul(p2, &end, 16) - 328;
-			if (end == NULL || *end != '\0')
-				return (-1);
-		} else if (strncasecmp(p2, "RID=", 4) == 0) {
-			p2 += 4;
-			RVAL_TRANS(test->rid, p2);
-		} else if (strncasecmp(p2, "RIPCK=", 6) == 0) {
-			p2 += 6;
-			RVAL_TRANS(test->ripck, p2);
-		} else if (strncasecmp(p2, "UCK=", 4) == 0) {
-			p2 += 4;
-			RVAL_TRANS(test->uck, p2);
-		} else if (strncasecmp(p2, "DAT=", 4) == 0) {
-			p2 += 4;
-			RVAL_TRANS(test->dat, p2);
-		} else
-			return (-1);
+	if(!strncasecmp(line, "R=Y", 3))
+	{
+		strsep(&p2, "%");
 	}
-	
-	return (0);
+	test->response = 1;
+	while (p2 != NULL && strlen(p))
+	{
+		c = *p2;
+		switch(c)
+		{
+			case 'D':
+				strsep(&p2, "=");
+				if(*p2 == 'Y')
+					test->df = 1;
+				else if(*p2 == 'N')
+					test->df = 0;
+				else return -1;
+				break;
+			case 'U':
+				strsep(&p2, "=");
+				test->un = strtoul(p2, &end, 16);
+				break;
+			case 'T':
+				//TTL Guess
+				if(*(p2+1) == 'G')
+				{
+					strsep(&p2, "=");
+					test->ttl_guess = strtoul(p2, &end, 16);
+				}
+				//Actual TTL
+				else if(*(p2+1) == '=')
+				{
+					strsep(&p2, "=");
+					test->ttl_min = strtoul(p2, &end, 16);
+					//If the TTL has a range and is not a flat value
+					if(*end == '-')
+					{
+						strsep(&p2, "-");
+						test->ttl_max = strtoul(p2, &end, 16);
+					}
+					//If there isn't a second value the TTL is flat
+					else
+						test->ttl_max = test->ttl_min;
+				}
+				else return -1;
+				break;
+			case 'I':
+				strsep(&p2, "=");
+				test->quotelen = strtoul(p2, &end, 16);
+				test->quotelen -= IP_HDR_LEN + ICMP_HDR_LEN + 4;
+				break;
+			case 'R':
+			{
+				c = *(p2+2);
+				switch(c)
+				{
+					case 'P':
+						if(*(p2+3) == 'C')
+						{
+							strsep(&p2,"=");
+							if(*p2 == 'Z')
+								test->ripck = RVAL_ZERO;
+							else if(*p2 == 'I')
+								test->ripck = RVAL_BAD;
+							else if(*p2 == 'G')
+								test->ripck = RVAL_OKAY;
+							else return -1;
+							break;
+						}
+
+						else if(*(p2+3) == 'L')
+						{
+							strsep(&p2,"=");
+							//A Value of G means that the correct value of 328 is returned which in honeyd
+							// means the value of test->riplen == 0 as any other value they subtract 328 from
+							// the number given
+							if(*p2 == 'G')
+								test->riplen = 0;
+							else
+								test->riplen = strtoul(p2, &end, 16) - 328;
+							break;
+						}
+						else return -1;
+						break;
+
+					case 'C':
+						//RUCK is the integrity of the udp checksum, I believe
+						strsep(&p2,"=");
+						if(*p2 == 'G')
+						{
+							test->uck = RVAL_OKAY;
+						}
+						else
+						{
+							//if the rid isn't 'G' it returns the value in RID
+							test->uckVal = strtoul(p2,&end,16);
+							//if the value is non zero flag as bad, otherwise flag as zero
+							if(test->uckVal)
+								test->uck = RVAL_BAD;
+							else
+								test->uck = RVAL_ZERO;
+						}
+						break;
+					case 'D':
+						if(*(p2+1) == 'I')
+						{
+							strsep(&p2,"=");
+							if(*p2 == 'G')
+							{
+								test->rid = RVAL_OKAY;
+							}
+							else
+							{
+								//if the rid isn't 'G' it returns the value in RID
+								test->ridVal = strtoul(p2,&end,16);
+								//if the value is non zero flag as bad, otherwise flag as zero
+								if(test->ridVal)
+									test->rid = RVAL_BAD;
+								else
+									test->rid = RVAL_ZERO;
+							}
+							break;
+						}
+
+						else if(*(p2+1) == 'U')
+						{
+						//What is now called RUD, it is the integrity of the udp data
+						//I believe this is the same as the dat field from the previous nmap version
+							strsep(&p2,"=");
+							if(*p2 == 'Z')
+								test->dat = RVAL_ZERO;
+							else if(*p2 == 'I')
+								test->dat = RVAL_BAD;
+							else if(*p2 == 'G')
+								test->dat = RVAL_OKAY;
+							else return -1;
+							break;
+						}
+						else return -1;
+						break;
+
+					default:
+						return -1;
+				}
+				break;
+			}
+			default: return -1;
+		}
+		strsep(&p2, "%");
+	}
+	return 0;
 }
 
 int
@@ -1378,14 +1478,35 @@ parse_win(struct personality *pers, int off, char *line)
 	// Currently just choosing the first is sufficient to fool nmap
 	char * p = line, *p2 = line, *end = line;
 	int i = 0;
-	while(end != NULL && strlen(p) && i < 6) //TODO Currently only takes first value in window line, does not account for OR'd values
+	//TODO Currently only takes first value in window line, does not account for OR'd values
+	while(end != NULL && strlen(p) && i < 6)
 	{
 		strsep(&p2, "=");
-		pers->seq_tests[i].window = strtoul(p2, &end, 16);
+		//If line is WIN(R=N)
+		if(*p2 == 'N')
+		{
+			pers->seq_tests[i].window = 0;
+			i++;
+			pers->seq_tests[i].window = 0;
+			i++;
+			pers->seq_tests[i].window = 0;
+			i++;
+			pers->seq_tests[i].window = 0;
+			i++;
+			pers->seq_tests[i].window = 0;
+			i++;
+			pers->seq_tests[i].window = 0;
+			i++;
+		}
+		else
+		{
+			pers->seq_tests[i].window = strtoul(p2, &end, 16);
 
-		if(((end-p2) > 4 ) || (end-p2) < 1) //should be between 1 and 4 digits
-			return -1;
-		i++;
+			//should be between 1 and 4 digits
+			if(((end-p2) > 4 ) || (end-p2) < 1)
+				return -1;
+			i++;
+		}
 	}
 	return 0;
 }
@@ -1456,13 +1577,19 @@ parse_ecn(struct personality *pers, int off, char *line)
 					ecn->window = strtoul(p2, &end, 16);
 					break;
 
-				case 'O': //allocates the memory for char * ecn->options and copies the options into them
+				case 'O':
+					//allocates the memory for char * ecn->options and copies the options into them
 					strsep(&p2, "=");
 					end = p2;
-					end = strchrnul(p2, '%'); //returns pointer to null byte if char not found rather than null
-					c = *end;					//this will prevent huge memory allocations
+
+					//returns pointer to null byte if char not found rather than null
+					//this will prevent huge memory allocations
+					end = strchrnul(p2, '%');
+					c = *end;
 					uint i = end - p2;
-					if(c == ')') i--; //If options is the last field, remove the parenthesis that was included
+
+					//If options is the last field, remove the parenthesis that was included
+					if(c == ')') i--;
 					ecn->options = malloc(i);
 					memcpy(ecn->options, p2, i);
 					break;
@@ -1471,7 +1598,8 @@ parse_ecn(struct personality *pers, int off, char *line)
 					strsep(&p2, "=");
 					c = *p2;
 					switch(c)
-					{	//As long as the character is any one of these 4 we can just use the char
+					{
+						//As long as the character is any one of these 4 we can just use the char
 						// there should only ever one char in this field
 						case 'N':
 						case 'S':
@@ -1488,17 +1616,20 @@ parse_ecn(struct personality *pers, int off, char *line)
 					strsep(&p2, "=");
 					c = *p2;
 					ecn->q = 0;
-					switch(c) //Vals of corresponding enum:"" = 0 "R" = 1, "U" = 2, "RU" = 3
+					switch(c)
 					{
+						//Vals of corresponding enum:"" = 0 "R" = 1, "U" = 2, "RU" = 3
 						//R must be first, if there is R, enum val is either 1 or 3.
 						case 'R':
 							ecn->q++;
 							//The only other option U must occur after R if R is present
 							if(*(p2+1) != 'U') //break it it is not
 								break;
-						case 'U'://If U is present the enum val is either 2 or 3
+						case 'U':
+							//If U is present the enum val is either 2 or 3
 							ecn->q += 2;
-						default: //break by default since Q is always present but may not have a value.
+						default:
+							//break by default since Q is always present but may not have a value.
 							break;
 					}
 					break;
