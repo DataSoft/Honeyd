@@ -289,65 +289,125 @@ tcp_personality_test(const struct tcp_con *con, struct personality *person,
 	 */
         
 	flags = con->rcv_flags & (TH_FIN|TH_RST|TH_PUSH|TH_ACK|TH_URG|TH_SYN);
-	if (flags == TH_SYN) {
+	if (flags == TH_SYN)
+	{
 		int hasece = con->rcv_flags & TH_ECE;
 
-		switch (con->state) {
-		case TCP_STATE_LISTEN:
-		case TCP_STATE_SYN_RECEIVED: {
-			struct personate *test = &person->t_tests[0];
-			if (sndflags & TH_RST) 
-				return (NULL);
-			
-			/* Check if we can use the ECE response for normal
-			 * SYN, too.
-			 */
-			if (hasece || (test->flags == (TH_SYN|TH_ACK) &&
-				test->forceack == ACK_KEEP))
-				return (test);
+		switch (con->state)
+		{
+			case TCP_STATE_LISTEN:
+			case TCP_STATE_SYN_RECEIVED:
+			{
+				struct personate *test = &person->t_tests[0];
+				if (sndflags & TH_RST)
+					return (NULL);
 
-			return (NULL);
-		}
-		case TCP_STATE_CLOSED:
-			if (hasece)
+				//This might be one of the 6 Nmap SEQ packets, reply appropriately
+				//Apply WIN and OPS fields to the t_tests[0] test
+				switch( con->window )
+				{
+					case 1:
+					{
+						//SEQ Packet #1
+						break;
+					}
+					case 63:
+					{
+						//SEQ Packet #2
+						break;
+					}
+					case 4:
+					{
+						if( con->mss == 640)
+						{
+							//SEQ Packet #3
+						}
+						else
+						{
+							//SEQ Packet #4
+						}
+						break;
+					}
+					case 16:
+					{
+						//SEQ Packet #5
+						break;
+					}
+					case 512:
+					{
+						//SEQ Packet #6
+						break;
+					}
+					default:
+					{
+
+					}
+
+				}
+
+				/* Check if we can use the ECE response for normal
+				 * SYN, too.
+				 */
+				if (hasece || (test->flags == (TH_SYN|TH_ACK) &&
+					test->forceack == ACK_KEEP))
+					return (test);
+
 				return (NULL);
-			return (&person->t_tests[4]);
-		default:
-			return (NULL);
+			}
+			case TCP_STATE_CLOSED:
+				if (hasece)
+					return (NULL);
+				return (&person->t_tests[4]);
+			default:
+				return (NULL);
 		}
-	} else if (flags == 0) {
-		switch (con->state) {
-		case TCP_STATE_LISTEN:
-			return (&person->t_tests[1]);
-		default:
-			return (NULL);
+	}
+	else if (flags == 0)
+	{
+		switch (con->state)
+		{
+			case TCP_STATE_LISTEN:
+				return (&person->t_tests[1]);
+			default:
+				return (NULL);
 		}
-	} else if (flags == (TH_SYN|TH_PUSH|TH_FIN|TH_URG)) {
-		switch (con->state) {
-		case TCP_STATE_LISTEN:
-		case TCP_STATE_SYN_RECEIVED:
-			return (&person->t_tests[2]);
-		default:
-			return (NULL);
+	}
+	else if (flags == (TH_SYN|TH_PUSH|TH_FIN|TH_URG))
+	{
+		switch (con->state)
+		{
+			case TCP_STATE_LISTEN:
+			case TCP_STATE_SYN_RECEIVED:
+				return (&person->t_tests[2]);
+			default:
+				return (NULL);
 		}
-	} else if (flags == TH_ACK) {
-		switch (con->state) {
-		case TCP_STATE_LISTEN:
-		case TCP_STATE_SYN_RECEIVED:
-			return (&person->t_tests[3]);
-		case TCP_STATE_CLOSED:
-			return (&person->t_tests[5]);
-		default:
-			return (NULL);
+	}
+	else if (flags == TH_ACK)
+	{
+		switch (con->state)
+		{
+			case TCP_STATE_LISTEN:
+			case TCP_STATE_SYN_RECEIVED:
+				return (&person->t_tests[3]);
+			case TCP_STATE_CLOSED:
+				return (&person->t_tests[5]);
+			default:
+				return (NULL);
 		}
-	} else if (flags == (TH_FIN|TH_PUSH|TH_URG)) {
-		switch (con->state) {
-		case TCP_STATE_CLOSED:
-			return (&person->t_tests[6]);
-		default:
-			return (NULL);
+	}
+	else if (flags == (TH_FIN|TH_PUSH|TH_URG))
+	{
+		switch (con->state)
+		{
+			case TCP_STATE_CLOSED:
+				return (&person->t_tests[6]);
+			default:
+				return (NULL);
 		}
-	} else if ((flags & TH_FIN) && (flags & (TH_SYN|TH_ACK)) == 0) {
+	}
+	else if ((flags & TH_FIN) && (flags & (TH_SYN|TH_ACK)) == 0)
+	{
 		/*
 		 * If we get a FIN flag and do not allow fin scanning, then
 		 * we just let the regular state engine run its course.
