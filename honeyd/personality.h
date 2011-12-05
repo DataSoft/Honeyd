@@ -32,6 +32,9 @@
 #ifndef _PERSONALITY_H_
 #define _PERSONALITY_H_
 
+#define DF1_FRAGMENT_OFFSET_MASK = 16384
+#define DF0_FRAGMENT_OFFSET_MASK = 49151
+
 //ACK_KEEP means ack# = sequence of probe+1
 //ACK_DECREMENT means ack# = sequence of probe
 //ACK_ZERO means ack# is 0
@@ -73,6 +76,7 @@ struct personate {
 	uint ttl_min;				//the minimum range for TTL
 	uint ttl_max; 				//The maximum range for TTL, if TTL is a flat value this == ttl_min
 	uint ttl_guess; 			//The TTL initial guess
+	uint8_t ttl;
 	struct tcp_option *options;
 	enum ackchange forceack;	//This is a comparison of the TCP Ack # of the host against the TCP Seq # of the probe
 	enum q_test q;				//The Q test flag, more important in ECN than most tests
@@ -90,6 +94,7 @@ struct personate_ecn {
 	struct tcp_option *options;
 	uint ttl_min;				//the minimum range for TTL
 	uint ttl_max; 				//The maximum range for TTL, if TTL is a flat value this == ttl_min
+	uint8_t ttl;
 	uint ttl_guess; 			//The TTL initial guess
 	char cc_flag; 				//The Special CC flag for the ECN test, can be N, Y, S, O
 	enum q_test q;				//The Q test flag, more important in ECN than most tests
@@ -98,6 +103,7 @@ struct personate_ie {
 	u_char response; 	//Response Y = 1, N = 0
 	uint ttl_min; 		//the minimum range for TTL
 	uint ttl_max; 		//The maximum range for TTL, if TTL is a flat value this == ttl_min
+	uint8_t ttl;
 	uint ttl_guess; 	//The TTL initial guess
 	int sharedSequence; // pers->ipid_shared_sequence, not parsed but needed in this test
 	char dfi_test; 		//The Special DFI for the dual ICMP prodbe test this is for the
@@ -112,10 +118,11 @@ struct persudp {
 	uint8_t response;
 	uint8_t tos;
 	uint8_t df;
-	uint un;			//The last 4 bits in the ICMP port unreachable header
+	uint un;			//The last 4 bytes in the ICMP port unreachable header
 	uint ttl_min;		//the minimum range for TTL
 	uint ttl_max;		//The maximum range for TTL, if TTL is a flat value this == ttl_min
 	uint ttl_guess;		//The TTL initial guess
+	uint8_t ttl;
 	enum rval rid;
 	uint ridVal; 		//If RID isn't good, 'G', value is stored here.
 	enum rval ripck;

@@ -795,17 +795,17 @@ icmp_error_personality(struct template *tmpl,
 		return (1);
 
 	/* JVR - set TTL using XP fingerprint, use nmap for rest of header settings */
-	xp_print = tmpl->person->xp_fprint;
+	/*xp_print = tmpl->person->xp_fprint;
 
 	if (xp_print != NULL)
-		*ttl = xp_print->ttl_vals.icmp_unreach_reply_ttl.ttl_val;
+		*ttl = xp_print->ttl_vals.icmp_unreach_reply_ttl.ttl_val;*/
 	/* JVR */
 
 	test = &tmpl->person->udptest;
 
 	if (!test->response)
 		return (0);
-
+	*ttl = test->ttl;
 	*pdf = test->df;
 	*ptos = test->tos;
 	*pquotelen = test->quotelen;
@@ -815,23 +815,38 @@ icmp_error_personality(struct template *tmpl,
 		iphdr_changed = 1;
 	}
 
-	RVAL_DO(ip->ip_id, test->rid);
 	if (test->rid != RVAL_OKAY)
+	{
 		iphdr_changed = 1;
+		ip->ip_id = test->ridVal;
+	}
 
 	/* We need to recompute the ip header checksum in some cases */
-	if (test->ripck == RVAL_OKAY) {
+	if (test->ripck == RVAL_OKAY)
+	{
 		if (iphdr_changed)
 			ip_checksum(ip, ip->ip_hl << 2);
-	} else
+	}
+	else
 		RVAL_DO(ip->ip_sum, test->ripck);
 
-	if (ip->ip_p == IP_PROTO_UDP) {
+	if (ip->ip_p == IP_PROTO_UDP)
+	{
 		struct udp_hdr *udp = (struct udp_hdr *)((u_char *)ip + (ip->ip_hl << 2));
 		u_char *p = (u_char *)(udp + 1);
-		RVAL_DO(udp->uh_sum, test->uck);
+		if(test->uck != RVAL_OKAY)
+		{
+			udp->uh_sum = test->uckVal;
+		}
 		if (test->dat == RVAL_BAD)
 			*p = 0;
+	}
+	if(test->un != 0)
+	{
+		//Sets the unused 4 byte field to the expected value in nmap fingerprint
+		//This is the 5th through 8th bytes of the icmp header
+		memcpy((ip+(ip->ip_hl << 2)+4),&test->un, 4);
+		iphdr_changed = 1;
 	}
 	
 	return (1);
@@ -1299,6 +1314,9 @@ parse_tl(struct personality *pers, int off, char *line)
 					//If there isn't a second value the TTL is flat
 					else
 						test->ttl_max = test->ttl_min;
+					//set ttl to the average
+					//TODO we should be getting a random value in the range
+					test->ttl = (test->ttl_max+test->ttl_min)/2;
 				}
 				else return -1;
 				break;
@@ -1455,6 +1473,9 @@ parse_u1(struct personality *pers, int off, char *line)
 					//If there isn't a second value the TTL is flat
 					else
 						test->ttl_max = test->ttl_min;
+					//set ttl to the average
+					//TODO we should be getting a random value in the range
+					test->ttl = (test->ttl_max+test->ttl_min)/2;
 				}
 				else return -1;
 				break;
@@ -1789,6 +1810,9 @@ parse_ecn(struct personality *pers, int off, char *line)
 						//If there isn't a second value the TTL is flat
 						else
 							ecn->ttl_max = ecn->ttl_min;
+						//set ttl to the average
+						//TODO we should be getting a random value in the range
+						ecn->ttl = (ecn->ttl_max+ecn->ttl_min)/2;
 					}
 					else return -1;
 					break;
@@ -1927,6 +1951,7 @@ parse_ie(struct personality *pers, int off, char *line)
 					//If there isn't a second value the TTL is flat
 					else
 						ie->ttl_max = ie->ttl_min;
+					ie->ttl = (ie->ttl_max+ie->ttl_min)/2;
 				}
 				else return -1;
 				break;
