@@ -101,6 +101,7 @@
 #include "histogram.h"
 #include "update.h"
 #include "util.h"
+#include "personality.h"
 
 #ifdef HAVE_PYTHON
 #include <Python.h>
@@ -1610,6 +1611,7 @@ icmp_error_send(struct template *tmpl, struct addr *addr,
  * 		ping programs to determine RTT
  * param len Length of the payload to return
  */
+
 void
 icmp_echo_reply(struct template *tmpl,
     struct ip_hdr *rip, uint8_t code, uint8_t tos,
@@ -1627,11 +1629,18 @@ icmp_echo_reply(struct template *tmpl,
 		pkt = pool_alloc(pool_pkt);
 	else
 		pkt = pool_alloc_size(pool_pkt, iplen);
-
-	icmp_pack_hdr_echo(pkt + IP_HDR_LEN, ICMP_ECHOREPLY, 
-		code, ntohs(icmp_echo->icmp_id), ntohs(icmp_echo->icmp_seq), 
-		payload, len);
-
+	if(tmpl->person->ipid_shared_sequence)
+	{
+		icmp_pack_hdr_echo(pkt + IP_HDR_LEN, ICMP_ECHOREPLY,
+			code, ntohs(icmp_echo->icmp_id), tmpl->IPID_last_TCP,
+			payload, len);
+	}
+	else
+	{
+		icmp_pack_hdr_echo(pkt + IP_HDR_LEN, ICMP_ECHOREPLY,
+			code, ntohs(icmp_echo->icmp_id), tmpl->IPID_last_ICMP,
+			payload, len);
+	}
 	icmp_send(tmpl, pkt, tos, iplen, offset, ttl,
 	    IP_PROTO_ICMP, rip->ip_dst, rip->ip_src, spoof);
 }
@@ -2446,6 +2455,7 @@ icmp_recv_cb(struct template *tmpl, u_char *pkt, u_short pktlen)
 	struct icmp_msg_timestamp *icmp_tstamp;
 	struct icmp_msg_idseq *icmp_idseq;
 	struct xp_fingerprint *xp_print = NULL;  /* JVR */
+	struct personate_ie *nmap_print = NULL;
 	struct tuple icmphdr;
 	struct addr src, dst;
 	struct spoof spoof;
@@ -2477,6 +2487,8 @@ icmp_recv_cb(struct template *tmpl, u_char *pkt, u_short pktlen)
 
 	if (tmpl != NULL && tmpl->person != NULL)
 		xp_print = tmpl->person->xp_fprint;
+	if (tmpl != NULL && tmpl->person != NULL)
+		nmap_print = &tmpl->person->ie_test;
 
 	/* Without xprobe fingerprint, we understand only ECHO and UNREACH */
 	if (xp_print == NULL) {
@@ -2526,16 +2538,76 @@ icmp_recv_cb(struct template *tmpl, u_char *pkt, u_short pktlen)
 	  
 		syslog(LOG_DEBUG, "Sending ICMP Echo Reply: %s -> %s",
 		    adst, asrc);
-	        if (xp_print) {
+
+		if(((icmp->icmp_code == 9) && (ip->ip_tos == 0)) || ((icmp->icmp_code == 0) && (ip->ip_tos == 4)))
+		{
+			icmp_echo = (struct icmp_msg_echo *)((u_char*)pkt + (ip->ip_hl << 2));
+			if((icmp_echo->icmp_seq == 295) || (icmp_echo->icmp_seq == 296))
+			{
+				if(nmap_print->response)
+				{
+					uint8_t code = 0;
+					switch(nmap_print->replyCode)
+					{
+						case 'Z':
+							code = 0;
+							break;
+						case 'S':
+							code = icmp->icmp_code;
+							break;
+						//This case is just something thats not the others not sure what to use here
+							//but it doesn't occur currently in the nmap db
+						case 'O':
+							code = 7;
+							break;
+						case 'N':
+							code = nmap_print->replyVal;
+							break;
+					}
+					uint16_t offset = 0;
+					//for case N, df bit = 0, so do nothing
+					switch(nmap_print->dfi_test)
+					{
+						//echos DF of probe
+						case 'S':
+							//16384 is an empty offset field with the DF bit set to 1
+							//Create empty offset field with the DF bit of the probe.
+							offset = ip->ip_off & 16384;
+							break;
+
+						//DF bit is set in this case;
+						case 'Y':
+							offset = 16384;
+							break;
+
+						//DF Bit is toggled
+						case 'O':
+							//49151 is the inverse of an empty offset field with the DF bit set to 1
+							// we mask all but the DF bit to 1, the inverse is an empty offset field
+							// with the DF bit toggled.
+							offset = ~(ip->ip_off | 49151);
+							break;
+					}
+					//In this first probe the TOS is zero so we just set it to 0 as well
+					icmp_echo_reply(tmpl, ip, code, 0, offset, nmap_print->ttl, dat, dlen, spoof);
+				}
+				break;
+			}
+		}
+		if (xp_print)
+		{
 			/* ym: Use our own icmp echo reply function */
 			icmp_echo_reply(tmpl, ip, xp_print->flags.icmp_echo_code,
-			    xp_print->flags.icmp_echo_tos_bits ? ip->ip_tos : 0,
-			    xp_print->flags.icmp_echo_df_bit ? IP_DF : 0,
-			    xp_print->ttl_vals.icmp_echo_reply_ttl.ttl_val,
-			    dat, dlen, spoof);
-		} else
+				xp_print->flags.icmp_echo_tos_bits ? ip->ip_tos : 0,
+				xp_print->flags.icmp_echo_df_bit ? IP_DF : 0,
+				xp_print->ttl_vals.icmp_echo_reply_ttl.ttl_val,
+				dat, dlen, spoof);
+		}
+		else
+		{
 			icmp_echo_reply(tmpl, ip,
-			    ICMP_CODE_NONE, 0, 0, honeyd_ttl, dat, dlen, spoof);
+					ICMP_CODE_NONE, 0, 0, honeyd_ttl, dat, dlen, spoof);
+		}
 		break;
 
 	case ICMP_UNREACH:
