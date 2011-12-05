@@ -1254,6 +1254,9 @@ parse_tl(struct personality *pers, int off, char *line)
 					//If there isn't a second value the TTL is flat
 					else
 						test->ttl_max = test->ttl_min;
+					//set ttl to the average
+					//TODO we should be getting a random value in the range
+					test->ttl = (test->ttl_max+test->ttl_min)/2;
 				}
 				else return -1;
 				break;
