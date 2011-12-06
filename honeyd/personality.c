@@ -288,7 +288,7 @@ tcp_personality_test(const struct tcp_con *con, struct personality *person,
 	 * sane.  This allows us to get TCP options right, too.
 	 */
         
-	flags = con->rcv_flags & (TH_FIN|TH_RST|TH_PUSH|TH_ACK|TH_URG|TH_SYN);
+	flags = con->rcv_flags & (TH_FIN|TH_RST|TH_PUSH|TH_ACK|TH_URG|TH_SYN|TH_ECE|TH_CWR);
 	if (flags == TH_SYN)
 	{
 		int hasece = con->rcv_flags & TH_ECE;
@@ -372,6 +372,17 @@ tcp_personality_test(const struct tcp_con *con, struct personality *person,
 				return (NULL);
 		}
 	}
+	else if(flags == (TH_ECE|TH_CWR|TH_SYN))
+	{
+		switch (con->state)
+		{
+			case TCP_STATE_LISTEN:
+			case TCP_STATE_SYN_RECEIVED:
+				return ((struct personate *)&person->ecn_test);
+			default:
+				return (NULL);
+		}
+	}
 	else if (flags == (TH_SYN|TH_PUSH|TH_FIN|TH_URG))
 	{
 		switch (con->state)
@@ -418,7 +429,6 @@ tcp_personality_test(const struct tcp_con *con, struct personality *person,
 			return (NULL);
 		return (&person_drop);
 	}
-
 	return (NULL);
 }
 
@@ -639,6 +649,7 @@ tcp_personality(struct tcp_con *con, uint8_t *pflags, int *pwindow, int *pdf,
 	struct template *tmpl = con->tmpl;
 	struct personality *person;
 	struct personate *pers;
+	struct personate_ecn * ecn;
 	uint8_t flags = *pflags;
 
 	if (poptions != NULL)
@@ -665,6 +676,42 @@ tcp_personality(struct tcp_con *con, uint8_t *pflags, int *pwindow, int *pdf,
 		if (person->tstamphz >= 0 && poptions != NULL)
 			*poptions = default_opts;
 		return (-1);
+	}
+	if(con->rcv_flags == (TH_ECE|TH_CWR|TH_SYN))
+	{
+		ecn = (struct personate_ecn *)pers;
+		if(ecn->response)
+		{
+			*pwindow = ecn->window;
+			*pdf = ecn->df;
+			switch(ecn->cc_flag)
+			{
+				case 'Y':
+					*pflags |= TH_ECE;
+					*pflags &= ~(TH_CWR);
+					break;
+				case 'N':
+					*pflags &= ~(TH_ECE);
+					*pflags &= ~(TH_CWR);
+					break;
+				case 'S':
+					*pflags |= TH_ECE;
+					*pflags |= TH_CWR;
+					break;
+				case 'O':
+					*pflags &= ~(TH_ECE);
+					*pflags |= TH_CWR;
+					break;
+			}
+
+			//TODO set options
+			ip_personality(tmpl, pid, TCP_UDP);
+			if (con->snd_una == 0)
+					con->snd_una = tcp_personality_seq(tmpl, person);
+			return 0;
+		}
+		else
+			return -1;
 	}
 
 	*pwindow = pers->window;
@@ -1194,6 +1241,7 @@ parse_tl(struct personality *pers, int off, char *line)
 
 	char *p = line, *p2 = line, *end = line;
 	char c;
+	test->ttl = 0;
 
 	//We can always expect an R = field
 	if(!strncasecmp(line, "R=N", 3))
@@ -1299,6 +1347,8 @@ parse_tl(struct personality *pers, int off, char *line)
 				{
 					strsep(&p2, "=");
 					test->ttl_guess = strtoul(p2, &end, 16);
+					if(test->ttl == 0)
+						test->ttl = test->ttl_guess;
 				}
 				//Actual TTL
 				else if(*(p2+1) == '=')
@@ -1422,6 +1472,7 @@ parse_u1(struct personality *pers, int off, char *line)
 	char *p = line, *p2 = line, *end;
 	struct persudp * test = &pers->udptest;
 	char c;
+	test->ttl = 0;
 
 	// If R is present it always seems to be N, doesn't seem present if test is used
 	// we check for it anyway
@@ -1458,6 +1509,8 @@ parse_u1(struct personality *pers, int off, char *line)
 				{
 					strsep(&p2, "=");
 					test->ttl_guess = strtoul(p2, &end, 16);
+					if(test->ttl == 0)
+						test->ttl = test->ttl_guess;
 				}
 				//Actual TTL
 				else if(*(p2+1) == '=')
@@ -1760,6 +1813,7 @@ parse_ecn(struct personality *pers, int off, char *line)
 	char c;
 	//the personate_ecn struct is new and is specific to the ecn test only
 	struct personate_ecn * ecn = &pers->ecn_test;
+	ecn->ttl = 0;
 
 	//Can always expect R= first
 	//We can assume there are no white spaces and all letters are caps
@@ -1795,6 +1849,8 @@ parse_ecn(struct personality *pers, int off, char *line)
 					{
 						strsep(&p2, "=");
 						ecn->ttl_guess = strtoul(p2, &end, 16);
+						if(ecn->ttl == 0)
+							ecn->ttl = ecn->ttl_guess;
 					}
 					//Actual TTL
 					else if(*(p2+1) == '=')
@@ -1893,7 +1949,7 @@ parse_ie(struct personality *pers, int off, char *line)
 	char *p = line, *p2 = line, *end;
 	struct personate_ie * ie = &pers->ie_test;
 	char c;
-
+	ie->ttl = 0;
 	//Same value but stored here for convenience later since this test uses it
 	ie->sharedSequence = pers->ipid_shared_sequence;
 
@@ -1936,6 +1992,8 @@ parse_ie(struct personality *pers, int off, char *line)
 				{
 					strsep(&p2, "=");
 					ie->ttl_guess = strtoul(p2, &end, 16);
+					if(ie->ttl == 0)
+						ie->ttl = ie->ttl_guess;
 				}
 				//Actual TTL
 				else if(*(p2+1) == '=')

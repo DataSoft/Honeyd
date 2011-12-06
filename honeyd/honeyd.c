@@ -1413,11 +1413,37 @@ tcp_send(struct tcp_con *con, uint8_t flags, u_char *payload, u_int len)
 	}
 
 	pkt = pool_alloc(pool_pkt);
+	int ttl = honeyd_ttl;
 
 	tcp = (struct tcp_hdr *)(pkt + IP_HDR_LEN);
+	if((flags == (TH_ECE|TH_CWR|TH_SYN)) && (tmpl->person->ecn_test.response))
+	{
+		switch(tmpl->person->ecn_test.q)
+		{
+			case NONE:
+				*((uint8_t *)(tcp + 13)) = 0;
+				*((uint16_t*)(tcp + 18)) = 0;
+				break;
+			case RESERVED:
+				*((uint8_t *)(tcp + 13)) = 1;
+				*((uint16_t*)(tcp + 18)) = 0;
+				break;
+			case URGENT:
+				*((uint8_t *)(tcp + 13)) = 0;
+				*((uint16_t*)(tcp + 18)) = rand_uint16(honeyd_rand);
+				break;
+			case BOTH:
+				*((uint8_t *)(tcp + 13)) = 1;
+				*((uint16_t*)(tcp + 18)) = rand_uint16(honeyd_rand);
+				break;
+		}
+		ttl = tmpl->person->ecn_test.ttl;
+
+	}
 	tcp_pack_hdr(tcp,
 	    con->con_dport, con->con_sport,
 	    con->snd_una, con->rcv_next, flags, window, 0);
+
 
 	/* ET - options is non-NULL if a personality was found.  If a
          * personality was found, it means that this packet is a response
@@ -1438,10 +1464,9 @@ tcp_send(struct tcp_con *con, uint8_t flags, u_char *payload, u_int len)
 		spoof = tmpl->spoof;
 	else
 		spoof = no_spoof;
-	
 	/* Src and Dst are reversed both for ip and tcp */
 	ip_pack_hdr(pkt, 0, iplen, id,
-	    dontfragment ? IP_DF : 0, honeyd_ttl,
+	    dontfragment ? IP_DF : 0, ttl,
 	    IP_PROTO_TCP, con->con_ipdst, con->con_ipsrc);
 
 	memcpy(pkt + IP_HDR_LEN + (tcp->th_off << 2), payload, len);
