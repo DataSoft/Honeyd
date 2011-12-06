@@ -309,40 +309,37 @@ tcp_personality_test(const struct tcp_con *con, struct personality *person,
 					case 1:
 					{
 						//SEQ Packet #1
-						break;
+						return (&person->seq_tests[0]);
 					}
 					case 63:
 					{
 						//SEQ Packet #2
-						break;
+						return (&person->seq_tests[1]);
 					}
 					case 4:
 					{
 						if( con->mss == 640)
 						{
 							//SEQ Packet #3
+							return (&person->seq_tests[2]);
 						}
 						else
 						{
 							//SEQ Packet #4
+							return (&person->seq_tests[3]);
 						}
 						break;
 					}
 					case 16:
 					{
 						//SEQ Packet #5
-						break;
+						return (&person->seq_tests[4]);
 					}
 					case 512:
 					{
 						//SEQ Packet #6
-						break;
+						return (&person->seq_tests[5]);
 					}
-					default:
-					{
-
-					}
-
 				}
 
 				/* Check if we can use the ECE response for normal
@@ -614,7 +611,16 @@ tcp_personality_seq(struct template *tmpl, struct personality *person)
 }
 
 /* Default TCP options is timestamp, noop, noop */
-static char *default_opts = "tnn";
+static struct tcp_option default_opt_vals[3] = {
+	{'T', 0, 0, 0},
+	{'N', 0, 0, 0},
+	{'N', 0, 0, 0}
+};
+static struct tcp_options default_opts =
+{
+	3,
+	default_opt_vals,
+};
 
 int
 tcp_personality_match(struct tcp_con *con, int flags)
@@ -634,15 +640,12 @@ tcp_personality_match(struct tcp_con *con, int flags)
 
 int
 tcp_personality(struct tcp_con *con, uint8_t *pflags, int *pwindow, int *pdf,
-    uint16_t *pid, char **poptions)
+    uint16_t *pid, struct tcp_options *poptions)
 {
 	struct template *tmpl = con->tmpl;
 	struct personality *person;
 	struct personate *pers;
 	uint8_t flags = *pflags;
-
-	if (poptions != NULL)
-		*poptions = NULL;
 
 	/* XXX - We need to find some template to use here */
 
@@ -705,7 +708,7 @@ tcp_personality(struct tcp_con *con, uint8_t *pflags, int *pwindow, int *pdf,
 
 void
 tcp_personality_options(struct tcp_con *con, struct tcp_hdr *tcp,
-    char *options)
+	struct tcp_options *options)
 {
 	extern rand_t *honeyd_rand;
 	u_char *p = (u_char *)tcp + TCP_HDR_LEN;
@@ -714,50 +717,72 @@ tcp_personality_options(struct tcp_con *con, struct tcp_hdr *tcp,
 	int optlen = 0, simple = 0;
 	uint32_t timestamp;
 	short mss = 1460;
-	char *o;
+
 	
-	for (o = options; *o; o++) {
+	uint i = 0;
+	for (; i < options->count; i++ )
+	{
 		opt.opt_len = 0;
-		switch(*o) {
-		case 'm':
-			if (o[1] == 'e') {
-				o++;
-				if (con->mss)
-					mss = con->mss;
-			}
-			if (con->flags & TCP_TARPIT)
-				mss = 64;
-			opt.opt_data.mss = htons(mss);
-			SET(p, &opt, TCP_OPT_MSS, 4);
-			break;
-		case 'w':
-			opt.opt_data.wscale = 0;
-			SET(p, &opt, TCP_OPT_WSCALE, 3);
-			break;
-		case 't':
-			if (tmpl != NULL) {
-				struct timeval tv;
-				tcp_personality_time(tmpl, &tv);
-				timestamp = htonl(tmpl->timestamp);
-			} else {
-				timestamp = rand_uint32(honeyd_rand);
-			}
-			opt.opt_data.timestamp[0] = timestamp;
-			opt.opt_data.timestamp[1] = 0;
-			if (con->sawtimestamp)
-				opt.opt_data.timestamp[1] = con->echotimestamp;
-			SET(p, &opt, TCP_OPT_TIMESTAMP, 2 + 4 + 4);
-			break;
-		case 'n':
-			simple++;
-			SET(p, &opt, TCP_OPT_NOP, 1);
-			break;
-		case 'l':
-			SET(p, &opt, TCP_OPT_EOL, 2);
-			break;
-		default:
-			opt.opt_len = 0;
-			break;
+		switch(options->options[i].opt_type)
+		{
+			case 'M':
+				mss = options->options[i].value;
+				if (con->flags & TCP_TARPIT)
+				{
+					mss = 64;
+				}
+				opt.opt_data.mss = htons(mss);
+				SET(p, &opt, TCP_OPT_MSS, 4);
+				break;
+			case 'W':
+				opt.opt_data.wscale = options->options[i].value;
+				SET(p, &opt, TCP_OPT_WSCALE, 3);
+				break;
+			case 'T':
+				if (tmpl != NULL)
+				{
+					struct timeval tv;
+					tcp_personality_time(tmpl, &tv);
+					timestamp = htonl(tmpl->timestamp);
+				}
+				else
+				{
+					timestamp = rand_uint32(honeyd_rand);
+				}
+
+				//Assign timestamps on the basis of the Nmap T values
+				//	IE: 0 means value is zero, 1 means anything else
+				if( options->options[i].TSval == '1' )
+				{
+					opt.opt_data.timestamp[0] = timestamp;
+				}
+				else
+				{
+					opt.opt_data.timestamp[0] = 0;
+				}
+				if( options->options[i].TSecr == '1' )
+				{
+					opt.opt_data.timestamp[1] = timestamp;
+				}
+				else
+				{
+					opt.opt_data.timestamp[1] = 0;
+				}
+
+				if (con->sawtimestamp)
+					opt.opt_data.timestamp[1] = con->echotimestamp;
+				SET(p, &opt, TCP_OPT_TIMESTAMP, 2 + 4 + 4);
+				break;
+			case 'N':
+				simple++;
+				SET(p, &opt, TCP_OPT_NOP, 1);
+				break;
+			case 'L':
+				SET(p, &opt, TCP_OPT_EOL, 2);
+				break;
+			default:
+				opt.opt_len = 0;
+				break;
 		}
 		optlen += opt.opt_len;
 		p += opt.opt_len;
@@ -1381,6 +1406,28 @@ parse_tl(struct personality *pers, int off, char *line)
 		}
 		strsep(&p2, "%");
 	}
+
+	//If this is test T1
+	if(off == 0)
+	{
+		//Set all the seq_tests to this personate
+		//	Except for Window size and TCP options (which are set by the WIN and OPS lines)
+		uint i = 0;
+		for(; i < 6; i++)
+		{
+			pers->seq_tests[i].flags = pers->t_tests[0].flags;
+			pers->seq_tests[i].df = pers->t_tests[0].df;
+			pers->seq_tests[i].ttl_min = pers->t_tests[0].ttl_min;
+			pers->seq_tests[i].ttl_max = pers->t_tests[0].ttl_max;
+			pers->seq_tests[i].ttl_guess = pers->t_tests[0].ttl_guess;
+			pers->seq_tests[i].forceack = pers->t_tests[0].forceack;
+			pers->seq_tests[i].q = pers->t_tests[0].q;
+			pers->seq_tests[i].forceack = pers->t_tests[0].forceack;
+			pers->seq_tests[i].forceseq = pers->t_tests[0].forceseq;
+			pers->seq_tests[i].resetDatChkSum = pers->t_tests[0].resetDatChkSum;
+		}
+	}
+
 	return 0;
 }
 
@@ -1617,7 +1664,7 @@ parse_ops(struct personality *pers, int off, char *line)
 // options is the address of the pointer to where the array will be stored
 // line is the null terminated string to be parsed, such as:  WANM5B4T10S
 int
-parse_option(struct tcp_option **options, char *line)
+parse_option(struct tcp_options *options, char *line)
 {
 	char *end;
 	uint i = 0;
@@ -1625,11 +1672,12 @@ parse_option(struct tcp_option **options, char *line)
 	//Allocate memory for the Options array
 	uint numOptions = CountCharsInString(line, "LNSMWT");
 	uint dataSize = sizeof(struct tcp_option) * numOptions;
-	*options = (struct tcp_option *)malloc(dataSize);
+	options->options = (struct tcp_option *)malloc(dataSize);
+	options->count = numOptions;
 
 	while( *line != '\0')
 	{
-		(*options)[i].opt_type = *line;
+		options->options[i].opt_type = *line;
 		switch (*line)
 		{
 			case 'L':
@@ -1643,14 +1691,14 @@ parse_option(struct tcp_option **options, char *line)
 			case 'W':
 			{
 				line++;
-				(*options)[i].value = strtoul(line, &end, 16);
+				options->options[i].value = strtoul(line, &end, 16);
 				line = end;
 				break;
 			}
 			case 'T':
 			{
-				(*options)[i].TSval = *(line+1);
-				(*options)[i].TSecr = *(line+2);
+				options->options[i].TSval = *(line+1);
+				options->options[i].TSecr = *(line+2);
 				line += 3;
 				break;
 			}

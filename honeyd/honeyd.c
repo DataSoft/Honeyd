@@ -1368,7 +1368,7 @@ tcp_send(struct tcp_con *con, uint8_t flags, u_char *payload, u_int len)
 	u_int iplen;
 	int window = 16000;
 	int dontfragment = 0;
-	char *options;
+	struct tcp_options options = {0, NULL};
 	uint16_t id = rand_uint16(honeyd_rand);
 	struct spoof spoof;
 	struct template *tmpl = con->tmpl;
@@ -1379,6 +1379,7 @@ tcp_send(struct tcp_con *con, uint8_t flags, u_char *payload, u_int len)
 	/*
 	 * The TCP personality will always set snd_una for us if necessary.
 	 * snd_una maybe 0 on RST segments.
+	 * Copies TCP options data into input options struct
 	 */
 	if (tcp_personality(con, &flags, &window, &dontfragment, &id,
 		&options) == -1) {
@@ -1386,11 +1387,18 @@ tcp_send(struct tcp_con *con, uint8_t flags, u_char *payload, u_int len)
 		 * If we do not match a personality and sent a reset
 		 * segment then we do not want to include options.
 		 */
-		if (flags & TH_RST) {
-			options = NULL;
+		if (flags & TH_RST)
+		{
+			options.count = 0;
+			options.options = NULL;
 			window = con->window;
-		} else if (flags & TH_SYN) {
-			options = "m";
+		}
+		else if (flags & TH_SYN)
+		{
+			options.count = 1;
+			options.options = malloc(sizeof(struct tcp_option));
+			options.options->opt_type = 'M';
+			options.options->value = 0;
 		}
 	}
 
@@ -1421,15 +1429,15 @@ tcp_send(struct tcp_con *con, uint8_t flags, u_char *payload, u_int len)
 	/* ET - options is non-NULL if a personality was found.  If a
          * personality was found, it means that this packet is a response
          * to an NMAP TCP test (not a Sequence number test, a weird flags test).
- 	 * Therefore if options is not NULL, you have to add the options to
+ 	 * Therefore if options is not empty, you have to add the options to
          * the response otherwise the reply packet will not have the complete
          * personality.  Of the seven NMAP TCP tests, only a couple may
          * return a packet with the SYN flag.  I needed to remove the
          * requirement of the SYN flag so that the other NMAP TCP tests would
          * have the personality TCP options. */
 
-	if (options != NULL)
-		tcp_personality_options(con, tcp, options);
+	if (options.count == 0)
+		tcp_personality_options(con, tcp, &options);
 
 	iplen = IP_HDR_LEN + (tcp->th_off << 2) + len;
 

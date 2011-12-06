@@ -44,6 +44,16 @@ enum ackchange { ACK_KEEP = 0, ACK_ZERO, ACK_DECREMENT, ACK_OTHER };
 //SEQ_OTHER means seq# is something else
 enum seqchange { SEQ_KEEP = 0, SEQ_ZERO, SEQ_DECREMENT, SEQ_OTHER };
 
+//A struct to contain the TCP options
+struct tcp_options
+{
+	//The number of options included below
+	uint count;
+
+	//A pointer to the first option
+	struct tcp_option *options;
+};
+
 //A single TCP option in the options field
 struct tcp_option
 {
@@ -73,7 +83,7 @@ struct personate {
 	uint ttl_min;				//the minimum range for TTL
 	uint ttl_max; 				//The maximum range for TTL, if TTL is a flat value this == ttl_min
 	uint ttl_guess; 			//The TTL initial guess
-	struct tcp_option *options;
+	struct tcp_options options;
 	enum ackchange forceack;	//This is a comparison of the TCP Ack # of the host against the TCP Seq # of the probe
 	enum q_test q;				//The Q test flag, more important in ECN than most tests
 	enum seqchange forceseq;	//This is a comparison of the TCP Seq # of the host against the TCP Ack # of the probe
@@ -87,7 +97,7 @@ struct personate_ecn {
 	int window; 				//Window Size
 	u_char response; 			//Response Y = 1, N = 0
 	u_char df; 					//Don't Fragement Y = 1, N = 0
-	struct tcp_option *options;
+	struct tcp_options options;
 	uint ttl_min;				//the minimum range for TTL
 	uint ttl_max; 				//The maximum range for TTL, if TTL is a flat value this == ttl_min
 	uint ttl_guess; 			//The TTL initial guess
@@ -261,9 +271,9 @@ struct personality *personality_random(void);
 void personality_free(struct personality *);
 
 void ip_personality(struct template *, uint16_t *, enum ipid_protocol proto);
-int tcp_personality(struct tcp_con *, uint8_t *, int *, int *,
-    uint16_t *, char **);
-void tcp_personality_options(struct tcp_con *, struct tcp_hdr *, char *);
+int tcp_personality(struct tcp_con *con, uint8_t *pflags, int *pwindow, int *pdf,
+	    uint16_t *pid, struct tcp_options *poptions);
+void tcp_personality_options(struct tcp_con *con, struct tcp_hdr *tcp, struct tcp_options *options);
 int tcp_personality_match(struct tcp_con *, int);
 
 int icmp_error_personality(struct template *, struct addr *,
@@ -274,7 +284,7 @@ int icmp_error_personality(struct template *, struct addr *,
 uint CountCharsInString(char *string, char *chars);
 
 
-int parse_option(struct tcp_option **option, char *line);
+int parse_option(struct tcp_options *options, char *line);
 
 /* ET - This functions loads the Xprobe fingerprints */
 int xprobe_personality_parse(FILE *fp);
