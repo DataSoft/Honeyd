@@ -2581,16 +2581,20 @@ icmp_recv_cb(struct template *tmpl, u_char *pkt, u_short pktlen)
 				{
 					case 'Z':
 						code = 0;
+						syslog(LOG_DEBUG, "Case 'Z'\n");
 						break;
 					case 'S':
+						syslog(LOG_DEBUG, "Case 'S'\n");
 						code = icmp->icmp_code;
 						break;
 					//This case is just something thats not the others not sure what to use here
 						//but it doesn't occur currently in the nmap db
 					case 'O':
+						syslog(LOG_DEBUG, "Case 'O'\n");
 						code = 7;
 						break;
 					case 'N':
+						syslog(LOG_DEBUG, "Case 'N'\n");
 						code = nmap_print->replyVal;
 						break;
 				}
@@ -2617,6 +2621,11 @@ icmp_recv_cb(struct template *tmpl, u_char *pkt, u_short pktlen)
 						// with the DF bit toggled.
 						offset = ~(ip->ip_off | 49151);
 						break;
+				}
+				if((nmap_print->ttl == nmap_print->ttl_guess) && (nmap_print->ttl_max != nmap_print->ttl_min))
+				{
+					extern rand_t *honeyd_rand;
+					nmap_print->ttl = nmap_print->ttl_min + rand_uint32(honeyd_rand)%(nmap_print->ttl_max - nmap_print->ttl_min);
 				}
 				//In this first probe the TOS is zero so we just set it to 0 as well
 				icmp_echo_reply(tmpl, ip, code, 0, offset, nmap_print->ttl, dat, dlen, spoof);
