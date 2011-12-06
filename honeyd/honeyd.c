@@ -1413,12 +1413,13 @@ tcp_send(struct tcp_con *con, uint8_t flags, u_char *payload, u_int len)
 	if ((flags & TH_SYN) && !con->window)
 		con->window = window;
 
-	/* Simple window tracking */
-	if (window && con->rlen) {
+	/* Simple window tracking
+	if (window && con->rlen)
+	{
 		window -= con->rlen;
 		if (window < 0)
 			window = 0;
-	}
+	}*/
 
 	pkt = pool_alloc(pool_pkt);
 	int ttl = honeyd_ttl;
@@ -1426,7 +1427,8 @@ tcp_send(struct tcp_con *con, uint8_t flags, u_char *payload, u_int len)
 	tcp = (struct tcp_hdr *)(pkt + IP_HDR_LEN);
 	if((flags == (TH_ECE|TH_CWR|TH_SYN)) && (tmpl->person->ecn_test.response))
 	{
-		switch(tmpl->person->ecn_test.q)
+		struct personate_ecn * ecn = &tmpl->person->ecn_test;
+		switch(ecn->q)
 		{
 			case NONE:
 				*((uint8_t *)(tcp + 13)) = 0;
@@ -1445,8 +1447,24 @@ tcp_send(struct tcp_con *con, uint8_t flags, u_char *payload, u_int len)
 				*((uint16_t*)(tcp + 18)) = rand_uint16(honeyd_rand);
 				break;
 		}
-		ttl = tmpl->person->ecn_test.ttl;
+		if((ecn->ttl == ecn->ttl_guess) && (ecn->ttl_max != ecn->ttl_min))
+		{
+			ecn->ttl = ecn->ttl_min + rand_uint32(honeyd_rand)%(ecn->ttl_max - ecn->ttl_min);
+		}
+		ttl = ecn->ttl;
 
+	}
+	else if(tmpl->person != NULL)
+	{
+		struct personate * pers;
+		if((pers = tcp_personality_test(con, con->tmpl->person, flags)) != NULL)
+		{
+			if((pers->ttl == pers->ttl_guess) && (pers->ttl_max != pers->ttl_min))
+			{
+				pers->ttl = pers->ttl_min + rand_uint32(honeyd_rand)%(pers->ttl_max - pers->ttl_min);
+			}
+			ttl = pers->ttl;
+		}
 	}
 	tcp_pack_hdr(tcp,
 	    con->con_dport, con->con_sport,
@@ -2581,20 +2599,16 @@ icmp_recv_cb(struct template *tmpl, u_char *pkt, u_short pktlen)
 				{
 					case 'Z':
 						code = 0;
-						syslog(LOG_DEBUG, "Case 'Z'\n");
 						break;
 					case 'S':
-						syslog(LOG_DEBUG, "Case 'S'\n");
 						code = icmp->icmp_code;
 						break;
 					//This case is just something thats not the others not sure what to use here
 						//but it doesn't occur currently in the nmap db
 					case 'O':
-						syslog(LOG_DEBUG, "Case 'O'\n");
 						code = 7;
 						break;
 					case 'N':
-						syslog(LOG_DEBUG, "Case 'N'\n");
 						code = nmap_print->replyVal;
 						break;
 				}

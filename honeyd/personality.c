@@ -288,8 +288,19 @@ tcp_personality_test(const struct tcp_con *con, struct personality *person,
 	 * sane.  This allows us to get TCP options right, too.
 	 */
         
-	flags = con->rcv_flags & (TH_FIN|TH_RST|TH_PUSH|TH_ACK|TH_URG|TH_SYN|TH_ECE|TH_CWR);
-	if (flags == TH_SYN)
+	flags = con->rcv_flags & (TH_FIN|TH_RST|TH_PUSH|TH_ACK|TH_URG|TH_SYN);
+	if(con->rcv_flags == (TH_ECE|TH_CWR|TH_SYN) && (con->window == 3))
+	{
+		switch (con->state)
+		{
+			case TCP_STATE_LISTEN:
+			case TCP_STATE_SYN_RECEIVED:
+				return ((struct personate *)&person->ecn_test);
+			default:
+				return (NULL);
+		}
+	}
+	else if (flags == TH_SYN)
 	{
 		int hasece = con->rcv_flags & TH_ECE;
 
@@ -365,17 +376,6 @@ tcp_personality_test(const struct tcp_con *con, struct personality *person,
 		{
 			case TCP_STATE_LISTEN:
 				return (&person->t_tests[1]);
-			default:
-				return (NULL);
-		}
-	}
-	else if(flags == (TH_ECE|TH_CWR|TH_SYN))
-	{
-		switch (con->state)
-		{
-			case TCP_STATE_LISTEN:
-			case TCP_STATE_SYN_RECEIVED:
-				return ((struct personate *)&person->ecn_test);
 			default:
 				return (NULL);
 		}
@@ -725,20 +725,38 @@ tcp_personality(struct tcp_con *con, uint8_t *pflags, int *pwindow, int *pdf,
 	if (poptions != NULL)
 		*poptions = pers->options;
 
-	switch (pers->forceack) {
-	case ACK_ZERO:
-		con->rcv_next = 0;
-		break;
-	case ACK_DECREMENT:
-		con->rcv_next--;
-		break;
-	case ACK_KEEP:
-		break;
+	switch (pers->forceack)
+	{
+		case ACK_ZERO:
+			con->rcv_next = 0;
+			break;
+		case ACK_DECREMENT:
+			con->rcv_next--;
+			break;
+		case ACK_KEEP:
+			break;
+		case ACK_OTHER:
+			con->rcv_flags += 9;
+			break;
+	}
+	switch (pers->forceseq)
+	{
+		case SEQ_ZERO:
+			con->snd_una = 0;
+			break;
+		case SEQ_DECREMENT:
+			con->snd_una--;
+			break;
+		case SEQ_KEEP:
+			break;
+		case SEQ_OTHER:
+			con->snd_una += 9;
+			break;
 	}
 
 	ip_personality(tmpl, pid, TCP_UDP);
 
-	if (con->snd_una == 0)
+	if ((con->snd_una == 0) && (pers->forceseq != SEQ_ZERO))
 		con->snd_una = tcp_personality_seq(tmpl, person);
 
 	return (0);
@@ -863,22 +881,21 @@ icmp_error_personality(struct template *tmpl,
 {
 	struct persudp *test;
 	int iphdr_changed = 0;
-	struct xp_fingerprint *xp_print;
 
 	if (tmpl == NULL || tmpl->person == NULL)
 		return (1);
-
-	/* JVR - set TTL using XP fingerprint, use nmap for rest of header settings */
-	/*xp_print = tmpl->person->xp_fprint;
-
-	if (xp_print != NULL)
-		*ttl = xp_print->ttl_vals.icmp_unreach_reply_ttl.ttl_val;*/
-	/* JVR */
 
 	test = &tmpl->person->udptest;
 
 	if (!test->response)
 		return (0);
+
+	extern rand_t* honeyd_rand;
+	if((test->ttl == test->ttl_guess) && (test->ttl_max != test->ttl_min))
+	{
+		test->ttl = test->ttl_min + rand_uint32(honeyd_rand)%(test->ttl_max - test->ttl_min);
+	}
+
 	*ttl = test->ttl;
 	*pdf = test->df;
 	*ptos = test->tos;
