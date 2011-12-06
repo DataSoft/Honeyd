@@ -1463,7 +1463,7 @@ tcp_send(struct tcp_con *con, uint8_t flags, u_char *payload, u_int len)
          * requirement of the SYN flag so that the other NMAP TCP tests would
          * have the personality TCP options. */
 
-	if (options.count == 0)
+	if (options.count != 0)
 		tcp_personality_options(con, tcp, &options);
 
 	iplen = IP_HDR_LEN + (tcp->th_off << 2) + len;
