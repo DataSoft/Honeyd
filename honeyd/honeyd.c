@@ -1382,8 +1382,8 @@ tcp_send(struct tcp_con *con, uint8_t flags, u_char *payload, u_int len)
 	 * snd_una maybe 0 on RST segments.
 	 * Copies TCP options data into input options struct
 	 */
-	if (tcp_personality(con, &flags, &window, &dontfragment, &id,
-		&options) == -1) {
+	if (tcp_personality(con, &flags, &window, &dontfragment, &id, &options) == -1)
+	{
 		/* 
 		 * If we do not match a personality and sent a reset
 		 * segment then we do not want to include options.
@@ -1450,6 +1450,7 @@ tcp_send(struct tcp_con *con, uint8_t flags, u_char *payload, u_int len)
 		if((ecn->ttl == ecn->ttl_guess) && (ecn->ttl_max != ecn->ttl_min))
 		{
 			ecn->ttl = ecn->ttl_min + rand_uint32(honeyd_rand)%(ecn->ttl_max - ecn->ttl_min);
+			ecn->ttl_guess = ecn->ttl+1;
 		}
 		ttl = ecn->ttl;
 
@@ -1464,6 +1465,7 @@ tcp_send(struct tcp_con *con, uint8_t flags, u_char *payload, u_int len)
 				pers->ttl = pers->ttl_min + rand_uint32(honeyd_rand)%(pers->ttl_max - pers->ttl_min);
 			}
 			ttl = pers->ttl;
+			pers->ttl_guess = pers->ttl+1;
 		}
 	}
 	tcp_pack_hdr(tcp,
@@ -2074,7 +2076,9 @@ tcp_recv_cb(struct template *tmpl, u_char *pkt, u_short pktlen)
 
 		con->tmpl = template_ref(tmpl);
 		con->rcv_next = ntohl(tcp->th_seq) + 1;
-		con->snd_una = 0;
+		con->snd_una = ntohl(tcp->th_ack) + 1;
+		con->recv_window = ntohs(tcp->th_win);
+		con->recv_mss = ntohs(*(uint8_t*)(tcp + sizeof(struct tcp_hdr) + 2));
 
 		con->state = TCP_STATE_LISTEN;
 		tcp_send(con, TH_SYN|TH_ACK, NULL, 0);
@@ -2122,7 +2126,7 @@ tcp_recv_cb(struct template *tmpl, u_char *pkt, u_short pktlen)
 			goto drop;
 
 		/* No simultaneous open allowed */
-		if (th_ack != con->snd_una)
+		if (th_ack != (con->snd_una-1))
 			goto dropwithreset;
 
 		tcp_do_options(con, tcp, 0);
@@ -2138,7 +2142,7 @@ tcp_recv_cb(struct template *tmpl, u_char *pkt, u_short pktlen)
 		if (tiflags & TH_ACK) {
 			if (tiflags & TH_SYN)
 				goto dropwithreset;
-			if (th_ack != con->snd_una)
+			if (th_ack != (con->snd_una-1))
 				goto dropwithreset;
 		}
 		if (tiflags & TH_SYN) {
@@ -2293,10 +2297,10 @@ tcp_recv_cb(struct template *tmpl, u_char *pkt, u_short pktlen)
 	 */
 	if (tcp_personality_match(&honeyd_tmp, flags)) {
 		honeyd_tmp.rcv_next = ntohl(tcp->th_seq) + 1;
-		honeyd_tmp.snd_una = ntohl(tcp->th_ack);
+		honeyd_tmp.snd_una = ntohl(tcp->th_ack)+1;
 	} else if (tiflags & TH_ACK) {
 		honeyd_tmp.rcv_next = 0;
-		honeyd_tmp.snd_una = ntohl(tcp->th_ack);
+		honeyd_tmp.snd_una = ntohl(tcp->th_ack)+1;
 	} else {
 		flags = TH_RST | TH_ACK;
 		honeyd_tmp.rcv_next = ntohl(tcp->th_seq) + 1;
@@ -2640,6 +2644,7 @@ icmp_recv_cb(struct template *tmpl, u_char *pkt, u_short pktlen)
 				{
 					extern rand_t *honeyd_rand;
 					nmap_print->ttl = nmap_print->ttl_min + rand_uint32(honeyd_rand)%(nmap_print->ttl_max - nmap_print->ttl_min);
+					nmap_print->ttl_guess = nmap_print->ttl+1;
 				}
 				//In this first probe the TOS is zero so we just set it to 0 as well
 				icmp_echo_reply(tmpl, ip, code, 0, offset, nmap_print->ttl, dat, dlen, spoof);

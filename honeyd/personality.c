@@ -287,9 +287,8 @@ tcp_personality_test(const struct tcp_con *con, struct personality *person,
 	 * Niels: We reuse the T1 even if ECE is not set if the response seems
 	 * sane.  This allows us to get TCP options right, too.
 	 */
-        
 	flags = con->rcv_flags & (TH_FIN|TH_RST|TH_PUSH|TH_ACK|TH_URG|TH_SYN);
-	if(con->rcv_flags == (TH_ECE|TH_CWR|TH_SYN) && (con->window == 3))
+	if(con->rcv_flags == (TH_ECE|TH_CWR|TH_SYN))
 	{
 		switch (con->state)
 		{
@@ -315,7 +314,7 @@ tcp_personality_test(const struct tcp_con *con, struct personality *person,
 
 				//This might be one of the 6 Nmap SEQ packets, reply appropriately
 				//Apply WIN and OPS fields to the t_tests[0] test
-				switch( con->window )
+				switch( con->recv_window )
 				{
 					case 1:
 					{
@@ -329,7 +328,7 @@ tcp_personality_test(const struct tcp_con *con, struct personality *person,
 					}
 					case 4:
 					{
-						if( con->mss == 640)
+						if( con->recv_mss == 640)
 						{
 							//SEQ Packet #3
 							return (&person->seq_tests[2]);
@@ -894,6 +893,7 @@ icmp_error_personality(struct template *tmpl,
 	if((test->ttl == test->ttl_guess) && (test->ttl_max != test->ttl_min))
 	{
 		test->ttl = test->ttl_min + rand_uint32(honeyd_rand)%(test->ttl_max - test->ttl_min);
+		test->ttl_guess = test->ttl+1;
 	}
 
 	*ttl = test->ttl;

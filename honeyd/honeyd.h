@@ -247,6 +247,7 @@ struct tcp_con {
 
 	u_short	mss;
 	u_short window;
+
 	uint32_t echotimestamp;
 
 	u_short retrans_time;
@@ -256,6 +257,9 @@ struct tcp_con {
 	struct port *port;		/* used if bound to sub system */
 
 	uint16_t flags;			/* Currently used for tarpitting */
+
+	uint8_t recv_mss;
+	uint8_t recv_window;
 };
 
 #define TCP_TARPIT	0x01
