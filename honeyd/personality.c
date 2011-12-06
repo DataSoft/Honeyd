@@ -706,6 +706,8 @@ tcp_personality(struct tcp_con *con, uint8_t *pflags, int *pwindow, int *pdf,
 					*pflags |= TH_CWR;
 					break;
 			}
+			if(poptions != NULL)
+				*poptions = ecn->options;
 
 			//TODO set options
 			ip_personality(tmpl, pid, TCP_UDP);
