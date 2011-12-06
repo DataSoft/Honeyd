@@ -2523,8 +2523,8 @@ icmp_recv_cb(struct template *tmpl, u_char *pkt, u_short pktlen)
 	if (tmpl != NULL && tmpl->person != NULL)
 		nmap_print = &tmpl->person->ie_test;
 
-	/* Without xprobe fingerprint, we understand only ECHO and UNREACH */
-	if (xp_print == NULL) {
+	/* Without xprobe or nmap fingerprint, we understand only ECHO and UNREACH */
+	if ((xp_print == NULL) && (nmap_print == NULL)) {
 		if (!(icmp->icmp_type == ICMP_ECHO) &&
 		    !(icmp->icmp_type == ICMP_UNREACH &&
 			icmp->icmp_code == ICMP_UNREACH_PORT))
@@ -2574,7 +2574,6 @@ icmp_recv_cb(struct template *tmpl, u_char *pkt, u_short pktlen)
 
 		if(((icmp->icmp_code == 9) && (ip->ip_tos == 0)) || ((icmp->icmp_code == 0) && (ip->ip_tos == 4)))
 		{
-			icmp_echo = (struct icmp_msg_echo *)((u_char*)pkt + (ip->ip_hl << 2));
 			if((icmp_echo->icmp_seq == 295) || (icmp_echo->icmp_seq == 296))
 			{
 				if(nmap_print->response)
@@ -2586,7 +2585,7 @@ icmp_recv_cb(struct template *tmpl, u_char *pkt, u_short pktlen)
 							code = 0;
 							break;
 						case 'S':
-							code = icmp->icmp_code;
+							code = 9;
 							break;
 						//This case is just something thats not the others not sure what to use here
 							//but it doesn't occur currently in the nmap db

@@ -1336,32 +1336,32 @@ parse_tl(struct personality *pers, int off, char *line)
 				}
 				if(*p2 == 'U')
 				{
-					test->flags |= TH_ECE;
+					test->flags |= TH_URG;
 					p2++;
 				}
 				if(*p2 == 'A')
 				{
-					test->flags |= TH_ECE;
+					test->flags |= TH_ACK;
 					p2++;
 				}
 				if(*p2 == 'P')
 				{
-					test->flags |= TH_ECE;
+					test->flags |= TH_PUSH;
 					p2++;
 				}
 				if(*p2 == 'R')
 				{
-					test->flags |= TH_ECE;
+					test->flags |= TH_RST;
 					p2++;
 				}
 				if(*p2 == 'S')
 				{
-					test->flags |= TH_ECE;
+					test->flags |= TH_SYN;
 					p2++;
 				}
 				if(*p2 == 'F')
 				{
-					test->flags |= TH_ECE;
+					test->flags |= TH_FIN;
 					p2++;
 				}
 				if((*p2 != '%') && (*p2 != '|') && (*p2 != ')'))
