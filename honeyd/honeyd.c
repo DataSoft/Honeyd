@@ -1671,7 +1671,7 @@ icmp_echo_reply(struct template *tmpl,
 	else
 	{
 		icmp_pack_hdr_echo(pkt + IP_HDR_LEN, ICMP_ECHOREPLY,
-			code, ntohs(icmp_echo->icmp_id), tmpl->IPID_last_ICMP,
+			code, ntohs(icmp_echo->icmp_id), ntohs(icmp_echo->icmp_seq),
 			payload, len);
 	}
 	icmp_send(tmpl, pkt, tos, iplen, offset, ttl,
@@ -2574,57 +2574,54 @@ icmp_recv_cb(struct template *tmpl, u_char *pkt, u_short pktlen)
 
 		if(((icmp->icmp_code == 9) && (ip->ip_tos == 0)) || ((icmp->icmp_code == 0) && (ip->ip_tos == 4)))
 		{
-			if((icmp_echo->icmp_seq == 295) || (icmp_echo->icmp_seq == 296))
+			if(nmap_print->response)
 			{
-				if(nmap_print->response)
+				uint8_t code = 0;
+				switch(nmap_print->replyCode)
 				{
-					uint8_t code = 0;
-					switch(nmap_print->replyCode)
-					{
-						case 'Z':
-							code = 0;
-							break;
-						case 'S':
-							code = 9;
-							break;
-						//This case is just something thats not the others not sure what to use here
-							//but it doesn't occur currently in the nmap db
-						case 'O':
-							code = 7;
-							break;
-						case 'N':
-							code = nmap_print->replyVal;
-							break;
-					}
-					uint16_t offset = 0;
-					//for case N, df bit = 0, so do nothing
-					switch(nmap_print->dfi_test)
-					{
-						//echos DF of probe
-						case 'S':
-							//16384 is an empty offset field with the DF bit set to 1
-							//Create empty offset field with the DF bit of the probe.
-							offset = ip->ip_off & 16384;
-							break;
-
-						//DF bit is set in this case;
-						case 'Y':
-							offset = 16384;
-							break;
-
-						//DF Bit is toggled
-						case 'O':
-							//49151 is the inverse of an empty offset field with the DF bit set to 1
-							// we mask all but the DF bit to 1, the inverse is an empty offset field
-							// with the DF bit toggled.
-							offset = ~(ip->ip_off | 49151);
-							break;
-					}
-					//In this first probe the TOS is zero so we just set it to 0 as well
-					icmp_echo_reply(tmpl, ip, code, 0, offset, nmap_print->ttl, dat, dlen, spoof);
+					case 'Z':
+						code = 0;
+						break;
+					case 'S':
+						code = icmp->icmp_code;
+						break;
+					//This case is just something thats not the others not sure what to use here
+						//but it doesn't occur currently in the nmap db
+					case 'O':
+						code = 7;
+						break;
+					case 'N':
+						code = nmap_print->replyVal;
+						break;
 				}
-				break;
+				uint16_t offset = 0;
+				//for case N, df bit = 0, so do nothing
+				switch(nmap_print->dfi_test)
+				{
+					//echos DF of probe
+					case 'S':
+						//16384 is an empty offset field with the DF bit set to 1
+						//Create empty offset field with the DF bit of the probe.
+						offset = ip->ip_off & 16384;
+						break;
+
+					//DF bit is set in this case;
+					case 'Y':
+						offset = 16384;
+						break;
+
+					//DF Bit is toggled
+					case 'O':
+						//49151 is the inverse of an empty offset field with the DF bit set to 1
+						// we mask all but the DF bit to 1, the inverse is an empty offset field
+						// with the DF bit toggled.
+						offset = ~(ip->ip_off | 49151);
+						break;
+				}
+				//In this first probe the TOS is zero so we just set it to 0 as well
+				icmp_echo_reply(tmpl, ip, code, 0, offset, nmap_print->ttl, dat, dlen, spoof);
 			}
+			break;
 		}
 		if (xp_print)
 		{
