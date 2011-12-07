@@ -1898,18 +1898,18 @@ generic_timeout(struct event *ev, int seconds)
 #define TCP_CHECK_SEQ_OR_ACK	do { \
 		int has_ack = tcp->th_flags & TH_ACK; \
 		if (tcp->th_flags & TH_RST) { \
-			if (th_seq != con->rcv_next) \
+			if (th_seq != con->rcv_next -1) \
 				goto drop; \
 			goto close; \
 		} \
 		if (!has_ack) \
 			goto drop; \
-		if (TCP_SEQ_LT(th_ack, con->snd_una)) { \
+		if (TCP_SEQ_LT(th_ack, con->snd_una -1)) { \
 			/* we used to drop only RST packets, now we drop everything */ \
 				goto drop; \
 		}\
 		/* Don't accept out of order data */ \
-		if (TCP_SEQ_GT(th_seq, con->rcv_next)) { \
+		if (TCP_SEQ_GT(th_seq, con->rcv_next -1)) { \
 			if (has_ack) \
 				tcp_send(con, TH_ACK, NULL, 0); \
 			goto drop; \
@@ -2078,7 +2078,7 @@ tcp_recv_cb(struct template *tmpl, u_char *pkt, u_short pktlen)
 		con->rcv_next = ntohl(tcp->th_seq) + 1;
 		con->snd_una = ntohl(tcp->th_ack) + 1;
 		con->recv_window = ntohs(tcp->th_win);
-		con->recv_mss = ntohs(*(uint8_t*)(tcp + sizeof(struct tcp_hdr) + 2));
+		con->recv_mss = con->mss;
 
 		con->state = TCP_STATE_LISTEN;
 		tcp_send(con, TH_SYN|TH_ACK, NULL, 0);
@@ -2116,155 +2116,163 @@ tcp_recv_cb(struct template *tmpl, u_char *pkt, u_short pktlen)
 
 	con->rcv_flags = tiflags;
 
-	switch (con->state) {
-	case TCP_STATE_SYN_SENT:
-		if (tiflags & TH_RST)
-			goto close;
-		if (!(tiflags & TH_SYN))
-			goto drop;
-		if (!(tiflags & TH_ACK))
-			goto drop;
+	switch (con->state)
+	{
+		case TCP_STATE_SYN_SENT:
+			if (tiflags & TH_RST)
+				goto close;
+			if (!(tiflags & TH_SYN))
+				goto drop;
+			if (!(tiflags & TH_ACK))
+				goto drop;
 
-		/* No simultaneous open allowed */
-		if (th_ack != (con->snd_una-1))
-			goto dropwithreset;
-
-		tcp_do_options(con, tcp, 0);
-
-		con->rcv_next = th_seq + 1;
-		tcp_send(con, TH_ACK, NULL, 0);
-
-		con->state = TCP_STATE_ESTABLISHED;
-		generic_connect(tmpl, &con->conhdr, &con->cmd, con);
-		break;
-
-	case TCP_STATE_SYN_RECEIVED:
-		if (tiflags & TH_ACK) {
-			if (tiflags & TH_SYN)
+			/* No simultaneous open allowed */
+			if (th_ack != con->snd_una - 1)
 				goto dropwithreset;
-			if (th_ack != (con->snd_una-1))
-				goto dropwithreset;
-		}
-		if (tiflags & TH_SYN) {
-			if (th_seq != con->rcv_next - 1)
-				goto dropwithreset;
-			con->snd_una--;
-			tcp_send(con, TH_SYN|TH_ACK, NULL,0);
-			con->snd_una++;
-			return;
-		}
 
-		if (tiflags & TH_RST)
-			goto close;
-		if (!(tiflags & TH_ACK))
-			goto drop;
+			tcp_do_options(con, tcp, 0);
 
-		tcp_do_options(con, tcp, 0);
+			con->rcv_next = th_seq + 1;
+			tcp_send(con, TH_ACK, NULL, 0);
 
-		/* Clear retransmit timeout */
-		con->retrans_time = 0;
-		evtimer_del(&con->retrans_timeout);
+			con->state = TCP_STATE_ESTABLISHED;
+			generic_connect(tmpl, &con->conhdr, &con->cmd, con);
+			break;
 
-		connection_update(&tcplru, &con->conhdr);
-
-		con->state = TCP_STATE_ESTABLISHED;
-		generic_connect(tmpl, &con->conhdr, &con->cmd, con);
-		break;
-
-	case TCP_STATE_ESTABLISHED:
-		TCP_CHECK_SEQ_OR_ACK;
-
-		TCP_RECV_SEND_DATA;
-			
-		tcp_do_options(con, tcp, 0);
-
-		connection_update(&tcplru, &con->conhdr);
-
-		if (tiflags & TH_FIN && !(con->flags & TCP_TARPIT)) {
-			if (con->cmd_pfd > 0) {
-				if (con->rlen == 0) {
-					/*
-					 * If we already transmitted all data,
-					 * we can completely shutdown the write
-					 * part of the connection.
-					 */
-					shutdown(con->cmd_pfd, SHUT_WR);
-				} else {
-					/* 
-					 * If we still have data to write to
-					 * our child process, we need to delay
-					 * the shutdown until later.
-					 */
-					con->cmd.fdgotfin = 1;
-				}
-			} else {
-				con->sentfin = 1;
+		case TCP_STATE_SYN_RECEIVED:
+			if (tiflags & TH_ACK) {
+				if (tiflags & TH_SYN)
+					goto dropwithreset;
+				if (th_ack != (con->snd_una-1))
+					goto dropwithreset;
 			}
-			con->state = TCP_STATE_CLOSE_WAIT;
-			dlen++;
-		}
+			if (tiflags & TH_SYN) {
+				if (th_seq != con->rcv_next - 1)
+					goto dropwithreset;
+				con->snd_una--;
+				tcp_send(con, TH_SYN|TH_ACK, NULL,0);
+				con->snd_una++;
+				return;
+			}
 
-		con->rcv_next += dlen;
-		con->snd_una += acked;
-		if (con->sentfin) {
-			tcp_sendfin(con);
-		} else
-			tcp_senddata(con, TH_ACK);
-		break;
+			if (tiflags & TH_RST)
+				goto close;
+			if (!(tiflags & TH_ACK))
+				goto drop;
 
-	case TCP_STATE_CLOSE_WAIT:
-		TCP_CHECK_SEQ_OR_ACK;
+			tcp_do_options(con, tcp, 0);
 
-		TCP_RECV_SEND_DATA;
+			/* Clear retransmit timeout */
+			con->retrans_time = 0;
+			evtimer_del(&con->retrans_timeout);
 
-		tcp_do_options(con, tcp, 0);
-
-		connection_update(&tcplru, &con->conhdr);
-
-		if (dlen)
-			goto dropwithreset;
-		con->snd_una += acked;
-		tcp_senddata(con, TH_ACK);
-		if (con->sentfin)
-			con->state = TCP_STATE_CLOSING;
-
-		break;
-
-	case TCP_STATE_CLOSING:
-		TCP_CHECK_SEQ_OR_ACK;
-
-		TCP_RECV_SEND_DATA;
-
-		tcp_do_options(con, tcp, 0);
-
-		connection_update(&tcplru, &con->conhdr);
-
-		con->snd_una += acked;
-		if (con->finacked)
-			goto closed;
-		tcp_senddata(con, TH_ACK);
-		break;
-
-	case TCP_STATE_FIN_WAIT_1:
-		TCP_CHECK_SEQ_OR_ACK;
-
-		TCP_RECV_SEND_DATA;
-			
-		tcp_do_options(con, tcp, 0);
-
-		if (tiflags & TH_FIN && !(con->flags & TCP_TARPIT)) {
-			con->state = TCP_STATE_CLOSING;
-			generic_timeout(&con->conhdr.timeout,
-			    HONEYD_CLOSE_WAIT);
-			dlen++;
-		} else {
 			connection_update(&tcplru, &con->conhdr);
-		}
 
-		con->rcv_next += dlen;
-		con->snd_una += acked;
-		tcp_senddata(con, TH_ACK);
-		break;
+			con->state = TCP_STATE_ESTABLISHED;
+			generic_connect(tmpl, &con->conhdr, &con->cmd, con);
+			break;
+
+		case TCP_STATE_ESTABLISHED:
+			TCP_CHECK_SEQ_OR_ACK;
+
+			TCP_RECV_SEND_DATA;
+
+			tcp_do_options(con, tcp, 0);
+
+			connection_update(&tcplru, &con->conhdr);
+
+			if (tiflags & TH_FIN && !(con->flags & TCP_TARPIT))
+			{
+				if (con->cmd_pfd > 0)
+				{
+					if (con->rlen == 0)
+					{
+						/*
+						 * If we already transmitted all data,
+						 * we can completely shutdown the write
+						 * part of the connection.
+						 */
+						shutdown(con->cmd_pfd, SHUT_WR);
+					}
+					else
+					{
+						/*
+						 * If we still have data to write to
+						 * our child process, we need to delay
+						 * the shutdown until later.
+						 */
+						con->cmd.fdgotfin = 1;
+					}
+				}
+				else
+				{
+					con->sentfin = 1;
+				}
+				con->state = TCP_STATE_CLOSE_WAIT;
+				dlen++;
+			}
+
+			con->rcv_next += dlen;
+			con->snd_una += acked;
+			if (con->sentfin) {
+				tcp_sendfin(con);
+			} else
+				tcp_senddata(con, TH_ACK);
+			break;
+
+		case TCP_STATE_CLOSE_WAIT:
+			TCP_CHECK_SEQ_OR_ACK;
+
+			TCP_RECV_SEND_DATA;
+
+			tcp_do_options(con, tcp, 0);
+
+			connection_update(&tcplru, &con->conhdr);
+
+			if (dlen)
+				goto dropwithreset;
+			con->snd_una += acked;
+			tcp_senddata(con, TH_ACK);
+			if (con->sentfin)
+				con->state = TCP_STATE_CLOSING;
+
+			break;
+
+		case TCP_STATE_CLOSING:
+			TCP_CHECK_SEQ_OR_ACK;
+
+			TCP_RECV_SEND_DATA;
+
+			tcp_do_options(con, tcp, 0);
+
+			connection_update(&tcplru, &con->conhdr);
+
+			con->snd_una += acked;
+			if (con->finacked)
+				goto closed;
+			tcp_senddata(con, TH_ACK);
+			break;
+
+		case TCP_STATE_FIN_WAIT_1:
+			TCP_CHECK_SEQ_OR_ACK;
+
+			TCP_RECV_SEND_DATA;
+
+			tcp_do_options(con, tcp, 0);
+
+			if (tiflags & TH_FIN && !(con->flags & TCP_TARPIT)) {
+				con->state = TCP_STATE_CLOSING;
+				generic_timeout(&con->conhdr.timeout,
+					HONEYD_CLOSE_WAIT);
+				dlen++;
+			} else {
+				connection_update(&tcplru, &con->conhdr);
+			}
+
+			con->rcv_next += dlen;
+			con->snd_una += acked;
+			tcp_senddata(con, TH_ACK);
+			break;
 	}
 
 	return;
@@ -2283,7 +2291,7 @@ tcp_recv_cb(struct template *tmpl, u_char *pkt, u_short pktlen)
 
 	/* Fake connection element */
 	honeyd_tmp.rcv_next = ntohl(tcp->th_seq) + 1;
-	honeyd_tmp.snd_una = ntohl(tcp->th_ack);
+	honeyd_tmp.snd_una = ntohl(tcp->th_ack) +1;
 	honeyd_tmp.tmpl = tmpl;
 
 	if (tiflags & TH_ACK)
@@ -2303,7 +2311,7 @@ tcp_recv_cb(struct template *tmpl, u_char *pkt, u_short pktlen)
 		honeyd_tmp.snd_una = ntohl(tcp->th_ack)+1;
 	} else {
 		flags = TH_RST | TH_ACK;
-		honeyd_tmp.rcv_next = ntohl(tcp->th_seq) + 1;
+		honeyd_tmp.rcv_next = ntohl(tcp->th_seq)+1;
 		honeyd_tmp.snd_una = 0;
 	}
 

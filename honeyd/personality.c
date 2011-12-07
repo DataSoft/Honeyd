@@ -835,8 +835,8 @@ tcp_personality_options(struct tcp_con *con, struct tcp_hdr *tcp,
 					opt.opt_data.timestamp[1] = 0;
 				}
 
-				if (con->sawtimestamp)
-					opt.opt_data.timestamp[1] = con->echotimestamp;
+				/*if (con->sawtimestamp)
+					opt.opt_data.timestamp[1] = con->echotimestamp;*/
 				SET(p, &opt, TCP_OPT_TIMESTAMP, 2 + 4 + 4);
 				break;
 			case 'N':
@@ -845,6 +845,9 @@ tcp_personality_options(struct tcp_con *con, struct tcp_hdr *tcp,
 				break;
 			case 'L':
 				SET(p, &opt, TCP_OPT_EOL, 2);
+				break;
+			case 'S':
+				SET(p, &opt, 4, 2);
 				break;
 			default:
 				opt.opt_len = 0;
@@ -1499,17 +1502,17 @@ parse_tl(struct personality *pers, int off, char *line)
 	{
 		//Set all the seq_tests to this personate
 		//	Except for Window size and TCP options (which are set by the WIN and OPS lines)
-		uint i = 0;
+		int i = 0;
 		for(; i < 6; i++)
 		{
 			pers->seq_tests[i].flags = pers->t_tests[0].flags;
 			pers->seq_tests[i].df = pers->t_tests[0].df;
+			pers->seq_tests[i].ttl = pers->t_tests[0].ttl;
 			pers->seq_tests[i].ttl_min = pers->t_tests[0].ttl_min;
 			pers->seq_tests[i].ttl_max = pers->t_tests[0].ttl_max;
 			pers->seq_tests[i].ttl_guess = pers->t_tests[0].ttl_guess;
 			pers->seq_tests[i].forceack = pers->t_tests[0].forceack;
 			pers->seq_tests[i].q = pers->t_tests[0].q;
-			pers->seq_tests[i].forceack = pers->t_tests[0].forceack;
 			pers->seq_tests[i].forceseq = pers->t_tests[0].forceseq;
 			pers->seq_tests[i].resetDatChkSum = pers->t_tests[0].resetDatChkSum;
 		}

@@ -87,7 +87,6 @@ struct personate {
 	uint ttl_max; 				//The maximum range for TTL, if TTL is a flat value this == ttl_min
 	uint ttl_guess; 			//The TTL initial guess
 	uint8_t ttl;
-	struct tcp_options options;
 	enum ackchange forceack;	//This is a comparison of the TCP Ack # of the host against the TCP Seq # of the probe
 	enum q_test q;				//The Q test flag, more important in ECN than most tests
 	enum seqchange forceseq;	//This is a comparison of the TCP Seq # of the host against the TCP Ack # of the probe
@@ -95,19 +94,20 @@ struct personate {
 								/* Some operating systems return ASCII data such as error messages in reset packets.
 								 * When Nmap encounters such data, it performs a CRC32 checksum and reports the results.
 								 * When there is no data, RD is set to zero.*/
+	struct tcp_options options;
 };
 
 struct personate_ecn {
 	int window; 				//Window Size
 	u_char response; 			//Response Y = 1, N = 0
 	u_char df; 					//Don't Fragement Y = 1, N = 0
-	struct tcp_options options;
 	uint ttl_min;				//the minimum range for TTL
 	uint ttl_max; 				//The maximum range for TTL, if TTL is a flat value this == ttl_min
 	uint8_t ttl;
 	uint ttl_guess; 			//The TTL initial guess
 	char cc_flag; 				//The Special CC flag for the ECN test, can be N, Y, S, O
 	enum q_test q;				//The Q test flag, more important in ECN than most tests
+	struct tcp_options options;
 };
 struct personate_ie {
 	u_char response; 	//Response Y = 1, N = 0
