@@ -98,17 +98,6 @@ struct personate {
 	struct tcp_options options;
 };
 
-struct personate_ecn {
-	int window; 				//Window Size
-	u_char df; 					//Don't Fragement Y = 1, N = 0
-	uint ttl_min;				//the minimum range for TTL
-	uint ttl_max; 				//The maximum range for TTL, if TTL is a flat value this == ttl_min
-	uint8_t ttl;
-	uint ttl_guess; 			//The TTL initial guess
-	char cc_flag; 				//The Special CC flag for the ECN test, can be N, Y, S, O
-	enum q_test q;				//The Q test flag, more important in ECN than most tests
-	struct tcp_options options;
-};
 struct personate_ie {
 	u_char response; 	//Response Y = 1, N = 0
 	uint ttl_min; 		//the minimum range for TTL
