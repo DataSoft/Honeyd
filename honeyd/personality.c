@@ -294,7 +294,8 @@ tcp_personality_test(const struct tcp_con *con, struct personality *person,
 		{
 			case TCP_STATE_LISTEN:
 			case TCP_STATE_SYN_RECEIVED:
-				return ((struct personate *)&person->ecn_test);
+				syslog(LOG_DEBUG, "ecn returned");
+				return (&person->ecn_test);
 			default:
 				return (NULL);
 		}
@@ -657,7 +658,6 @@ tcp_personality(struct tcp_con *con, uint8_t *pflags, int *pwindow, int *pdf,
 	struct template *tmpl = con->tmpl;
 	struct personality *person;
 	struct personate *pers;
-	struct personate_ecn * ecn;
 	uint8_t flags = *pflags;
 
 	/* XXX - We need to find some template to use here */
@@ -1258,6 +1258,8 @@ parse_tl(struct personality *pers, int off, char *line)
 	char *p = line, *p2 = line, *end = line;
 	char c;
 	test->ttl = 0;
+	test->q = 0;
+
 
 	//We can always expect an R = field
 	if(!strncasecmp(line, "R=N", 3))
@@ -1415,7 +1417,6 @@ parse_tl(struct personality *pers, int off, char *line)
 			case 'Q':
 				strsep(&p2, "=");
 				c = *p2;
-				test->q = 0;
 				switch(c)
 				{
 					//Vals of corresponding enum:"" = 0 "R" = 1, "U" = 2, "RU" = 3
@@ -1867,7 +1868,7 @@ parse_ecn(struct personality *pers, int off, char *line)
 	{
 		ecn->response = 1;
 		strsep(&p2, "%");
-		ecn->flags = 0;
+		ecn->flags = (TH_SYN|TH_ACK);
 		while (p2 != NULL && strlen(p))
 		{
 			c = *p2;

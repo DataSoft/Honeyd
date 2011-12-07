@@ -1429,27 +1429,23 @@ tcp_send(struct tcp_con *con, uint8_t flags, u_char *payload, u_int len)
 	if(tmpl->person != NULL)
 	{
 		struct personate * pers;
-		switch(pers->q)
-		{
-			case NONE:
-				*((uint8_t *)(tcp + 13)) = 0;
-				*((uint16_t*)(tcp + 18)) = 0;
-				break;
-			case RESERVED:
-				*((uint8_t *)(tcp + 13)) = 1;
-				*((uint16_t*)(tcp + 18)) = 0;
-				break;
-			case URGENT:
-				*((uint8_t *)(tcp + 13)) = 0;
-				*((uint16_t*)(tcp + 18)) = rand_uint16(honeyd_rand);
-				break;
-			case BOTH:
-				*((uint8_t *)(tcp + 13)) = 1;
-				*((uint16_t*)(tcp + 18)) = rand_uint16(honeyd_rand);
-				break;
-		}
 		if((pers = tcp_personality_test(con, con->tmpl->person, flags)) != NULL)
 		{
+			switch(pers->q)
+			{
+				case NONE:
+					break;
+				case RESERVED:
+					*((uint8_t *)(tcp + 13)) = 1;
+					break;
+				case URGENT:
+					*((uint16_t*)(tcp + 18)) = rand_uint16(honeyd_rand);
+					break;
+				case BOTH:
+					*((uint8_t *)(tcp + 13)) = 1;
+					*((uint16_t*)(tcp + 18)) = rand_uint16(honeyd_rand);
+					break;
+			}
 			if((pers->ttl == pers->ttl_guess) && (pers->ttl_max != pers->ttl_min))
 			{
 				pers->ttl = pers->ttl_min + rand_uint32(honeyd_rand)%(pers->ttl_max - pers->ttl_min);
@@ -1458,6 +1454,7 @@ tcp_send(struct tcp_con *con, uint8_t flags, u_char *payload, u_int len)
 			pers->ttl_guess = pers->ttl+1;
 		}
 	}
+
 	tcp_pack_hdr(tcp,
 	    con->con_dport, con->con_sport,
 	    con->snd_una, con->rcv_next, flags, window, 0);
