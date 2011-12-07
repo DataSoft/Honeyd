@@ -2078,7 +2078,7 @@ tcp_recv_cb(struct template *tmpl, u_char *pkt, u_short pktlen)
 		con->rcv_next = ntohl(tcp->th_seq) + 1;
 		con->snd_una = ntohl(tcp->th_ack) + 1;
 		con->recv_window = ntohs(tcp->th_win);
-		con->recv_mss = con->mss;
+		con->nmap_opt = *(uint8_t*)(data-1);
 
 		con->state = TCP_STATE_LISTEN;
 		tcp_send(con, TH_SYN|TH_ACK, NULL, 0);

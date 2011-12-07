@@ -259,7 +259,7 @@ struct tcp_con {
 	uint16_t flags;			/* Currently used for tarpitting */
 
 	u_short recv_window;
-	u_short recv_mss;
+	uint8_t nmap_opt;
 };
 
 #define TCP_TARPIT	0x01

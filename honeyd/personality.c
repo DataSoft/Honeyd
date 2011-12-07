@@ -328,11 +328,14 @@ tcp_personality_test(const struct tcp_con *con, struct personality *person,
 					}
 					case 4:
 					{
-						if( con->recv_mss == 640)
+						//In this case the last byte in the tcp header for seq_test[2]
+						// is the last byte of the MSS value which is 640, the last byte is 128
+						if(con->nmap_opt == 128)
 						{
 							//SEQ Packet #3
 							return (&person->seq_tests[2]);
 						}
+						//The last byte in the tcp header(data-1) for seq_test[3] is 0, EOL
 						else
 						{
 							//SEQ Packet #4
