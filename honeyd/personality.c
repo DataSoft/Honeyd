@@ -847,7 +847,7 @@ tcp_personality_options(struct tcp_con *con, struct tcp_hdr *tcp,
 				SET(p, &opt, TCP_OPT_NOP, 1);
 				break;
 			case 'L':
-				SET(p, &opt, TCP_OPT_EOL, 2);
+				SET(p, &opt, TCP_OPT_EOL, 1);
 				break;
 			case 'S':
 				SET(p, &opt, 4, 2);
