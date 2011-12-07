@@ -669,7 +669,8 @@ tcp_personality(struct tcp_con *con, uint8_t *pflags, int *pwindow, int *pdf,
 	if (person == NULL)
 		return (-1);
 
-	if ((pers = tcp_personality_test(con, person, flags)) == NULL) {
+	if ((pers = tcp_personality_test(con, person, flags)) == NULL)
+	{
 		/* Not a test case - but we still want to pretend */
 		ip_personality(tmpl, pid, TCP_UDP);
 
@@ -682,44 +683,6 @@ tcp_personality(struct tcp_con *con, uint8_t *pflags, int *pwindow, int *pdf,
 			*poptions = default_opts;
 		return (-1);
 	}
-	if(con->rcv_flags == (TH_ECE|TH_CWR|TH_SYN))
-	{
-		ecn = (struct personate_ecn *)pers;
-		if(ecn->response)
-		{
-			*pwindow = ecn->window;
-			*pdf = ecn->df;
-			switch(ecn->cc_flag)
-			{
-				case 'Y':
-					*pflags |= TH_ECE;
-					*pflags &= ~(TH_CWR);
-					break;
-				case 'N':
-					*pflags &= ~(TH_ECE);
-					*pflags &= ~(TH_CWR);
-					break;
-				case 'S':
-					*pflags |= TH_ECE;
-					*pflags |= TH_CWR;
-					break;
-				case 'O':
-					*pflags &= ~(TH_ECE);
-					*pflags |= TH_CWR;
-					break;
-			}
-			if(poptions != NULL)
-				*poptions = ecn->options;
-
-			//TODO set options
-			ip_personality(tmpl, pid, TCP_UDP);
-			if (con->snd_una == 0)
-					con->snd_una = tcp_personality_seq(tmpl, person);
-			return 0;
-		}
-		else
-			return -1;
-	}
 
 	*pwindow = pers->window;
 	*pflags = pers->flags;
@@ -727,33 +690,36 @@ tcp_personality(struct tcp_con *con, uint8_t *pflags, int *pwindow, int *pdf,
 	if (poptions != NULL)
 		*poptions = pers->options;
 
-	switch (pers->forceack)
+	if(con->rcv_flags != (TH_ECE|TH_CWR|TH_SYN))
 	{
-		case ACK_ZERO:
-			con->rcv_next = 0;
-			break;
-		case ACK_DECREMENT:
-			con->rcv_next--;
-			break;
-		case ACK_KEEP:
-			break;
-		case ACK_OTHER:
-			con->rcv_flags += 9;
-			break;
-	}
-	switch (pers->forceseq)
-	{
-		case SEQ_ZERO:
-			con->snd_una = 0;
-			break;
-		case SEQ_DECREMENT:
-			con->snd_una--;
-			break;
-		case SEQ_KEEP:
-			break;
-		case SEQ_OTHER:
-			con->snd_una += 9;
-			break;
+		switch (pers->forceack)
+		{
+			case ACK_ZERO:
+				con->rcv_next = 0;
+				break;
+			case ACK_DECREMENT:
+				con->rcv_next--;
+				break;
+			case ACK_KEEP:
+				break;
+			case ACK_OTHER:
+				con->rcv_flags += 9;
+				break;
+		}
+		switch (pers->forceseq)
+		{
+			case SEQ_ZERO:
+				con->snd_una = 0;
+				break;
+			case SEQ_DECREMENT:
+				con->snd_una--;
+				break;
+			case SEQ_KEEP:
+				break;
+			case SEQ_OTHER:
+				con->snd_una += 9;
+				break;
+		}
 	}
 
 	ip_personality(tmpl, pid, TCP_UDP);
@@ -1296,6 +1262,7 @@ parse_tl(struct personality *pers, int off, char *line)
 	//We can always expect an R = field
 	if(!strncasecmp(line, "R=N", 3))
 	{
+		test->response = 0;
 		test->flags = 0;
 		return (0);
 	}
@@ -1303,6 +1270,7 @@ parse_tl(struct personality *pers, int off, char *line)
 	{
 		strsep(&p2, "%");
 	}
+	test->response = 1;
 	while (p2 != NULL && strlen(p))
 	{
 		c = *p2;
@@ -1885,7 +1853,7 @@ parse_ecn(struct personality *pers, int off, char *line)
 	char *p = line, *p2 = line, *end;
 	char c;
 	//the personate_ecn struct is new and is specific to the ecn test only
-	struct personate_ecn * ecn = &pers->ecn_test;
+	struct personate * ecn = &pers->ecn_test;
 	ecn->ttl = 0;
 
 	//Can always expect R= first
@@ -1899,6 +1867,7 @@ parse_ecn(struct personality *pers, int off, char *line)
 	{
 		ecn->response = 1;
 		strsep(&p2, "%");
+		ecn->flags = 0;
 		while (p2 != NULL && strlen(p))
 		{
 			c = *p2;
@@ -1972,13 +1941,16 @@ parse_ecn(struct personality *pers, int off, char *line)
 					c = *p2;
 					switch(c)
 					{
-						//As long as the character is any one of these 4 we can just use the char
-						// there should only ever one char in this field
-						case 'N':
-						case 'S':
 						case 'Y':
+							ecn->flags |= TH_ECE;
+							break;
+						case 'N':
+							break;
+						case 'S':
+							ecn->flags |= (TH_ECE|TH_CWR);
+							break;
 						case 'O':
-							ecn->cc_flag = c;
+							ecn->flags |= TH_CWR;
 							break;
 						default:
 							return -1;

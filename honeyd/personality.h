@@ -81,6 +81,7 @@ enum q_test {NONE = 0, RESERVED = 1, URGENT = 2, BOTH = 3};
 
 struct personate {
 	int window;
+	u_char response; 			//Response Y = 1, N = 0
 	u_char flags;
 	u_char df;
 	uint ttl_min;				//the minimum range for TTL
@@ -99,7 +100,6 @@ struct personate {
 
 struct personate_ecn {
 	int window; 				//Window Size
-	u_char response; 			//Response Y = 1, N = 0
 	u_char df; 					//Don't Fragement Y = 1, N = 0
 	uint ttl_min;				//the minimum range for TTL
 	uint ttl_max; 				//The maximum range for TTL, if TTL is a flat value this == ttl_min
@@ -218,7 +218,7 @@ struct personality {
 	struct personate t_tests[7];
 	struct personate seq_tests[6];
 
-	struct personate_ecn ecn_test;
+	struct personate ecn_test;
 	struct personate_ie ie_test;
 	struct persudp udptest;
 

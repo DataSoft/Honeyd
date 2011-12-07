@@ -1425,10 +1425,11 @@ tcp_send(struct tcp_con *con, uint8_t flags, u_char *payload, u_int len)
 	int ttl = honeyd_ttl;
 
 	tcp = (struct tcp_hdr *)(pkt + IP_HDR_LEN);
-	if((flags == (TH_ECE|TH_CWR|TH_SYN)) && (tmpl->person->ecn_test.response))
+
+	if(tmpl->person != NULL)
 	{
-		struct personate_ecn * ecn = &tmpl->person->ecn_test;
-		switch(ecn->q)
+		struct personate * pers;
+		switch(pers->q)
 		{
 			case NONE:
 				*((uint8_t *)(tcp + 13)) = 0;
@@ -1447,17 +1448,6 @@ tcp_send(struct tcp_con *con, uint8_t flags, u_char *payload, u_int len)
 				*((uint16_t*)(tcp + 18)) = rand_uint16(honeyd_rand);
 				break;
 		}
-		if((ecn->ttl == ecn->ttl_guess) && (ecn->ttl_max != ecn->ttl_min))
-		{
-			ecn->ttl = ecn->ttl_min + rand_uint32(honeyd_rand)%(ecn->ttl_max - ecn->ttl_min);
-			ecn->ttl_guess = ecn->ttl+1;
-		}
-		ttl = ecn->ttl;
-
-	}
-	else if(tmpl->person != NULL)
-	{
-		struct personate * pers;
 		if((pers = tcp_personality_test(con, con->tmpl->person, flags)) != NULL)
 		{
 			if((pers->ttl == pers->ttl_guess) && (pers->ttl_max != pers->ttl_min))
