@@ -509,6 +509,7 @@ get_next_isn(struct template *tmpl, const struct personality *person)
 {
 	double mean, std_dev;
 	extern rand_t *honeyd_rand;
+	uint32_t GCD_delta;
 
 	//If this is our first ISN, then just make one up.
 	if( tmpl->seq == 0 )
@@ -530,7 +531,18 @@ get_next_isn(struct template *tmpl, const struct personality *person)
 	std_dev = pow(2,((double)person->TCP_SP / 8)) * 10;
 
 	tmpl->seq += rand_normal(mean, std_dev);
-	tmpl->seq -= (tmpl->seq % person->TCP_ISN_gcd);
+	GCD_delta = (tmpl->seq % person->TCP_ISN_gcd);
+
+	//Round up
+	if( GCD_delta > (person->TCP_ISN_gcd/2) )
+	{
+		tmpl->seq += (person->TCP_ISN_gcd - GCD_delta);
+	}
+	//Round down
+	else
+	{
+		tmpl->seq -= GCD_delta;
+	}
 
 	return tmpl->seq;
 
