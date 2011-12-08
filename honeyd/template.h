@@ -62,9 +62,9 @@ struct template {
 
 	struct personality *person;
 
-	int ipid;
-	int IPID_last_TCP;
-	int IPID_last_ICMP;
+	uint16_t ipid;
+	uint16_t IPID_last_TCP;
+	uint16_t IPID_last_ICMP;
 
 	uint32_t seq;
 	int seqcalls;

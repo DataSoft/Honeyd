@@ -208,7 +208,8 @@ ip_personality(struct template *tmpl, uint16_t *pid, enum ipid_protocol proto)
 	if ((person = tmpl->person) == NULL)
 		return;
 
-	int *ipid_cached, *ipid_cached_TCP, *ipid_cached_ICMP;
+	uint16_t *ipid_cached, *ipid_cached_TCP, *ipid_cached_ICMP;
+
 	//If it's a shared sequence...
 	if( person->ipid_shared_sequence == 1 )
 	{
@@ -222,11 +223,16 @@ ip_personality(struct template *tmpl, uint16_t *pid, enum ipid_protocol proto)
 	}
 
 	enum ipidtype ourType;
-	if( proto == TCP_UDP)
+	if( proto == TCP)
 	{
 		//TODO: What are we supposed to do with the CI test? It's unused. Also, we're assuming UDP
 		//	should be handled the same as TCP.
 		ourType = person->IPID_type_TI;
+		ipid_cached = ipid_cached_TCP;
+	}
+	else if( proto == TCP_CLOSED)
+	{
+		ourType = person->IPID_type_CI;
 		ipid_cached = ipid_cached_TCP;
 	}
 	else
@@ -235,31 +241,29 @@ ip_personality(struct template *tmpl, uint16_t *pid, enum ipid_protocol proto)
 		ipid_cached = ipid_cached_ICMP;
 	}
 
-	while (!*ipid_cached)
-		*ipid_cached = rand_uint16(honeyd_rand);
+	if((proto == ICMP))
+		while (!*ipid_cached)
+			*ipid_cached = 32768 + rand_uint16(honeyd_rand)/2;
+	else
+		while (!*ipid_cached)
+			*ipid_cached = rand_uint16(honeyd_rand) % 1024;
 
 	switch(ourType)
 	{
-		case(ID_SEQUENTIAL):
-		{
-			*pid = *ipid_cached++;
-			break;
-		}
-		case(ID_SEQUENTIAL_BROKEN):
-		{
-			*pid = htons(*ipid_cached++);
-			break;
-		}
 		case(ID_ZERO):
 		{
 			*pid = 0;
 			break;
 		}
-		case(ID_RPI):
+		case(ID_RANDOM):
 		{
-			/* Apparently needs to be at least 1000 */
-			*ipid_cached += 1000 + (rand_uint16(honeyd_rand) % 1024);
-			*pid = *ipid_cached;
+			//Random not valid for II, set to 0 if called mistakenly
+			if(proto != ICMP)
+			{
+				*pid = rand_uint16(honeyd_rand);
+			}
+			else
+				*pid = 0;
 			break;
 		}
 		case(ID_CONSTANT):
@@ -267,10 +271,48 @@ ip_personality(struct template *tmpl, uint16_t *pid, enum ipid_protocol proto)
 			*pid = *ipid_cached;
 			break;
 		}
-		case(ID_RANDOM):
+		case(ID_RPI):
 		{
-			*pid = rand_uint16(honeyd_rand);
+			// Id must increment by at least 1000
+			uint16_t temp = 1025 + (rand_uint16(honeyd_rand) % 255);
+			//cannot be divisible by 256 unless > 256,000 which is outside uint16_t so we just keep trying
+			// by shifting right 2 we can quickly constrain the random to < 2^14 == 16384 to avoid
+			// incrementing by 20,000 and having value of RD.
+			if((temp % 256 == 0))
+				temp = 1025 + (rand_uint16(honeyd_rand) % 255);
+
+			*ipid_cached += temp;
+			*pid = *ipid_cached;
 			break;
+		}
+		//This means id is sent in host byte order, increment and return host to network
+		case(ID_SEQUENTIAL_BROKEN):
+		{
+			*ipid_cached = ntohs(*ipid_cached) + 1;
+			*ipid_cached =  htons(*ipid_cached);
+			*pid = *ipid_cached;
+			break;
+		}
+		//This means id increases by 1
+		case(ID_SEQUENTIAL):
+		{
+			*ipid_cached = *ipid_cached + 1;
+			*pid = *ipid_cached;
+			break;
+		}
+	}
+	//TODO this is a fringe case that can sometimes cause bad IP ID results particularly when TI = BI, II = BI and SS = O
+	if((proto == ICMP) && !person->ipid_shared_sequence)
+	{
+		uint16_t temp = tmpl->IPID_last_TCP + 3*person->TCPID_Max_Increment;
+		if(*ipid_cached < temp)
+		{
+			temp = (tmpl->IPID_last_TCP + 1 + 3*person->TCPID_Max_Increment);
+			*ipid_cached = temp + (rand_uint16(honeyd_rand) % ((~(uint16_t)0) - temp));
+			if(tmpl->IPID_last_TCP > 32768)
+			{
+				tmpl->IPID_last_TCP -= 32768;
+			}
 		}
 	}
 }
@@ -294,7 +336,6 @@ tcp_personality_test(const struct tcp_con *con, struct personality *person,
 		{
 			case TCP_STATE_LISTEN:
 			case TCP_STATE_SYN_RECEIVED:
-				syslog(LOG_DEBUG, "ecn returned");
 				return (&person->ecn_test);
 			default:
 				return (NULL);
@@ -673,7 +714,7 @@ tcp_personality(struct tcp_con *con, uint8_t *pflags, int *pwindow, int *pdf,
 	if ((pers = tcp_personality_test(con, person, flags)) == NULL)
 	{
 		/* Not a test case - but we still want to pretend */
-		ip_personality(tmpl, pid, TCP_UDP);
+		ip_personality(tmpl, pid, TCP);
 
 		/* Set the sequence number only on SYN segments */
 		if (flags & TH_SYN)
@@ -723,7 +764,10 @@ tcp_personality(struct tcp_con *con, uint8_t *pflags, int *pwindow, int *pdf,
 		}
 	}
 
-	ip_personality(tmpl, pid, TCP_UDP);
+	if(con->state == TCP_STATE_CLOSED)
+		ip_personality(tmpl, pid, TCP_CLOSED);
+	else
+		ip_personality(tmpl, pid, TCP);
 
 	if (pers->forceseq != SEQ_ZERO)
 		con->snd_una = tcp_personality_seq(tmpl, person);
@@ -1005,13 +1049,27 @@ parse_seq_gcd(char *s, char *end, struct personality *pers)
 int
 parse_seq(struct personality *pers, int off, char *line)
 {
-	char *p = line, *p2, *end;
+	char *p = line, *p2 = line, *end;
+	char *ss = NULL;
+	int ti_opts[3];
+	pers->IPID_type_TI = ID_RANDOM;
+	pers->IPID_type_CI = ID_NONE;
+	pers->IPID_type_II = ID_NONE;
+	pers->ipid_shared_sequence = 0;
 
-	while (p != NULL && strlen(p)) {
+	//First check for and prefer shared sequence
+	if((ss = strstr(p2, "SS=")) != NULL)
+	{
+		if((strstr(ss,"|S") != NULL) || (*(ss+3) == 'S'))
+			pers->ipid_shared_sequence = 1;
+	}
+	while (p != NULL && strlen(p))
+	{
 		p2 = strsep(&p, "%");
 		end = p2;
 
-		if (strncasecmp(p2, "SP=", 3) == 0) {
+		if (strncasecmp(p2, "SP=", 3) == 0)
+		{
 			p2 += 3;
 			if (p == NULL)
 				p = p2 + strlen(p2);
@@ -1040,13 +1098,15 @@ parse_seq(struct personality *pers, int off, char *line)
 				}
 			}
 		}
-		else if (strncasecmp(p2, "GCD=", 4) == 0) {
+		else if (strncasecmp(p2, "GCD=", 4) == 0)
+		{
 			p2 += 4;
 			if (p == NULL)
 				p = p2 + strlen(p2);
 			parse_seq_gcd(p2, p, pers);
 		}
-		else if (strncasecmp(p2, "ISR=", 4) == 0) {
+		else if (strncasecmp(p2, "ISR=", 4) == 0)
+		{
 			p2 += 4;
 			if (p == NULL)
 				p = p2 + strlen(p2);
@@ -1077,30 +1137,45 @@ parse_seq(struct personality *pers, int off, char *line)
 
 		}
 		/* Improve IPID sequencing capability */
-		else if (strncasecmp(p2, "TI=", 3) == 0) {
+		else if(strncasecmp(p2, "TI=", 3) == 0)
+		{
 			int done = 0;
 
 			end += 3;
-			while (!done) {
-				done = 1;
+			while (!done)
+			{
 				p2 = strsep(&end, "|");
-				if (strcasecmp(p2, "I") == 0) {
+				if(end == NULL)
+					done = 1;
+				if (strcasecmp(p2, "I") == 0)
+				{
 					pers->IPID_type_TI = ID_SEQUENTIAL;
-				} else if (strcasecmp(p2, "BI") == 0) {
+					pers->TCPID_Max_Increment = 1;
+					ti_opts[0] = 1;
+				}
+				else if (strcasecmp(p2, "BI") == 0)
+				{
 					pers->IPID_type_TI = ID_SEQUENTIAL_BROKEN;
-				} else if (strcasecmp(p2, "Z") == 0) {
-					if (end != NULL) {
-						done = 0;
-						continue;
-					}
+					pers->TCPID_Max_Increment = 256;
+					ti_opts[1] = 1;
+				}
+				else if (strcasecmp(p2, "Z") == 0)
+				{
 					pers->IPID_type_TI = ID_ZERO;
-				} else if (strcasecmp(p2, "RD") == 0) {
+				}
+				else if (strcasecmp(p2, "RD") == 0)
+				{
 					pers->IPID_type_TI = ID_RANDOM; 
-				} else if (strcasecmp(p2, "RI") == 0) {
+				}
+				else if (strcasecmp(p2, "RI") == 0)
+				{
 					pers->IPID_type_TI = ID_RPI;
+					pers->TCPID_Max_Increment = 1279;
+					ti_opts[2] = 1;
 				}
 				/* Assume p2 must be a hex value for constant IPID */
-				else {
+				else
+				{
 					char *temp;
 					uint32_t IPID_constant = strtol(p2, &temp, 16);
 					if ( (*temp == '\0') && (p2 != NULL) ) /* IE: Conversion was successful */
@@ -1116,30 +1191,43 @@ parse_seq(struct personality *pers, int off, char *line)
 			}
 
 		}
-		else if (strncasecmp(p2, "CI=", 3) == 0) {
+		else if (strncasecmp(p2, "CI=", 3) == 0)
+		{
 			int done = 0;
 
 			end += 3;
-			while (!done) {
+			while (!done)
+			{
 				done = 1;
 				p2 = strsep(&end, "|");
-				if (strcasecmp(p2, "I") == 0) {
+				if (strcasecmp(p2, "I") == 0)
+				{
 					pers->IPID_type_CI = ID_SEQUENTIAL;
-				} else if (strcasecmp(p2, "BI") == 0) {
+				}
+				else if (strcasecmp(p2, "BI") == 0)
+				{
 					pers->IPID_type_CI = ID_SEQUENTIAL_BROKEN;
-				} else if (strcasecmp(p2, "Z") == 0) {
-					if (end != NULL) {
+				}
+				else if (strcasecmp(p2, "Z") == 0)
+				{
+					if (end != NULL)
+					{
 						done = 0;
 						continue;
 					}
 					pers->IPID_type_CI = ID_ZERO;
-				} else if (strcasecmp(p2, "RD") == 0) {
+				}
+				else if (strcasecmp(p2, "RD") == 0)
+				{
 					pers->IPID_type_CI = ID_RANDOM;
-				} else if (strcasecmp(p2, "RI") == 0) {
+				}
+				else if (strcasecmp(p2, "RI") == 0)
+				{
 					pers->IPID_type_CI = ID_RPI;
 				}
 				/* Assume p2 must be a hex value for constant IPID */
-				else {
+				else
+				{
 					char *temp;
 					uint32_t IPID_constant = strtol(p2, &temp, 16);
 					if ( (*temp == '\0') && (p2 != NULL) ) /* IE: Conversion was successful */
@@ -1154,30 +1242,43 @@ parse_seq(struct personality *pers, int off, char *line)
 				}
 			}
 		}
-		else if (strncasecmp(p2, "II=", 3) == 0) {
+		else if(strncasecmp(p2, "II=", 3) == 0)
+		{
 			int done = 0;
 
 			end += 3;
-			while (!done) {
+			while (!done)
+			{
 				done = 1;
 				p2 = strsep(&end, "|");
-				if (strcasecmp(p2, "I") == 0) {
+				if (strcasecmp(p2, "I") == 0)
+				{
 					pers->IPID_type_II = ID_SEQUENTIAL;
-				} else if (strcasecmp(p2, "BI") == 0) {
+				}
+				else if (strcasecmp(p2, "BI") == 0)
+				{
 					pers->IPID_type_II = ID_SEQUENTIAL_BROKEN;
-				} else if (strcasecmp(p2, "Z") == 0) {
-					if (end != NULL) {
+				}
+				else if (strcasecmp(p2, "Z") == 0)
+				{
+					if (end != NULL)
+					{
 						done = 0;
 						continue;
 					}
 					pers->IPID_type_II = ID_ZERO;
-				} else if (strcasecmp(p2, "RD") == 0) {
+				}
+				else if (strcasecmp(p2, "RD") == 0)
+				{
 					pers->IPID_type_II = ID_RANDOM;
-				} else if (strcasecmp(p2, "RI") == 0) {
+				}
+				else if (strcasecmp(p2, "RI") == 0)
+				{
 					pers->IPID_type_II = ID_RPI;
 				}
 				/* Assume p2 must be a hex value for constant IPID */
-				else {
+				else
+				{
 					char *temp;
 					uint32_t IPID_constant = strtol(p2, &temp, 16);
 					if ( (*temp == '\0') && (p2 != NULL) ) /* IE: Conversion was successful */
@@ -1192,7 +1293,8 @@ parse_seq(struct personality *pers, int off, char *line)
 				}
 			}
 		}
-		else if (strncasecmp(p2, "TS=", 3) == 0) {
+		else if (strncasecmp(p2, "TS=", 3) == 0)
+		{
 			/* TCP timestamp sequencing capability */
 			p2 = strsep(&end, "|");
 			p2 += 3;
@@ -1229,20 +1331,26 @@ parse_seq(struct personality *pers, int off, char *line)
 				}
 			}
  		}
-		else if (strncasecmp(p2, "SS=", 3) == 0) {
-			p2 = strsep(&end, "|");
-			p2 += 3;
-
-			if (strcasecmp(p2, "S") == 0)
-				pers->ipid_shared_sequence = 1;
-			else if (strcasecmp(p2, "O") == 0)
-				pers->ipid_shared_sequence = 0;
-			else
-			{
-				return -1;
-			}
-		}
 	}
+	if(pers->ipid_shared_sequence == 1)
+	{
+		//If II has a valid seq type for SS=S and TI had that option
+		if(((pers->IPID_type_II == ID_RPI) && ti_opts[2])
+				|| ((pers->IPID_type_II == ID_SEQUENTIAL_BROKEN) && ti_opts[1])
+				|| ((pers->IPID_type_II == ID_SEQUENTIAL) && ti_opts[0]))
+		{
+			//Force TI to have a valid seq increment policy
+			if((pers->IPID_type_TI != ID_SEQUENTIAL) &&
+					(pers->IPID_type_TI != ID_SEQUENTIAL_BROKEN) &&
+					(pers->IPID_type_TI != ID_RPI))
+				pers->IPID_type_TI = pers->IPID_type_II;
+		}
+		else
+			pers->ipid_shared_sequence = 0;
+
+	}
+	if(pers->IPID_type_CI ==  ID_NONE)
+		pers->IPID_type_CI = pers->IPID_type_TI;
 
 	if (pers->TCP_ISN_gcd_min == 0)
 		pers->TCP_ISN_gcd_min = 1;
@@ -1997,8 +2105,6 @@ parse_ie(struct personality *pers, int off, char *line)
 	struct personate_ie * ie = &pers->ie_test;
 	char c;
 	ie->ttl = 0;
-	//Same value but stored here for convenience later since this test uses it
-	ie->sharedSequence = pers->ipid_shared_sequence;
 
 	// If R is present it always seems to be N, doesn't seem present if test is used
 	// we check for it anyway
