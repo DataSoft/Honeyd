@@ -526,10 +526,12 @@ get_next_isn(struct template *tmpl, const struct personality *person)
 
 	//Nmap saves the values as binary log times 8, so undo this.
 	//	(Supposedly, Nmap does this to prevent floating point rounding during calculations)
-	mean = pow(2,((double)person->TCP_ISR / 8));
-	std_dev = pow(2,((double)person->TCP_SP / 8));
+	mean = pow(2,((double)person->TCP_ISR / 8)) * 10;
+	std_dev = pow(2,((double)person->TCP_SP / 8)) * 10;
 
 	tmpl->seq += rand_normal(mean, std_dev);
+	tmpl->seq -= (tmpl->seq % person->TCP_ISN_gcd);
+
 	return tmpl->seq;
 
 }
