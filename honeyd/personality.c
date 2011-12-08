@@ -467,9 +467,17 @@ static uint32_t
 get_next_isn(struct template *tmpl, const struct personality *person)
 {
 	double mean, std_dev;
+	extern rand_t *honeyd_rand;
+
+	//If this is our first ISN, then just make one up.
+	if( tmpl->seq == 0 )
+	{
+		tmpl->seq = rand_uint32(honeyd_rand);
+		return tmpl->seq;
+	}
 
 	/* if SEQ is constant */
-	if(person->TCP_ISR_max == 0)
+	if(person->TCP_ISR_max < 10)
 	{
 		//Do nothing
 		return (tmpl->seq);
@@ -480,7 +488,8 @@ get_next_isn(struct template *tmpl, const struct personality *person)
 	mean = pow(2,((double)person->TCP_ISR / 8));
 	std_dev = pow(2,((double)person->TCP_SP / 8));
 
-	return rand_normal(mean, std_dev);
+	tmpl->seq += rand_normal(mean, std_dev);
+	return tmpl->seq;
 
 }
 
@@ -600,14 +609,6 @@ tcp_personality_seq(struct template *tmpl, struct personality *person)
 		{
 			tmpl->timestamp = rand_uint32(honeyd_rand) % 1728000;
 		}
-		if (tmpl->seq == 0)
-		{
-			if (person->TCP_ISN_gcd_max == 0 && person->valset)
-				tmpl->seq = person->TCP_ISN_constant_val;
-			else
-				tmpl->seq = rand_uint32(honeyd_rand);
-		}
-		return (tmpl->seq);
 	}
 
 	slowhz = tcp_personality_time(tmpl, &tmp);
@@ -675,7 +676,7 @@ tcp_personality(struct tcp_con *con, uint8_t *pflags, int *pwindow, int *pdf,
 		ip_personality(tmpl, pid, TCP_UDP);
 
 		/* Set the sequence number only on SYN segments */
-		if (con->snd_una == 0 && (flags & TH_SYN))
+		if (flags & TH_SYN)
 			con->snd_una = tcp_personality_seq(tmpl, person);
 
 		/* If we support timestamps, always set them */
@@ -724,7 +725,7 @@ tcp_personality(struct tcp_con *con, uint8_t *pflags, int *pwindow, int *pdf,
 
 	ip_personality(tmpl, pid, TCP_UDP);
 
-	if ((con->snd_una == 0) && (pers->forceseq != SEQ_ZERO))
+	if (pers->forceseq != SEQ_ZERO)
 		con->snd_una = tcp_personality_seq(tmpl, person);
 
 	return (0);
