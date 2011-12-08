@@ -1479,6 +1479,7 @@ tcp_send(struct tcp_con *con, uint8_t flags, u_char *payload, u_int len)
 		spoof = tmpl->spoof;
 	else
 		spoof = no_spoof;
+
 	/* Src and Dst are reversed both for ip and tcp */
 	ip_pack_hdr(pkt, 0, iplen, id,
 	    dontfragment ? IP_DF : 0, ttl,
@@ -1669,18 +1670,11 @@ icmp_echo_reply(struct template *tmpl,
 		pkt = pool_alloc(pool_pkt);
 	else
 		pkt = pool_alloc_size(pool_pkt, iplen);
-	if(tmpl->person->ipid_shared_sequence)
-	{
-		icmp_pack_hdr_echo(pkt + IP_HDR_LEN, ICMP_ECHOREPLY,
-			code, ntohs(icmp_echo->icmp_id), tmpl->IPID_last_TCP,
-			payload, len);
-	}
-	else
-	{
-		icmp_pack_hdr_echo(pkt + IP_HDR_LEN, ICMP_ECHOREPLY,
-			code, ntohs(icmp_echo->icmp_id), ntohs(icmp_echo->icmp_seq),
-			payload, len);
-	}
+
+	icmp_pack_hdr_echo(pkt + IP_HDR_LEN, ICMP_ECHOREPLY,
+		code, ntohs(icmp_echo->icmp_id), ntohs(icmp_echo->icmp_seq),
+		payload, len);
+
 	icmp_send(tmpl, pkt, tos, iplen, offset, ttl,
 	    IP_PROTO_ICMP, rip->ip_dst, rip->ip_src, spoof);
 }
@@ -2354,7 +2348,7 @@ udp_send(struct udp_con *con, u_char *payload, u_int len)
 	/* Statistics */
 	con->conhdr.sent += len;
 
-	ip_personality(tmpl, &id, TCP_UDP);
+	ip_personality(tmpl, &id, TCP_CLOSED);
 
 	pkt = pool_alloc(pool_pkt);
 

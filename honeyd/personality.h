@@ -191,8 +191,8 @@ struct xp_fingerprint {
 
 /* JVR - improve IPID sequencing capability */
 enum ipidtype {ID_SEQUENTIAL, ID_RANDOM, ID_SEQUENTIAL_BROKEN, ID_ZERO,
-               ID_CONSTANT, ID_RPI};
-enum ipid_protocol {TCP_UDP, ICMP};
+               ID_CONSTANT, ID_RPI, ID_NONE = 0};
+enum ipid_protocol {TCP, ICMP, TCP_CLOSED};
 enum seqtype {SEQ_CLASS64K, SEQ_RI, SEQ_TRIVIALTIME, SEQ_RANDOM,
 	      SEQ_CONSTANT, SEQ_I800};
 enum fragpolicy {FRAG_OLD = 0, FRAG_DROP, FRAG_NEW};
@@ -223,6 +223,7 @@ struct personality {
 	uint32_t IPID_constant_val_CI;
 	uint32_t IPID_constant_val_II;
 
+	uint16_t TCPID_Max_Increment;
 	int ipid_shared_sequence; //boolean
 
 	uint8_t valset:1,
