@@ -2616,7 +2616,7 @@ icmp_recv_cb(struct template *tmpl, u_char *pkt, u_short pktlen)
 					case 'S':
 						//16384 is an empty offset field with the DF bit set to 1
 						//Create empty offset field with the DF bit of the probe.
-						offset = ip->ip_off & 16384;
+						offset = (ntohs(ip->ip_off) & 16384);
 						break;
 
 					//DF bit is set in this case;
@@ -2629,7 +2629,7 @@ icmp_recv_cb(struct template *tmpl, u_char *pkt, u_short pktlen)
 						//49151 is the inverse of an empty offset field with the DF bit set to 1
 						// we mask all but the DF bit to 1, the inverse is an empty offset field
 						// with the DF bit toggled.
-						offset = ~(ip->ip_off | 49151);
+						offset = ~(ntohs(ip->ip_off) | 49151);
 						break;
 				}
 				if((nmap_print->ttl == nmap_print->ttl_guess) && (nmap_print->ttl_max != nmap_print->ttl_min))
