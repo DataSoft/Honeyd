@@ -473,6 +473,35 @@ tcp_personality_test(const struct tcp_con *con, struct personality *person,
 	return (NULL);
 }
 
+double rand_normal(double mean, double stddev)
+{
+    static double n2 = 0.0;
+    static int n2_cached = 0;
+    if (!n2_cached) {
+        double x, y, r;
+	do {
+	    x = 2.0*rand()/RAND_MAX - 1;
+	    y = 2.0*rand()/RAND_MAX - 1;
+
+	    r = x*x + y*y;
+	} while (r == 0.0 || r > 1.0);
+
+        {
+        double d = sqrt(-2.0*log(r)/r);
+	double n1 = x*d;
+	n2 = y*d;
+
+        double result = n1*stddev + mean;
+
+        n2_cached = 1;
+        return result;
+        }
+    } else {
+        n2_cached = 0;
+        return n2*stddev + mean;
+    }
+}
+
 static uint32_t
 get_next_isn(struct template *tmpl, const struct personality *person)
 {
@@ -505,21 +534,26 @@ get_next_isn(struct template *tmpl, const struct personality *person)
 
 	//Nmap saves the values as binary log times 8, so undo this.
 	//	(Supposedly, Nmap does this to prevent floating point rounding during calculations)
-	mean = pow(2,((double)person->TCP_ISR / 8)) / seconds_passed;
+	mean = pow(2,((double)person->TCP_ISR /(double)8)) * seconds_passed;
+	std_dev = pow(2, ((double)person->TCP_SP/(double)8));
+	double temp = rand_normal(0, std_dev);
+	if(person->TCP_ISN_gcd > 9)
+		temp *= person->TCP_ISN_gcd;
 
 	tmpl->seq += mean;
+	tmpl->seq += temp;
 	GCD_delta = (tmpl->seq % person->TCP_ISN_gcd);
 
 	//Round up
-	if( GCD_delta > (person->TCP_ISN_gcd/2) )
-	{
+	//if( GCD_delta > (person->TCP_ISN_gcd/2) )
+	//{
 		tmpl->seq += (person->TCP_ISN_gcd - GCD_delta);
-	}
+	//}
 	//Round down
-	else
-	{
-		tmpl->seq -= GCD_delta;
-	}
+	//else
+	//{
+		//tmpl->seq -= GCD_delta;
+	//}
 
 	tmpl->tv_ISN = time_now;
 	return tmpl->seq;
@@ -586,40 +620,6 @@ tcp_personality_time(struct template *tmpl, struct timeval *diff)
 		 */
 		slowhz = 0;
 		tmpl->timestamp = 0;
-	}
-
-	/* 
-	 * This is where new ISNs are generated.  The latest ISN is
-	 * stored in tmpl->seq.  tmpl->seqcalls is the number of ISNs
-	 * generated so far.
-	 */
-
-	/* if constant SEQ. IE: gcd == 0 */
-	if( person->TCP_ISN_gcd_max == 0 )
-	{
-		/* do nothing to tmpl->seq */
-		return (slowhz);
-	}
-	/* If random TCP ISNs IE: low gcd */
-	else if( person->TCP_ISN_gcd_max < 11 )
-	{
-		/* No time component.  May be required for high latency */
-		if (diff->tv_sec > 2) {
-			uint32_t adjust, randGCD;
-
-			/* pick a random number between TCP_ISN_gcd_min and TCP_ISN_gcd_max */
-			uint32_t TCP_ISN_gcd_delta = person->TCP_ISN_gcd_max - person->TCP_ISN_gcd_min;
-			randGCD = (rand_uint32(honeyd_rand) % TCP_ISN_gcd_delta) + person->TCP_ISN_gcd_min;
-
-			adjust = rand_uint32(honeyd_rand) % 2048;
-			adjust *= (slowhz - 2) * randGCD;
-			tmpl->seq += adjust;
-		}
-	}
-	else
-	{
-		/* if not random, just increment the SEQ by the GCD */
-		tmpl->seq += slowhz * person->TCP_ISN_gcd_min;
 	}
 
 	return (slowhz);
