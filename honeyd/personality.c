@@ -747,7 +747,7 @@ tcp_personality(struct tcp_con *con, uint8_t *pflags, int *pwindow, int *pdf,
 			case ACK_KEEP:
 				break;
 			case ACK_OTHER:
-				con->rcv_flags += 9;
+				con->rcv_next += 9;
 				break;
 		}
 		switch (pers->forceseq)

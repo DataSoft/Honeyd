@@ -2274,23 +2274,26 @@ tcp_recv_cb(struct template *tmpl, u_char *pkt, u_short pktlen)
 	honeyd_tmp.rcv_next = ntohl(tcp->th_seq) + 1;
 	honeyd_tmp.snd_una = ntohl(tcp->th_ack) +1;
 	honeyd_tmp.tmpl = tmpl;
+	honeyd_tmp.rcv_flags = tiflags;
 
-	if (tiflags & TH_ACK)
-		flags = TH_RST;
-	else
-		flags = TH_RST | TH_ACK;
 	/* 
 	 * The TCP personality matches, all the sequence numbers are
 	 * going to be taken care off via the Nmap fingerprint,
 	 * otherwise, we are going to fill in reasonable defaults.
 	 */
-	if (tcp_personality_match(&honeyd_tmp, flags)) {
+	if (tcp_personality_match(&honeyd_tmp, flags))
+	{
 		honeyd_tmp.rcv_next = ntohl(tcp->th_seq) + 1;
 		honeyd_tmp.snd_una = ntohl(tcp->th_ack)+1;
-	} else if (tiflags & TH_ACK) {
+	}
+	else if (tiflags & TH_ACK)
+	{
+		flags = TH_RST;
 		honeyd_tmp.rcv_next = 0;
 		honeyd_tmp.snd_una = ntohl(tcp->th_ack)+1;
-	} else {
+	}
+	else
+	{
 		flags = TH_RST | TH_ACK;
 		honeyd_tmp.rcv_next = ntohl(tcp->th_seq)+1;
 		honeyd_tmp.snd_una = 0;
