@@ -70,8 +70,10 @@ struct template {
 	int seqcalls;
 
 	uint32_t timestamp;
-	struct timeval tv;		/* drifted time */
+	struct timeval tv;			/* drifted time */
 	struct timeval tv_real;		/* real wall time */
+
+	struct timeval tv_ISN;		//Used for calculating the ISN timing
 	float drift;
 
 	uint16_t drop_inrate;

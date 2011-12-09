@@ -473,47 +473,23 @@ tcp_personality_test(const struct tcp_con *con, struct personality *person,
 	return (NULL);
 }
 
-//Retrieved from: http://en.literateprograms.org/Box-Muller_transform_(C)?oldid=7011
-double rand_normal(double mean, double stddev)
-{
-    static double n2 = 0.0;
-    static int n2_cached = 0;
-    if (!n2_cached) {
-        double x, y, r;
-	do {
-	    x = 2.0*rand()/RAND_MAX - 1;
-	    y = 2.0*rand()/RAND_MAX - 1;
-
-	    r = x*x + y*y;
-	} while (r == 0.0 || r > 1.0);
-
-        {
-        double d = sqrt(-2.0*log(r)/r);
-	double n1 = x*d;
-	n2 = y*d;
-
-        double result = n1*stddev + mean;
-
-        n2_cached = 1;
-        return result;
-        }
-    } else {
-        n2_cached = 0;
-        return n2*stddev + mean;
-    }
-}
-
-
 static uint32_t
 get_next_isn(struct template *tmpl, const struct personality *person)
 {
-	double mean, std_dev;
+	double mean, std_dev, seconds_passed;
 	extern rand_t *honeyd_rand;
+	uint32_t GCD_delta;
+	struct timeval time_now, time_diff;
+
+	//Get the current timstamp, save it
+	gettimeofday( &time_now, NULL);
 
 	//If this is our first ISN, then just make one up.
 	if( tmpl->seq == 0 )
 	{
 		tmpl->seq = rand_uint32(honeyd_rand);
+		//Save the timeval into the template
+		tmpl->tv_ISN = time_now;
 		return tmpl->seq;
 	}
 
@@ -524,14 +500,28 @@ get_next_isn(struct template *tmpl, const struct personality *person)
 		return (tmpl->seq);
 	}
 
+	timersub(&time_now, &tmpl->tv_ISN, &time_diff);
+	seconds_passed = time_diff.tv_sec + ((double)time_diff.tv_usec / 1000000.0);
+
 	//Nmap saves the values as binary log times 8, so undo this.
 	//	(Supposedly, Nmap does this to prevent floating point rounding during calculations)
-	mean = pow(2,((double)person->TCP_ISR / 8)) * 10;
-	std_dev = pow(2,((double)person->TCP_SP / 8)) * 10;
+	mean = pow(2,((double)person->TCP_ISR / 8)) / seconds_passed;
 
-	tmpl->seq += rand_normal(mean, std_dev);
-	tmpl->seq -= (tmpl->seq % person->TCP_ISN_gcd);
+	tmpl->seq += mean;
+	GCD_delta = (tmpl->seq % person->TCP_ISN_gcd);
 
+	//Round up
+	if( GCD_delta > (person->TCP_ISN_gcd/2) )
+	{
+		tmpl->seq += (person->TCP_ISN_gcd - GCD_delta);
+	}
+	//Round down
+	else
+	{
+		tmpl->seq -= GCD_delta;
+	}
+
+	tmpl->tv_ISN = time_now;
 	return tmpl->seq;
 
 }
