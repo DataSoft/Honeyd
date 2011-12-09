@@ -632,7 +632,7 @@ tcp_personality_time(struct template *tmpl, struct timeval *diff)
 }
 
 uint32_t
-tcp_personality_seq(struct template *tmpl, struct personality *person)
+tcp_personality_seq(struct tcp_con * con, struct template *tmpl, struct personality *person)
 {
 	struct timeval tmp;
 	extern rand_t *honeyd_rand;
@@ -658,8 +658,11 @@ tcp_personality_seq(struct template *tmpl, struct personality *person)
 	 * generated so far.
 	 */
 
-	tmpl->seq = get_next_isn(tmpl, person);
-	return (tmpl->seq);
+	if((con->state == TCP_STATE_LISTEN) && (con->rcv_flags == TH_SYN))
+	{
+		con->snd_una = get_next_isn(tmpl, person);
+	}
+	return (con->snd_una);
 
 }
 
@@ -716,7 +719,7 @@ tcp_personality(struct tcp_con *con, uint8_t *pflags, int *pwindow, int *pdf,
 
 		/* Set the sequence number only on SYN segments */
 		if (flags & TH_SYN)
-			con->snd_una = tcp_personality_seq(tmpl, person);
+			con->snd_una = tcp_personality_seq(con, tmpl, person);
 
 		/* If we support timestamps, always set them */
 		if (person->tstamphz >= 0 && poptions != NULL)
@@ -768,7 +771,7 @@ tcp_personality(struct tcp_con *con, uint8_t *pflags, int *pwindow, int *pdf,
 		ip_personality(tmpl, pid, TCP);
 
 	if (pers->forceseq != SEQ_ZERO)
-		con->snd_una = tcp_personality_seq(tmpl, person);
+		con->snd_una = tcp_personality_seq(con, tmpl, person);
 
 	return (0);
 }
