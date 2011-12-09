@@ -799,7 +799,6 @@ tcp_personality_options(struct tcp_con *con, struct tcp_hdr *tcp,
 	uint32_t timestamp;
 	short mss = 1460;
 
-	
 	uint i = 0;
 	for (; i < options->count; i++ )
 	{
@@ -824,7 +823,9 @@ tcp_personality_options(struct tcp_con *con, struct tcp_hdr *tcp,
 				{
 					struct timeval tv;
 					tcp_personality_time(tmpl, &tv);
-					timestamp = htonl(tmpl->timestamp);
+					gettimeofday(&tv, NULL);
+					timestamp = tv.tv_sec;
+					//timestamp = htonl(tmpl->timestamp);
 				}
 				else
 				{
