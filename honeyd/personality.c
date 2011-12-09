@@ -507,7 +507,7 @@ get_next_isn(struct template *tmpl, const struct personality *person)
 {
 	double mean, std_dev, seconds_passed;
 	extern rand_t *honeyd_rand;
-	uint32_t GCD_delta;
+	uint32_t GCD_delta, ISN_delta = 0;
 	struct timeval time_now, time_diff;
 
 	//Get the current timstamp, save it
@@ -537,25 +537,31 @@ get_next_isn(struct template *tmpl, const struct personality *person)
 	mean = pow(2,((double)person->TCP_ISR /(double)8)) * seconds_passed;
 	std_dev = pow(2, ((double)person->TCP_SP/(double)8));
 	double temp = rand_normal(0, std_dev);
+
+	//Only worry about making things line up for the GCD if it's a significant value
 	if(person->TCP_ISN_gcd > 9)
+	{
 		temp *= person->TCP_ISN_gcd;
 
-	tmpl->seq += mean;
-	tmpl->seq += temp;
-	GCD_delta = (tmpl->seq % person->TCP_ISN_gcd);
+		GCD_delta = (ISN_delta % person->TCP_ISN_gcd);
 
-	//Round up
-	//if( GCD_delta > (person->TCP_ISN_gcd/2) )
-	//{
-		tmpl->seq += (person->TCP_ISN_gcd - GCD_delta);
-	//}
-	//Round down
-	//else
-	//{
-		//tmpl->seq -= GCD_delta;
-	//}
+		//Round up
+		if( GCD_delta > (person->TCP_ISN_gcd/2) )
+		{
+			ISN_delta += (person->TCP_ISN_gcd - GCD_delta);
+		}
+		//Round down
+		else
+		{
+			ISN_delta -= GCD_delta;
+		}
+	}
+
+	ISN_delta += mean;
+	ISN_delta += temp;
 
 	tmpl->tv_ISN = time_now;
+	tmpl->seq += ISN_delta;
 	return tmpl->seq;
 
 }
