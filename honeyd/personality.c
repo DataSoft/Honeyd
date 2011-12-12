@@ -505,7 +505,7 @@ double rand_normal(double mean, double stddev)
 static uint32_t
 get_next_isn(struct template *tmpl, const struct personality *person)
 {
-	double mean, std_dev, seconds_passed;
+	double mean, max, min, std_dev, seconds_passed;
 	extern rand_t *honeyd_rand;
 	uint32_t GCD_delta, ISN_delta = 0;
 	struct timeval time_now, time_diff;
@@ -534,15 +534,35 @@ get_next_isn(struct template *tmpl, const struct personality *person)
 
 	//Nmap saves the values as binary log times 8, so undo this.
 	//	(Supposedly, Nmap does this to prevent floating point rounding during calculations)
+	max = pow(2,((double)person->TCP_ISR_max /(double)8)) * seconds_passed;
+	min = pow(2,((double)person->TCP_ISR_min /(double)8)) * seconds_passed;
 	mean = pow(2,((double)person->TCP_ISR /(double)8)) * seconds_passed;
 	std_dev = pow(2, ((double)person->TCP_SP/(double)8));
+	max += (std_dev/8);
+	min -= (std_dev/8);
 	double temp = rand_normal(0, std_dev);
+
+	ISN_delta = mean;
+	if(person->TCP_ISN_gcd > 9)
+	{
+		temp *= person->TCP_ISN_gcd;
+		max += (std_dev/8)*(person->TCP_ISN_gcd -1);
+		min -= (std_dev/8)*(person->TCP_ISN_gcd -1);
+	}
+	while((max < (mean + temp)) || (min > (mean + temp)))
+	{
+		temp = rand_normal(0, std_dev);
+		if(person->TCP_ISN_gcd > 9)
+		{
+			temp *= person->TCP_ISN_gcd;
+		}
+	}
+
+	ISN_delta += temp;
 
 	//Only worry about making things line up for the GCD if it's a significant value
 	if(person->TCP_ISN_gcd > 9)
 	{
-		temp *= person->TCP_ISN_gcd;
-
 		GCD_delta = (ISN_delta % person->TCP_ISN_gcd);
 
 		//Round up
@@ -556,10 +576,6 @@ get_next_isn(struct template *tmpl, const struct personality *person)
 			ISN_delta -= GCD_delta;
 		}
 	}
-
-	ISN_delta += mean;
-	ISN_delta += temp;
-
 	tmpl->tv_ISN = time_now;
 	tmpl->seq += ISN_delta;
 	return tmpl->seq;
@@ -603,7 +619,8 @@ tcp_personality_time(struct template *tmpl, struct timeval *diff)
 
 	personality_time(tmpl, diff);
 
-	if (person->tstamphz) {
+	if (person->tstamphz)
+	{
 		int tstamphz = person->tstamphz;
 		int ticks;
 
@@ -619,7 +636,9 @@ tcp_personality_time(struct template *tmpl, struct timeval *diff)
 		TIME_CORRECT(ticks, diff);
 
 		tmpl->timestamp += slowhz;
-	} else {
+	}
+	else
+	{
 		/*
 		 * This is not the default.  Some stacks don't have
 		 * any notion of time.
@@ -822,10 +841,10 @@ tcp_personality_options(struct tcp_con *con, struct tcp_hdr *tcp,
 				if (tmpl != NULL)
 				{
 					struct timeval tv;
-					tcp_personality_time(tmpl, &tv);
-					gettimeofday(&tv, NULL);
-					timestamp = tv.tv_sec;
-					//timestamp = htonl(tmpl->timestamp);
+					//tcp_personality_time(tmpl, &tv);
+					//gettimeofday(&tv, NULL);
+					//timestamp = tv.tv_sec;
+					timestamp = htonl(tmpl->timestamp);
 				}
 				else
 				{
@@ -1301,6 +1320,15 @@ parse_seq(struct personality *pers, int off, char *line)
 			p2 = strsep(&end, "|");
 			p2 += 3;
 
+			if (strcasecmp(p2, "0") == 0)
+			{
+				pers->tstamphz = 0;
+				if(end != NULL)
+				{
+					p2 = end;
+				}
+			}
+
 			//TODO: Handle the other values after the OR symbol. Choose one at random.
 		  
 			/* Hit some of the most common ones manually first */
@@ -1310,8 +1338,6 @@ parse_seq(struct personality *pers, int off, char *line)
 				pers->tstamphz = 100;
 			else if (strcasecmp(p2, "8") == 0)
 				pers->tstamphz = 200;
-			else if (strcasecmp(p2, "0") == 0)
-				pers->tstamphz = 0;
 			else if (strcasecmp(p2, "A") == 0)
 				pers->tstamphz = 1000;
 			else if (strcasecmp(p2, "U") == 0)
@@ -1320,9 +1346,9 @@ parse_seq(struct personality *pers, int off, char *line)
 			{
 				/* Try to convert to int */
 				char *endpt;
-				int exponent = strtol(p2, &endpt, 16);
+				uint exponent = strtoul(p2, &endpt, 16);
 				/* If conversion worked without fail */
-				if( *endpt == '\0')
+				if(endpt != p2)
 				{
 					pers->tstamphz = pow(2, exponent);
 					//TODO: Watch for integer overflow here
