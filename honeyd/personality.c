@@ -617,6 +617,7 @@ tcp_personality_time(struct template *tmpl, struct timeval *diff)
 	if (person == NULL)
 		return (-1);
 
+	gettimeofday(&tv_periodic, NULL);
 	personality_time(tmpl, diff);
 
 	if (person->tstamphz)
@@ -632,8 +633,17 @@ tcp_personality_time(struct template *tmpl, struct timeval *diff)
 		 * counted next time.
 		 */
 		ticks = 1000000L / tstamphz;
-		slowhz = diff->tv_sec * tstamphz + diff->tv_usec / ticks;
-		TIME_CORRECT(ticks, diff);
+
+		if(!ticks)
+		{
+			slowhz = diff->tv_sec * tstamphz + diff->tv_usec;
+		}
+		else
+		{
+			slowhz = diff->tv_sec * tstamphz + diff->tv_usec / ticks;
+			TIME_CORRECT(ticks, diff);
+		}
+
 
 		tmpl->timestamp += slowhz;
 	}
@@ -663,6 +673,8 @@ tcp_personality_seq(struct tcp_con * con, struct template *tmpl, struct personal
 	{
 		gettimeofday(&tv_periodic, NULL);
 		tmpl->tv_real = tmpl->tv = tv_periodic;
+		gettimeofday(&tv_periodic, NULL);
+
 		if (tmpl->timestamp == 0)
 		{
 			tmpl->timestamp = rand_uint32(honeyd_rand) % 1728000;
@@ -1072,7 +1084,7 @@ parse_seq(struct personality *pers, int off, char *line)
 {
 	char *p = line, *p2 = line, *end;
 	char *ss = NULL;
-	int ti_opts[3];
+	int ti_opts[3];gettimeofday(&tv_periodic, NULL);
 	pers->IPID_type_TI = ID_RANDOM;
 	pers->IPID_type_CI = ID_NONE;
 	pers->IPID_type_II = ID_NONE;
