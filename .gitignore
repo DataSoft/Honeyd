@@ -1,0 +1,51 @@
+# Compiled Source #
+##################
+
+*.com
+*.class
+*.dll
+*.exe
+*.o
+*.so
+*.swp
+*.cproject
+.~
+
+# Binaries #
+############
+honeyd
+honeydctl
+honeydstats
+hsniff
+
+# Packages #
+############
+
+*.7z
+*.dmg
+*.gz
+*.iso
+*.jar
+*.rar
+*.tar
+*.zip
+
+# Logs and Databases #
+######################
+
+*.log
+*.sql
+*.sqlite
+
+# OS generated files #
+######################
+
+.DS_Store*
+ehthumbs.db
+Icon?
+Thumbs.db
+
+# Autogen Files #
+#################
+
+
