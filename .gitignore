@@ -9,7 +9,6 @@
 *.so
 *.swp
 *.cproject
-.~
 
 # Binaries #
 ############
@@ -48,4 +47,4 @@ Thumbs.db
 # Autogen Files #
 #################
 
-
+honeyd/autom4te.cache/*
