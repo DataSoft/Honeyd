@@ -8,7 +8,6 @@
 *.o
 *.so
 *.swp
-*.cproject
 *.guess
 *.h
 *.h.in
@@ -16,10 +15,10 @@
 *.status
 *.m4
 *.lo
-honeyd/.cproject
 
 # Binaries #
 ############
+
 honeyd/honeyd
 honeyd/honeydctl
 honeyd/honeydstats
@@ -55,9 +54,9 @@ Thumbs.db
 # Autogen Files #
 #################
 
+honeyd/autom4te.cache/*
 libtool
 stamp-h1
 ylwrap
-honeyd/autom4te.cache/*
 Makefile
 Makefile.in
