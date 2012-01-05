@@ -15,13 +15,15 @@
 *.sub
 *.status
 *.m4
+*.lo
+honeyd/.cproject
 
 # Binaries #
 ############
-# honeyd
-# honeydctl
-# honeydstats
-# hsniff
+honeyd/honeyd
+honeyd/honeydctl
+honeyd/honeydstats
+honeyd/hsniff
 
 # Packages #
 ############
@@ -57,3 +59,5 @@ libtool
 stamp-h1
 ylwrap
 honeyd/autom4te.cache/*
+Makefile
+Makefile.in
