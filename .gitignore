@@ -9,13 +9,19 @@
 *.so
 *.swp
 *.cproject
+*.guess
+*.h
+*.h.in
+*.sub
+*.status
+*.m4
 
 # Binaries #
 ############
-honeyd
-honeydctl
-honeydstats
-hsniff
+# honeyd
+# honeydctl
+# honeydstats
+# hsniff
 
 # Packages #
 ############
@@ -47,4 +53,7 @@ Thumbs.db
 # Autogen Files #
 #################
 
+libtool
+stamp-h1
+ylwrap
 honeyd/autom4te.cache/*
