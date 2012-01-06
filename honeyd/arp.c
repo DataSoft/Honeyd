@@ -318,7 +318,7 @@ arp_recv_cb(u_char *u, const struct pcap_pkthdr *pkthdr, const u_char *pkt)
 	struct arp_entry src, dst;
 	struct addr *reply_sha;
 
-	if (pkthdr->caplen < ETH_HDR_LEN + ARP_HDR_LEN + ARP_ETHIP_LEN)
+	if (pkthdr->caplen < inter->if_dloff + ARP_HDR_LEN + ARP_ETHIP_LEN)
 		return;
 
 	arp = (struct arp_hdr *)(pkt + inter->if_dloff);	
