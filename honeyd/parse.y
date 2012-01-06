@@ -422,6 +422,12 @@ set		: SET template DEFAULT PROTO ACTION action
 		if ($2->ethernet_addr == NULL) {
 			yyerror("Unknown ethernet vendor \"%s\"", $4 + 1);
 		}
+		/*** small patch to make sure the ethernet adress is used ***/
+		/*** even if none were set in the default template ***/
+		struct addr addr;
+		if(addr_aton($2->name, &addr) != -1)
+			template_post_arp($2, &addr);
+		/*** end patch ***/
 		free ($4);
 
 		need_arp = 1;
