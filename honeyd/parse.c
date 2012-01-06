@@ -1915,10 +1915,14 @@ yyreduce:
 			inter = interface_find_responsible(&(yyvsp[(2) - (3)].addr));
 			if (inter == NULL ||
 			    inter->if_ent.intf_link_addr.addr_type != ADDR_TYPE_ETH) {
-				yyerror("Template \"%s\" is configured with "
+				yywarn("Template \"%s\" is configured with "
 				    "ethernet address but there is no "
 				    "interface that can reach %s",
 				    (yyvsp[(3) - (3)].tmpl)->name, addr_ntoa(&(yyvsp[(2) - (3)].addr)));
+				// This will prevent honeyd from kicking out if the ethernet is misconfigured
+				// i.e. outside it's possible IP range, etc.
+			    free(yyvsp[0].tmpl->ethernet_addr);
+			    yyvsp[0].tmpl->ethernet_addr = NULL;
 				break;
 			}
 		}
