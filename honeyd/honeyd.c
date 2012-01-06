@@ -184,6 +184,32 @@ void (*honeyd_delay_callback)(int, short, void *) = honeyd_delay_cb;
 static char		*logfile = NULL;	/* Log file names */
 static char		*servicelog = NULL;
 
+/*
+ * TODO: There is a patch on the Google Code page, Issue 12, that purports to be a performance
+ *       enhancement when using honeyd as a proxy to send data through an SSH daemon. However,
+ *		 there are some parts of the patch that are now incompatible with the DataSoft honeyd
+ *		 structure. I will put a note about this in the git commits, and possibly a ticket
+ *		 for it if we suspect we'll be using honeyd in this fashion.
+ */
+
+/*
+ * TODO: There is another patch, Issue 13, which solves about 4 issues total on the Google Code
+ * 		 page for honeyd. It is rather large, so I'm merely writing this to remind myself what
+ * 		 should be done next time I'm here. I may need to pass this off to someone else, however
+ * 		 given that this honeyd is modified a bit and I may not know how to resolve everything.
+ */
+
+/*
+ * TODO: Issue 16 is a bust, the sys/syslimits.h library either doesn't exist on Ubuntu
+ *       (which is what I suspect) or it's hidden very well. I would say that since Mac
+ * 		 probably won't be very prevalent in our userbase, this fix can just go on the
+ * 		 wiki as it's pretty simple if the library were there.
+ */
+
+/*
+ * TODO: Issue 20 is rather large, give it a try when you get back. But do Issue 21 first.
+ */
+
 static struct option honeyd_long_opts[] = {
 	{"include-dir", 0, &honeyd_show_include_dir, 1},
 	{"data-dir",    0, &honeyd_show_data_dir, 1},
@@ -2964,6 +2990,12 @@ honeyd_input(const struct interface *inter, struct ip_hdr *ip, u_short iplen)
 	enum forward res = FW_INTERNAL;
 	int delay = 0, flags = 0;
 	struct addr src, addr;
+
+	if (inter->if_ent.intf_flags & INTF_FLAG_LOOPBACK)
+	{
+		/* Override checksum on IP packet to prevent drops */
+		ip_checksum(ip, iplen);
+	}
 
 	addr_pack(&addr, ADDR_TYPE_IP, IP_ADDR_BITS, &ip->ip_dst, IP_ADDR_LEN);
 	if (!router_used) {
