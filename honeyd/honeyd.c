@@ -2977,7 +2977,7 @@ honeyd_input(const struct interface *inter, struct ip_hdr *ip, u_short iplen)
 		}
 		if (tmpl != NULL && tmpl->flags & TEMPLATE_EXTERNAL)
 			flags |= DELAY_ETHERNET;
-		honeyd_delay_packet(NULL, ip, iplen, NULL, NULL, delay, flags, no_spoof);
+		honeyd_delay_packet(tmpl, ip, iplen, NULL, NULL, delay, flags, no_spoof);
 		return;
 	}
 
