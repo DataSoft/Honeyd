@@ -200,14 +200,8 @@ static char		*servicelog = NULL;
  */
 
 /*
- * TODO: Issue 16 is a bust, the sys/syslimits.h library either doesn't exist on Ubuntu
- *       (which is what I suspect) or it's hidden very well. I would say that since Mac
- * 		 probably won't be very prevalent in our userbase, this fix can just go on the
- * 		 wiki as it's pretty simple if the library were there.
- */
-
-/*
- * TODO: Issue 20 is rather large, give it a try when you get back. But do Issue 21 first.
+ * TODO: Issue 20 is rather large, and I don't know if we'd need to functionality that it would
+ * 		 provide, but I'm not familiar enough with honeyd to be comfortable with putting it in myself.
  */
 
 static struct option honeyd_long_opts[] = {

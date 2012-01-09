@@ -492,7 +492,26 @@ interface_recv(int fd, short type, void *arg)
 	struct interface *inter = arg;
 
 	if (!interface_dopoll)
+	{
+		/*
+		 * If the interface we are bound to goes down and comes back
+		 * up, then we may enter in an infinite loop condition. The
+		 * libevent library doesn't propagate the EPOLLERR/POLLERR to
+		 * this code in any way, and versions of libpcap < 1.1.0 don't
+		 * handle it gracefully either. So we read one byte here to
+		 * clear the POLLERR condition if it exists.
+		 */
+		char c;
+
+		if (recv(fd, &c, sizeof c, MSG_PEEK|MSG_DONTWAIT) == -1)
+		{
+			if (errno != EAGAIN && errno != EWOULDBLOCK)
+			{
+				syslog(LOG_ERR, "recv error: %s", strerror(errno));
+			}
+		}
 		event_add(&inter->if_recvev, NULL);
+	}
 
 	if (pcap_dispatch(inter->if_pcap, -1, if_recv_cb, (u_char *)inter) < 0)
 		syslog(LOG_ERR, "pcap_dispatch: %s",
