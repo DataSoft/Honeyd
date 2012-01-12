@@ -1525,6 +1525,8 @@ tcp_senddata(struct tcp_con *con, uint8_t flags)
 		space = TCP_MAX_INFLIGHT - TCP_BYTESINFLIGHT(con);
 		if (space > TCP_MAX_SEND)
 			space = TCP_MAX_SEND;
+		else
+			flags |= TH_PUSH;
 		if (con->plen - con->poff < space)
 			space = con->plen - con->poff;
 
@@ -1899,7 +1901,7 @@ generic_timeout(struct event *ev, int seconds)
 #define TCP_CHECK_SEQ_OR_ACK	do { \
 		int has_ack = tcp->th_flags & TH_ACK; \
 		if (tcp->th_flags & TH_RST) { \
-			if (th_seq != con->rcv_next -1) \
+			if (th_seq != con->rcv_next) \
 				goto drop; \
 			goto close; \
 		} \
@@ -1910,7 +1912,7 @@ generic_timeout(struct event *ev, int seconds)
 				goto drop; \
 		}\
 		/* Don't accept out of order data */ \
-		if (TCP_SEQ_GT(th_seq, con->rcv_next -1)) { \
+		if (TCP_SEQ_GT(th_seq, con->rcv_next)) { \
 			if (has_ack) \
 				tcp_send(con, TH_ACK, NULL, 0); \
 			goto drop; \
@@ -2144,11 +2146,11 @@ tcp_recv_cb(struct template *tmpl, u_char *pkt, u_short pktlen)
 			if (tiflags & TH_ACK) {
 				if (tiflags & TH_SYN)
 					goto dropwithreset;
-				if (th_ack != (con->snd_una-1))
+				if (th_ack != (con->snd_una))
 					goto dropwithreset;
 			}
 			if (tiflags & TH_SYN) {
-				if (th_seq != con->rcv_next - 1)
+				if (th_seq != con->rcv_next)
 					goto dropwithreset;
 				con->snd_una--;
 				tcp_send(con, TH_SYN|TH_ACK, NULL,0);

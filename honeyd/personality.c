@@ -801,7 +801,7 @@ tcp_personality(struct tcp_con *con, uint8_t *pflags, int *pwindow, int *pdf,
 	else
 		ip_personality(tmpl, pid, TCP);
 
-	if (pers->forceseq != SEQ_ZERO)
+	if ((pers->forceseq != SEQ_ZERO) && (con->state == TCP_STATE_LISTEN))
 		con->snd_una = tcp_personality_seq(con, tmpl, person);
 
 	return (0);
