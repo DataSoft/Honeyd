@@ -1,0 +1,9 @@
+HTTP/1.1 200 OK
+Date: %DATE%
+Server: %SERVER_VERSION%
+Allow: GET,HEAD,POST,OPTIONS
+Content-Length: 0
+Connection: close
+Content-Type: text/plain
+
+

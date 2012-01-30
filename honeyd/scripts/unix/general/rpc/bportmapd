@@ -1,0 +1,384 @@
+#!/usr/bin/perl
+# 
+# bportmapd - a portmap emulation service
+#
+# Copyright 2003 Brian Caswell <bmc@snort.org>
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+# 1. Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in the
+#    documentation and/or other materials provided with the distribution.
+# 3. All advertising materials mentioning features or use of this software
+#    must display the following acknowledgement:
+#      This product includes software developed by Brian Caswell.
+# 4. The name of the author may not be used to endorse or promote products
+#    derived from this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
+# IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+# OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+# IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
+# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+# NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+# THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+    
+=head1 NAME
+
+bportmapd - portmap emulation service
+
+=head1 SYNOPSIS
+
+add solaris <protocol> port 111 "perl bportmapd --proto <protocol> 
+   --host /honeyd/rpc/solaris-2.7 --srcip $ipsrc --dstip $ipdst
+   --srcport $srcport --dstport $dport --logfile /tmp/log --logall
+
+=head1 DESCRIPTION
+
+bportmapd is a server that converts RPC program numers into DARPA protocol
+port numbers.  As in, portmap for those of you that do not read RFCs.  This
+implementation of portmap can emulate pre-defined hosts by parsing portmap
+dump files (as in the output of 'rpcinfo -p <IP>').
+
+bportampd can also support acting like other RPC based programs, but this
+support is limited.  Currently, bportmapd can fake out a number of RPC
+based exploits.
+
+=head1 OPTIONS
+
+=over 4
+
+=item --debug
+
+Increases the debug verbose level.
+
+=item --protocol <protocol>
+
+Sets the protocol.  
+
+=item --host <hostfile>
+
+Sets the hosts dump file to use for emulating portmapd.  
+
+=item --host <logfile>
+
+Sets the logfile.
+
+=item --logall
+
+Log all requests.
+
+=item --accept
+
+Respond with a port for any program requested.  (USEFUL FOR HONEYPOTS!)
+
+=item --srcip
+
+Set the Source IP address for logs
+
+=item --dstip
+
+Set the Destination IP address for logs
+
+=item --srcport
+
+Set the Source Port for logs
+
+=item --dstport
+
+Set the Destination Port for logs
+
+=back
+
+
+If a logging is enabled then the request is logged to file in this format:
+
+   srcip:srcport -> dstip:dstport PAYLOAD_IN_HEX_HERE
+
+=head1 NOTES
+
+I have been using bportmapd for the last three weeks.  I use it to emulate portmapd and RPC services that I have for vulnerabilities for which I have exploits but not vulnerable servers while I am writing snort rules.  I have been able to fool statd, tooltalk, rquota, and sadmind exploits into firing on bportmapd which logs the full request in HEX format (which makes writing snort rules easy :)
+
+Unfortunatly, honeyd has a few limitations that I can't work around.  I have written support for SET/UNSET and PROXY but have not released this support because a program can not signal honeyd to dynamically open and close ports on a host.  (Perhaps an idea for a patch anyone?)
+
+Also, honeyd has another bug in its configuration parser.  Default commands are not handled properly.  The quick and dirty workaround for honeypot usage is to add a configuration line for every port.
+
+=head1 AUTHOR
+
+Brian Caswell <bmc@snort.org>
+
+=head1 REPORTING BUGS
+
+Report bugs to <bmc@snort.org>
+
+=head1 THANKS
+
+Thanks to Niels Provos for writing honeyd
+
+=head1 COPYRIGHT
+
+Copyright (c) 2003 Brian Caswell 
+
+=head1 SEE ALSO
+
+L<rpcinfo(5)>, L<rpc(5)>, L<portmap(8)>, L<honeyd(8)>, L<inetd(8)>
+
+=head1 BUGS
+
+bportmapd doesn't handle rpc record fragmentation properly.  bportmapd handles it gracefully (well, not really ;P) by returning an error.
+
+=cut
+
+use strict;
+use Getopt::Long;
+use Fcntl ':flock';
+
+$|++;
+
+my %options;
+
+GetOptions(
+   \%options,         'debug|d+',  'protocol|proto|p=s', 'host|h=s',
+   'logfile|log|l=s', 'logall|v',  'accept|a',           'srcip=s',
+   'dstip=s',         'srcport=s', 'dstport=s',
+);
+
+my $tcp = 0;
+if (lc($options{'protocol'}) eq "tcp") {
+   $tcp = 1;
+}
+
+my %programs;
+my @programs;
+
+if ($options{'host'}) {
+   if ($options{'debug'} > 2) { warn "host file $options{'host'} specified"; }
+   open(FILE, "<$options{'host'}") || die "CRAP $!";
+   while (my $line = <FILE>) {
+      chomp($line);
+      $line =~ s/^\s*(.*)\s*/$1/;
+
+      # skip if it is the header or blank
+      next if ($line =~ /^program vers/ || $line =~ /^\s*$/);
+
+      my ($program, $version, $proto, $port) = split (/\s+/, $line);
+      if ($proto eq "tcp") { $proto = 6; }
+      if ($proto eq "udp") { $proto = 17; }
+      $programs{$program}{$version}{$proto}{$port} = 1;
+      push (@programs, $program, $version, $proto, $port);
+   }
+} else {
+   if ($options{'debug'} > 2) {
+      warn "no host file specified just supporting portmap";
+   }
+
+   # if we don't have anything, just show portmap (be like linux)
+   $programs{100000}{1}{6}{111}  = 1;
+   $programs{100000}{2}{6}{111}  = 1;
+   $programs{100000}{1}{17}{111} = 1;
+   $programs{100000}{2}{17}{111} = 1;
+}
+
+my $reply = 0x80000000;
+
+my $payload;
+my $count = sysread(STDIN, $payload, 1024 * 100);
+
+if ($options{'logall'} || $options{'debug'} > 2) {
+   log_data($payload);
+}
+
+my (
+   $frag,     $xid,      $type,      $rpc_version,
+   $program,  $version,  $procedure, $auth_type,
+   $auth_foo, $ver_type, $ver_foo,   $unpack
+);
+
+# if we have a TCP portmap request, then we have an extra frag bit thingie.
+
+# ok, so this is the hard part.
+#
+# unpack takes a string and a template and expands it out into a list of
+# values.  
+#
+# N   = unsigned long in network byte order
+# N/a = read the 32bits.  use that as a length.  read that much into "a"
+#       skip any padding to the 32bit boundry
+# a*  = read everything else into the specified string.
+# 
+# One of these days I'll do some unpack/pack/unpack foo that handles RPC
+# fragmentation but that will wait till I finish my perl based RPC client
+if ($tcp) {
+   ($frag,      $xid,      $type,      $rpc_version,
+     $program,  $version,  $procedure, $auth_type,
+     $auth_foo, $ver_type, $ver_foo,   $unpack)
+     = unpack("NNNNNNNNN/aNN/aa*", $payload);
+} else {
+   ($xid,       $type,      $rpc_version, $program,
+     $version,  $procedure, $auth_type,   $auth_foo,
+     $ver_type, $ver_foo,   $unpack)
+     = unpack("NNNNNNNN/aNN/aa*", $payload);
+}
+
+my $data;
+if ($options{'debug'} > 0) { warn "portmapd $program : $version : $procedure"; }
+
+# am i portmap?
+if ($program eq "100000" && $type eq 0) {    # ok, lets pretend to be portmap
+   if ($options{'debug'} > 1) { warn "portmap get"; }
+
+   # null procedure 
+   #
+   # you would think that for an anally defined protocol, there would be no 
+   # such thing as a "null query"
+   #
+   if ($procedure eq 0) {
+      if ($options{'debug'} > 0) { warn "portmap version request"; }
+
+      # if they give me a wrong version, bitch and return the high and low
+      # version of what we support
+      if (!defined($programs{$program}{$version})) {
+         my ($low, $high);
+         foreach my $r_version (keys %{$programs{$program}}) {
+            if (!$low || $r_version < $low) { $low = $r_version; }
+            if (!$high || $r_version > $high) { $high = $r_version; }
+         }
+         $data = pack("N*", $xid, 1, 0, 0, 0, 2, $low, $high);
+      } else {
+         # otherwise, they are asking if we exist, so we respond with "Yep"
+         $data = pack("N*", $xid, 1, 0, 0, 0, 0);
+      }
+   }
+
+   # getport
+   elsif ($procedure eq 3) {
+      # Ok, so lets get the rpc programs and whatnot they are asking for
+      my ($r_program, $r_version, $r_proto, $r_port) = unpack("N*", $unpack);
+      if ($options{'debug'} > 0) { warn "portmap port request for $r_program"; }
+
+      # If they don't specify a version, we'll just use the first one in our
+      # list.
+      if ($programs{$r_program} && $r_version eq 0) {
+         $r_version = (keys %{$programs{$r_program}})[0];
+      }
+      if ($programs{$r_program}{$r_version}{$r_proto}) {
+
+         # they specified a port, so I should only return if the port
+         # I'm given is is defined
+         if ($programs{$r_program}{$r_version}{$r_proto}{$r_port}) {
+            $data = pack("N*", $xid, 1, 0, 0, 0, 0, $r_port);
+         }
+
+         # since they didn't specify a port, we give them the first port
+         elsif ($r_port eq 0) {
+            $r_port = (keys %{$programs{$r_program}{$r_version}{$r_proto}})[0];
+            $data = pack("N*", $xid, 1, 0, 0, 0, 0, $r_port);
+         }
+      } else {
+
+         # if I don't have the specified program ...
+         if ($options{'debug'} > 0) { warn "portmap unknown program request"; }
+
+         # If we are in accept everything mode, we want the evil hackers to be
+         # given a port even if we don't support it.  so respond with a random
+         # port
+         if ($options{'accept'}) {
+
+            # generate a random port until it isn't 0 and isn't 111.
+            while (!defined($r_port) || $r_port eq 0 || $r_port eq 111) {
+               $r_port = int(rand(65536));
+            }
+            if ($options{'debug'} > 0) { warn "giving port $r_port"; }
+            $data = pack("N*", $xid, 1, 0, 0, 0, 0, $r_port);
+         } else { # otherwise respond with "I don't have that port."
+            $data = pack("N*", $xid, 1, 0, 0, 0, 0, 0);
+         }
+      }
+   }
+
+   # dump
+   elsif ($procedure eq 4) {
+      # Go through the list of programs, add it to my response
+      if ($options{'debug'} > 0) { warn "portmap dump request"; }
+      $data = pack("N*", $xid, 1, 0, 0, 0, 0);
+      while (@programs) {
+         my $program = shift (@programs);
+         my $version = shift (@programs);
+         my $proto   = shift (@programs);
+         my $port    = shift (@programs);
+         $data .= pack("N*", 1, $program, $version, $proto, $port);
+      }
+      $data .= pack("N", 0);
+   }
+
+   # donno how to handle portmap query, so I'll return portmap error this...
+   # This isn't as bad as evil hacker data (see below) so we ddon't want to
+   # respond failure, we just want to respond that we don't support it.
+   else {
+      if ($options{'debug'} > 0) { warn "unknown portmap request."; }
+      $data = pack("N*", $xid, 1, 0, 0, 0, 1);
+   }
+} elsif ($version ne 0 && $procedure eq 0) {
+
+   # If they ask if we are here, respond with yes 
+   if ($options{'debug'} > 0) { warn "am I here?"; }
+   $data = pack("N*", $xid, 1, 0, 0, 0, 1);
+} elsif ($procedure eq 0) {
+
+   # If they ask what versions we support
+   if ($options{'debug'} > 0) { warn "what versions do I support?"; }
+
+   # Well, if we arn't portmap and we don't have a procedure or version,
+   # return what versions we actually support.
+   my ($low, $high);
+   foreach my $version (keys %{$programs{$program}}) {
+      if (!$low || $version < $low) { $low = $version; }
+      if (!$high || $version > $high) { $high = $version; }
+   }
+
+   # of course, if we don't have a high or low version, we probably want
+   # to lie and pick some random high version and low version.
+   if (!$low)  { $low  = 1; }
+   if (!$high) { $high = 10; }
+   $data = pack("N*", $xid, 1, 0, 0, 0, 2, $low, $high);
+}
+
+# someone tried something we couldn't handle.  Lets log it so we can figure
+# out what the hax0r was trying to do
+if (!defined($data)) {
+   if ($options{'debug'} > 0) {
+      warn "evil hacker data: " . unpack("H*", $payload);
+   }
+   log_data($payload);
+   $data = pack("N*", $xid, 1, 0, 0, 0, 4);
+}
+
+# if the protocol is tcp, we need to add some special foo
+if ($tcp) {
+   $reply += length($data);
+   $data = pack("N", $reply) . $data;
+}
+print $data;
+
+sub log_data {
+   my ($data) = @_;
+   warn "HERE $options{'logfile'}";
+   if ($options{'logfile'}) {
+      open(FILE, ">>$options{'logfile'}")
+        || warn "Can't open file: $!" && return;
+      flock(FILE, LOCK_EX);
+      seek(FILE, 0, 2);
+      print FILE "$options{'srcip'}:$options{'srcport'} -> "
+        . "$options{'dstip'}:$options{'dstport'} "
+        . unpack("H*", $payload) . "\n";
+      flock(FILE, LOCK_UN);
+      close(FILE);
+   }
+}

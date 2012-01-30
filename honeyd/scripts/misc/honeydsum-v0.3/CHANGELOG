@@ -1,0 +1,20 @@
+0.3
+   - improved output
+   - summary in text and valid html has been implemented
+   - graphics generation has been implemented
+   - a configuration file has been created
+   - log's sanitize with address validation has been implemented
+   - some bugs have been fixed in the parser
+   - flag "E" not shown as warning
+   - other bugfixes have been made
+   - upgraded documents
+0.2
+   - improved output
+   - improved parser
+   - verify flags S/E
+   - working with honeyd logs v. 0.7 and later
+   - upgraded documents
+0.1
+   - beta test
+   - analysis of honeyd logs v. 0.6
+

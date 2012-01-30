@@ -13,7 +13,7 @@ AM_PROG_LIBTOOL
 
 dnl Initialize prefix.
 if test "$prefix" = "NONE"; then
-   prefix="/usr/local"
+   prefix="/usr"
 fi
 
 disable_kqueue=no

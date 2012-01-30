@@ -1,0 +1,217 @@
+                           Honeydsum v. 0.3
+                    
+                     Thu Apr 15 09:30:31 BRT 2004
+
+       Copyright (c) 2004 Lucio Henrique Franco <lucio@lac.inpe.br>
+       and Carlos Henrique Peixoto Caetano Chaves <cae@lac.inpe.br>
+
+1. License Information
+
+   Honeydsum is free software. Please refer to the source
+   code for detailed information.
+
+2. What's Honeydsum?
+
+   Honeydsum is a tool written in Perl designed to generate a 
+   summary from honeyd logs. The summaries may be produced using 
+   different parameters as filters, such as ports, protocols, 
+   IP addresses or networks. It shows the top source and port access 
+   and the number of connections per hour, and supports input from 
+   multiple log files. It allows to specify the honeypot network
+   address and other network address which will be sanitized with its
+   correspondent fake network. There is validation of networks 
+   (address and size) for data's sanitize. It is able to generate a 
+   summary in text or in valid HTML. There is also an option to
+   create graphics illustrating the information showed by the 
+   summary. The script can also correlate events from several
+   honeypots.
+ 
+3. Requires:
+
+   - Honeyd Logs v. 0.7 or later
+   - Perl
+   - Net::Netmask module for Perl
+   - GD module for Perl
+   - GD::Graph::pie module for Perl
+   - GD::Graph::bars module for Perl
+   - GD::Graph::bars3d module for Perl
+
+4. Tested Systems
+
+   Honeydsum is a Perl script ran with -T (Tainted) and -w (use
+   warning) option. It was tested on OpenBSD 3.4 and Slackware Linux
+   9.1, with Perl 5.8.0 and with honeyd logs versions 0.7 and 0.8.
+
+5. Features:
+
+   - Display honeypot configuration from honeyd.conf;
+   - Filter by list of honeypot's IP addresses;
+   - Filter by list of IP or Network addresses;
+   - Filter by list of destination ports;
+   - Filter by list of protocols;
+   - Connection counter;
+   - Connections per hour;
+   - Distinct network address sanitize;
+   - Validation of networks (address and size) for data's
+     sanitize;
+   - Support multiple honeyd log and conf files;
+   - Graphics generation;
+
+
+6. Usage:
+
+   ./honeydsum.pl -c honeydsum.conf [-hVw] log-file1 log-file2 ... log-filen
+    
+   Where:
+
+       -c   honeydsum.conf file.
+       -h   display this help and exit.
+       -V   display version number and exit.
+       -w   display output as web page (HTML).
+
+7. Examples:
+
+   Assumptions:
+
+   - List of honeypot's: 10.0.1.1, 10.0.1.2
+   - List of source NET for filtering: 192.168.1.0/24, 192.168.2.0/24
+   - List of destination port: 21, 80
+   - List of protocols: tcp
+
+   Configuration File Options: 
+
+   # honeyd.conf file (support multiple files, eg: honeyd_conf=../honeyd.conf,/tmp/honeyd.conf.alt).
+   # Use comma separator for each option below.
+   honeyd_conf=honeyd.conf
+
+   # list of honeypot's IP addresses for filtering.
+   honeypot_list=10.0.1.1,10.0.1.2
+   
+   # list of source IP or Network addresses for filtering.
+   net_list=192.168.1.0/24,192.168.2.0/24
+
+   # list of destination ports.
+   dest_port=21,80
+
+   # list of protocols.
+   proto_list=tcp
+
+   Run:
+
+   $ /<path-of-file>/honeydsum.pl -c honeydsum.conf honeyd.log.2003-10-10-00\:00 honeyd.log.2003-11-11-00\:00 
+
+   Output:
+
+   ### Honeypot's Configuration ###
+
+    Linux 2.4.18 - 2.4.20 (X86)
+    ( / 10.0.1.1, 10.0.1.2 / )
+             21/tcp
+             80/tcp
+
+   --------------------------------------
+   Connection Counter
+   --------------------------------------
+   Total:          10
+   TCP:            10
+   UDP:             0
+   ICMP:            0
+   --------------------------------------
+
+   --------------------------------------
+   Honeypot: 10.0.1.1
+   --------------------------------------
+   Source IP       Resource   Connections
+   192.168.1.15    21/tcp          1
+   --------------------------------------
+   IPs             Resources  Connections
+   1               1               1
+   --------------------------------------
+   
+   --------------------------------------
+   Honeypot: 10.0.1.2
+   --------------------------------------
+   Source IP       Resource   Connections
+   192.168.1.15    21/tcp          1
+   192.168.2.15    21/tcp          1
+   192.168.2.100   80/tcp          7
+   --------------------------------------
+   IPs             Resources  Connections
+   3               2               9
+   --------------------------------------
+
+   Top 10 Source Hosts
+
+   Rank     Source IP         Connections
+   1        192.168.2.100        7
+   2        192.168.1.15         2
+   3        192.168.2.15         1
+
+
+   Top 10 Accessed Resources
+
+   Rank     Resource      Connections
+   1        80/tcp           7
+   1        21/tcp           3
+
+
+   Connections per Hour
+
+   Hour    Connections
+   00:00        0
+   01:00        0
+   02:00        0
+   03:00        0
+   04:00        0
+   05:00        0
+   06:00        0
+   07:00        0
+   08:00        0
+   09:00        0
+   10:00        0
+   11:00        0
+   12:00        0
+   13:00        0
+   14:00        0
+   15:00        9
+   16:00        1
+   17:00        0
+   18:00        0
+   19:00        0
+   20:00        0
+   21:00        0
+   22:00        0
+   23:00        0
+
+   See output sample in HTML at:
+   http://www.honeynet.org.br/tools/
+
+8. Limitations
+
+   Honeydsum is a code under development.  At this time
+   it has some limitations such as:
+
+   1. Might be slow
+   2. Might not offer desired output's alternatives
+   3. Might not offer all desired information on a summary 
+
+9. Obtaining this software
+
+   This software is available at:
+   http://www.honeynet.org.br/tools/
+
+10. Reports and questions
+
+   Please send comments, questions and bug reports to
+   lucio@lac.inpe.br or cae@lac.inpe.br.
+
+11. Acknowledgments
+
+   The authors would like to thank some colaborators:
+      - Andre Ricardo,
+      - Thiago Alves Siqueira, and
+
+   Honeynet.BR Team for their suggestions and tests.
+
+### README ends here.
+

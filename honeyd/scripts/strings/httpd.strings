@@ -1,0 +1,18 @@
+HTTPD_SERVER_VERSION Apache/1.3.23 (Unix)  (SuSE/Linux) ApacheJServ/1.2.2 mod_fastcgi/2.2.2 mod_perl/1.34 PHP/4.1.0 mod_ssl/2.8.7 OpenSSL/0.9.6c
+HTTPD_SERVER_VERSION Apache/1.3.12 (Unix)  (SuSE/Linux) ApacheJServ/1.1.2 mod_fastcgi/2.2.2 mod_perl/1.24 PHP/4.0.0 mod_ssl/2.6.5 OpenSSL/0.9.5a
+HTTPD_SERVER_VERSION Apache/2.2.20 (Ubuntu)
+HTTPD_SERVER_VERSION SonicWALL
+HTTPD_SERVER_VERSION Apache/2.2.17 (Win32)
+HTTPD_SERVER_VERSION Apache/2.2.6 (Win32) DAV/2 SVN/1.4.5 PHP/5.2.4 mod_python/3.2.10 Python/2.4.4
+HTTPD_SERVER_VERSION CANON HTTP Server Ver2.30
+HTTPD_SERVER_VERSION CANON HTTP Server Ver2.21
+HTTPD_SERVER_VERSION Synaccess
+HTTPD_SERVER_VERSION Microsoft-IIS/5.1
+HTTPD_SERVER_VERSION Apache/2.2.3 (Red Hat)
+HTTPD_SERVER_VERSION Apache
+HTTPD_SERVER_VERSION thttpd/2.25b 29dec2003
+HTTPD_SERVER_VERSION GoAhead-Webs
+HTTPD_SERVER_VERSION Virata-EmWeb/R6_0_3
+HTTPD_SECURE_FILES sysStatus.shtml synOpStatus.shtml sysCfg.shtml synNwCfg.shtml acctSetup.shtml serPortCfg.shtml pwrPortCfg.shtml pwrAutoPing.shtml log.shtml
+HTTPD_RESPONSE_FOLDER /usr/share/nova/scripts/linux/httpd/responses/apache
+HTTPD_RESPONSE_FOLDER /usr/share/nova/scripts/linux/httpd/responses/netboot

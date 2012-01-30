@@ -11400,7 +11400,7 @@ CC="$lt_save_CC"
 
 
 if test "$prefix" = "NONE"; then
-   prefix="/usr/local"
+   prefix="/usr"
 fi
 
 disable_kqueue=no

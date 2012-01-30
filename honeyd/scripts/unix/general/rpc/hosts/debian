@@ -1,0 +1,3 @@
+   program vers proto   port
+    100000    2   tcp    111  portmapper
+    100000    2   udp    111  portmapper

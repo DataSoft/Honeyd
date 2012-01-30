@@ -1,0 +1,37 @@
+#file with the messages to be sent
+#Emulate Linux RedHAT
+#
+#$logfile="faketel.log";
+#$myhost="enigma.opensolutions.com.br";
+#$message="\n$myhost (Linux release 2.4.18-14)";
+#$msglogin="Bem vindo a maquina ENIGMA\n\n";
+#$shell="[root\@enigma root]# ";
+#$uname="Linux RedHat 6.2 enigma.opensolutions.com.br 2.2.19 i586";
+#
+#emulate Solaris
+#
+#$logfile="faketel.log";
+#$myhost="enigma.opensolutions.com.br";
+#$message="\nSunOS 5.8";
+#$msglogin="Last login:  Mon Jun  2 15:31:59 from localhost\n";
+#$shell="$ ";
+#$uname="SunOS 5.8 Spark Ultra 10";
+#
+#Emulate Win NT (GoodTech Telnet Server)
+#
+#$logfile="faketel.log";
+#$message="Welcome to GoodTech Telnet Server for Windows NT (V2.2) \n\n (C) Copyright 1996-1999 GoodTech Systems, 
+Inc.\n";
+#msglogin="";
+#$shell="c:>";
+#$uname="uname is not recognized as a internal or external program, operable program or batch file";
+
+
+#Default responses:
+
+
+$logfile="faketel.log";
+$myhost="localhost.localdomain";
+$message="\nConnected to $myhost";
+$msglogin="Last login: Mon Jun  2 15:31:59 from localhost\n\n";
+$shell="[root\@enigma root]# ";

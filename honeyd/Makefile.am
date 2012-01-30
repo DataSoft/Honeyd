@@ -213,22 +213,14 @@ PYTHON_FILES = pypcap/CHANGES pypcap/pcap_ex.c \
 	dpkt/dpkt/ethernet.py dpkt/dpkt/pim.py dpkt/tests/test-perf.py \
 	dpkt/tests/test-perf2.py
 
+# TODO: Fix this, half the scripts are missing and this will probably break gzipping
 EXTRA_DIST = $(man_MANS) $(WEBDIR_FILES) $(PYTHON_FILES)		  \
 	acconfig.h $(honeyddata_DATA) LICENSE sha1.c			  \
 	compat/sys/tree.h compat/sys/queue.h compat/err.h compat/sha1.h	  \
 	compat/libdnet/dnet.h compat/getopt.h				  \
-	scripts/web.sh scripts/router-telnet.pl scripts/test.sh		  \
-	scripts/mydoom.pl scripts/README.mydoom				  \
-	scripts/cmdexe.pl scripts/README.cmdexe				  \
-	scripts/README.kuang2 scripts/INSTALL.kuang2			  \
-	scripts/kuang2.pl scripts/kuang2.conf				  \
-	scripts/smtp.pl scripts/proxy.pl				  \
-	scripts/snmp/README scripts/snmp/buildSNMPConfig.pl		  \
-	scripts/snmp/fake-snmp.pl scripts/snmp/default.snmp		  \
-	scripts/snmp/windows2000.snmp.tpl scripts/snmp/linux-2.4.snmp.tpl \
 	honeyd_overload.c pyextend.c pyextend.h \
 	pydataprocessing.c pydataprocessing.h \
-	pydatahoneyd.c pydatahoneyd.h
+	pydatahoneyd.c pydatahoneyd.h scripts
 
 install-data-local:
 	$(mkdir_p) "$(DESTDIR)$(honeyddatadir)"
@@ -236,6 +228,8 @@ install-data-local:
 	(cd $(DESTDIR)$(honeyddatadir) && tar -xf -)
 	find $(DESTDIR)$(honeyddatadir)/webserver -type f | xargs chmod a+r
 	find $(DESTDIR)$(honeyddatadir)/webserver -type d | xargs chmod a+xr
+	(cd $(top_srcdir) && tar -cf - $(top_srcdir)/scripts) | \
+	(cd $(DESTDIR)$(honeyddatadir) && tar -xf -)
 
 CLEANFILES = *.so
 DISTCLEANFILES = *~

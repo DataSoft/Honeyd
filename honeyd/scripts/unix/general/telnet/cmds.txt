@@ -1,0 +1,9 @@
+ls:Mail    Secret.doc    pass-test   foto.jpg 
+id:uid=0(root) gid=0(root) groups=0(root),1(bin),2(daemon),3(sys),4(adm),6(disk),10(wheel)
+ls -la:Mail    Secret.doc    pass-test   foto.jpg
+uname -a:Linux localhost.localdomain 2.4.18-14 i386 GNU/Linux
+uname:Linux
+who:root    ttyp0   
+whoami:root
+last:root     :0                            Mon Jun  2 09:27 - 17:38  (08:11)\nwtmp begins Mon Jun  2 09:27:00 2003
+pwd:/root

@@ -1,0 +1,54 @@
+POP3 Emulator by Rob MacGregor <rob.macgregor@techie.com>
+
+Written in far too little time during a SANS conference.  Suggestions 
+and improvements welcome!
+
+Designed for use with HONEYd, please let me know if it works with other things.
+
+This emulates a POP3 server with a configurable user base.  Users can have a 
+single email message or none.  Currently multiple email messages aren't
+supported.  All the core RFC1939 commands are implemented and the "server"
+behaves as you would expect.  It's even possible to mark messages as deleted
+and to clear that flag.  Upon exit however the server is "unable" to really
+delete those messages and errors, leaving it all set up for the next victim.
+
+
+DIRECTORY STRUCTURE
+
+<base>
+	Contains the emulate-pop3.sh script
+	POP.emulator/
+
+POP.emulator
+	email.<username>: File containing a single email
+	pop.password: username:password
+	README: This file
+	log/
+
+log/
+	Contains logs from connections, identified by attacker IP, destination
+	port and time the attack started.
+
+
+USAGE
+
+emulate_pop3.sh IP SPORT
+
+IP: Attacker's IP address
+SPORT: Attacker's source port
+
+
+LOGGING
+
+The log format is:
+
+From attacker:
+	YY-DD-MM HH:MM:SS CMD: >attacker input<
+Response:
+	YY-DD-MM HH:MM:SS RESP: response
+
+
+SAFETY NETS
+
+User input has all control characters stripped.  No user input is every passed
+to anything other than the test command.

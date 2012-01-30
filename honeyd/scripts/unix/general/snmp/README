@@ -1,0 +1,32 @@
+INTRO
+====
+This is a module for Honeyd...
+Its purpose is to provide fake but realistic SNMP answers to snmpget and snmpwalk requests.
+
+HOWTO
+=====
+Quite simple indeed.
+
+1. Add the following line in your honeyd configuration file :  
+   add host udp port 161 "/full/path/to/fake-snmp.pl (community ...)"
+   several communities can be specified (space separated). if no community is defined the system will answer to "public" and "private"
+
+2. Buid the specific configuration files with the command :
+   buildSNMPConfig.pl /full/path/to/honeyd_configuration_file
+   answer the questions
+
+3. change dirs in fake-snmp.pl
+
+TODO
+====
+1. Improve stability
+2. Improve customizability (open ports, uptime etc.)
+3. Manage SET requests
+4. Learn PERL
+
+WHO
+===
+The FrenchHoneynetProjet - http://www.frenchhoneynet.org
+Renaud Bidou - renaud.bidou@iv2-technologies.com
+ 
+

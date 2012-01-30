@@ -1,0 +1,19 @@
+HTTP/1.1 501 Method Not Implemented
+Date: %DATE%
+Server: %SERVER_VERSION%
+Allow: GET,HEAD,POST,OPTIONS
+Vary: Accept-Encoding
+Connection: close
+Content-Type: text/html; charset=iso-8859-1
+
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">
+<html><head>
+<title>501 Method Not Implemented</title>
+</head><body>
+<h1>Method Not Implemented</h1>
+<p> %METHOD% to %URI% not supported.<br />
+</p>
+<hr>
+<address>Apache/2.2.20 (Ubuntu) Server at %SERVER% Port %PORT%</address>
+</body></html>
+

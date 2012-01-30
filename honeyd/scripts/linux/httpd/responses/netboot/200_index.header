@@ -1,0 +1,6 @@
+HTTP/1.1 200 OK
+Date: %DATE%
+Server: Synaccess
+Connection: close
+Content-Type: text/html
+
