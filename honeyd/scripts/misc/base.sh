@@ -19,7 +19,7 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #
 
-LOG="/usr/share/nova/Logs/honeyd.txt"
+LOG="scripts/logs/honeyd.txt"
 DATE=`date`
 SERVICE="undef"
 HOST="undef"

@@ -7,7 +7,7 @@ do
 	then
 		break
 	fi
-	echo "$name" >> /usr/share/nova/Logs//usr/share/nova/scripts/iis.log
+	echo "$name" >> scripts/logs/iis.log
 	NEWREQUEST=`echo "$name" | grep "GET .scripts.*cmd.exe.*dir.* HTTP/1.0"`
 	if [ ! -z "$NEWREQUEST" ] ; then
 		REQUEST=$NEWREQUEST

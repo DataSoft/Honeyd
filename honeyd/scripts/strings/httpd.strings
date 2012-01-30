@@ -14,5 +14,5 @@ HTTPD_SERVER_VERSION thttpd/2.25b 29dec2003
 HTTPD_SERVER_VERSION GoAhead-Webs
 HTTPD_SERVER_VERSION Virata-EmWeb/R6_0_3
 HTTPD_SECURE_FILES sysStatus.shtml synOpStatus.shtml sysCfg.shtml synNwCfg.shtml acctSetup.shtml serPortCfg.shtml pwrPortCfg.shtml pwrAutoPing.shtml log.shtml
-HTTPD_RESPONSE_FOLDER /usr/share/nova/scripts/linux/httpd/responses/apache
-HTTPD_RESPONSE_FOLDER /usr/share/nova/scripts/linux/httpd/responses/netboot
+HTTPD_RESPONSE_FOLDER scripts/linux/httpd/responses/apache
+HTTPD_RESPONSE_FOLDER scripts/linux/httpd/responses/netboot

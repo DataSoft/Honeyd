@@ -13,7 +13,7 @@
 # 0.0.1: initial release
 # 
 
-. /usr/share/honeyd//usr/share/nova/scripts/misc/base.sh
+. scripts/misc/base.sh
 
 SRCIP=$1
 SRCPORT=$2
@@ -25,7 +25,7 @@ HOST="bps-pc9"
 
 AUTH="no"
 PASS="no"
-DATFILES="/usr/share/nova/scripts/win32/win2k/dat/msftp.files"
+DATFILES="scripts/win32/win2k/dat/msftp.files"
 
 pwd="/"
 passive=0

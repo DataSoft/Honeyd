@@ -21,7 +21,7 @@
 # 0.0.1: initial release
 # 
 
-. /usr/share/nova/scripts/misc/base.sh
+. scripts/misc/base.sh
 
 SRCIP=$1
 SRCPORT=$2
@@ -36,7 +36,7 @@ HOST="serv"
 
 AUTH="no"
 PASS="no"
-DATFILES="/usr/share/nova/scripts/suse7.0/dat/wuftpd.files"
+DATFILES="scripts/suse7.0/dat/wuftpd.files"
 
 pwd="/"
 passive=0

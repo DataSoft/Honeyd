@@ -5,7 +5,7 @@
 # by Fabian Bieker <fabian.bieker@web.de>
 #
 
-. /usr/share/nova/scripts/misc/base.sh
+. scripts/misc/base.sh
 
 SRCIP=$1
 SRCPORT=$2
