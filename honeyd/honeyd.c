@@ -3253,6 +3253,8 @@ main(int argc, char *argv[])
 	int i, c, orig_argc, ninterfaces = 0;
 	FILE *fp;
 
+	chdir(PATH_HONEYDDATA);
+
 	fprintf(stderr, "Honeyd V%s Copyright (c) 2002-2007 Niels Provos\n",
 	    VERSION);
 
