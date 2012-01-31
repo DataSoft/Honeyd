@@ -5,6 +5,9 @@ set sourcePort [lindex $argv 1]
 set destinationIp [lindex $argv 2]
 set destinationPort [lindex $argv 3]
 
+set requestMethod ""
+set requestURI ""
+
 proc readFile {fileName} {
 	set fh [open $fileName "r"]
 	set data [read $fh]
@@ -27,13 +30,8 @@ if {![info exists responseFolder] || ![info exists versionString] || ![info exis
 }
 
 
-
-
-
 # Stuff we might want to change into arguments
 set date [exec date]
-
-
 
 proc processOutputString {outputString} {
 	regsub {%DATE%} $outputString $::date outputString

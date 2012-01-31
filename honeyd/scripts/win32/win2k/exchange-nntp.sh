@@ -30,7 +30,7 @@ while read incmd parm1 parm2 parm3 parm4 parm5; do
 	parm4=`echo $parm4 | sed s/[[:cntrl:]]//g`
 	parm5=`echo $parm5 | sed s/[[:cntrl:]]//g`
 
-	incmd_nocase=`echo $incmd | gawk '{print toupper($0);}'`
+	incmd_nocase=`echo $incmd | awk '{print toupper($0);}'`
 
 	#echo "$incmd $parm1 $parm2 $parm3 $parm4 $parm5" >> $LOG
 
@@ -41,7 +41,7 @@ while read incmd parm1 parm2 parm3 parm4 parm5; do
 	;;
 	AUTHINFO)
 		if [ -n $parm1 ]; then
-			incmd_nocase=`echo $incmd | gawk '{print toupper($0);}'`
+			incmd_nocase=`echo $incmd | awk '{print toupper($0);}'`
 
 			case $parm1_nocase in
 			USER)

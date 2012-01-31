@@ -59,7 +59,7 @@ do
 	parm5=`echo $parm5 | sed s/[[:cntrl:]]//g`
 
 	# convert to upper-case
-	incmd_nocase=`echo $incmd | gawk '{print toupper($0);}'`
+	incmd_nocase=`echo $incmd | awk '{print toupper($0);}'`
 	#echo $incmd_nocase
 
 	# log user input
@@ -99,7 +99,7 @@ do
 			echo -e "214 Direct comments to ftp@$domain.\r"
 		;;
 	    USER* )
-			parm1_nocase=`echo $parm1 | gawk '{print toupper($0);}'`
+			parm1_nocase=`echo $parm1 | awk '{print toupper($0);}'`
 			if [ "$parm1_nocase" == "ANONYMOUS" ]; then
 		  		echo -e "331 Guest login ok, send your complete e-mail address as a password.\r"
                 AUTH="ANONYMOUS"

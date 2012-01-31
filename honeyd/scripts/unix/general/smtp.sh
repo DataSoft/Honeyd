@@ -38,7 +38,7 @@ do
 	parm5=`echo $parm5 | sed s/[[:cntrl:]]//g`
 
 	# convert to upper-case
-	incmd_nocase=`echo $incmd | gawk '{print toupper($0);}'`
+	incmd_nocase=`echo $incmd | awk '{print toupper($0);}'`
 	#echo $incmd_nocase
 	case $incmd_nocase in
 	    QUIT* )	
@@ -87,7 +87,7 @@ do
 		fi
 		;;
 	    MAIL* )
-		haveFROM=`echo $parm1 | gawk '{print toupper($0);}'`
+		haveFROM=`echo $parm1 | awk '{print toupper($0);}'`
 		if [ "$haveFROM" == "FROM:" ]
 		then
 	    			if [ -n "$parm2" ]
@@ -106,7 +106,7 @@ do
 		#echo $MAILFROM
 		if [ "$MAILFROM" == "ok"  ]
 		then
-			haveTO=`echo $parm1 | gawk '{print toupper($0);}'`
+			haveTO=`echo $parm1 | awk '{print toupper($0);}'`
 			if [ "$haveTO" == "TO:"  ]
 			then
 	    			if [ -n "$parm2" ]

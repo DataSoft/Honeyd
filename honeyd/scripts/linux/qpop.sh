@@ -45,7 +45,7 @@ do
 	parm5=`echo $parm5 | sed s/[[:cntrl:]]//g`
 
 	# convert to upper-case
-	incmd_nocase=`echo $incmd | gawk '{print toupper($0);}'`
+	incmd_nocase=`echo $incmd | awk '{print toupper($0);}'`
 	#echo $incmd_nocase
 
 	if [ "$AUTH" == "no" ]
@@ -70,7 +70,7 @@ do
 		echo -e "-ERR No help.\r"
 		;;
 	    USER* )
-		parm1_nocase=`echo $parm1 | gawk '{print toupper($0);}'`
+		parm1_nocase=`echo $parm1 | awk '{print toupper($0);}'`
 		if [ "$parm1_nocase" == "" ]
 		then
 		  echo -e "-ERR Too few arguments for the user command.\r"

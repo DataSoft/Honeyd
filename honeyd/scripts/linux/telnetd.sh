@@ -15,7 +15,7 @@ BANNER=`perl -nle '/TELNET_BANNER (.*)/ and print $1' < $STRINGSFILE`
 
 
 SERVICE="telnet"
-HOST="serv"
+HOST="server"
 
 state="login"
 count=1
@@ -32,25 +32,25 @@ login_failed() {
 	state="login"
 
 	echo ""
-	echo -n "$HOST Login: "
+	echo -n "$HOST login: "
 
 }
 
-echo -e $BANNER
-echo -n "$HOST Login: "
+echo -e "$BANNER"
+echo -n "$HOST login: "
 
 
 while read name; do
 
 	# remove control-characters
-	name=`echo $name | sed s/[[:cntrl:]]//g`
+	name=`echo "$name" | sed s/[[:cntrl:]]//g`
 
 	echo "$name" >> $LOG
 
 
 	case $state in
 	login)
-		if [ -z $name ]; then
+		if [ -z "$name" ]; then
 			login_failed
 		else
 			state="pass"

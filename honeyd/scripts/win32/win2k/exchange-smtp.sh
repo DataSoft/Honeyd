@@ -42,7 +42,7 @@ do
 	parm5=`echo $parm5 | sed s/[[:cntrl:]]//g`
 
 	# convert to upper-case
-	incmd_nocase=`echo $incmd | gawk '{print toupper($0);}'`
+	incmd_nocase=`echo $incmd | awk '{print toupper($0);}'`
 	#echo $incmd_nocase
 	case $incmd_nocase in
 	    QUIT* )	
@@ -70,7 +70,7 @@ do
 		  echo -e "250 OK\r"
 		;;
 	    MAIL* )
-		haveFROM=`echo $parm1 | gawk -F: '{print toupper($1);}'`
+		haveFROM=`echo $parm1 | awk -F: '{print toupper($1);}'`
 		if [ "$haveFROM" == "FROM" ]
 		then
 	    		if [ `echo "$incmd$parm1$parm2" | grep '<.*>' 2>&1 >/dev/null && echo 1` ]; then
@@ -85,7 +85,7 @@ do
 		fi
 		;;
 	    RCPT* )
-		haveTO=`echo $parm1 | gawk -F: '{print toupper($1);}'`
+		haveTO=`echo $parm1 | awk -F: '{print toupper($1);}'`
 		if [ "$haveTO" == "TO"  ]; then
 			if [ "$MAILFROM" == "ok"  ]; then 
 	    		if [ `echo "$incmd$parm1$parm2" | grep '<.*>' 2>&1 >/dev/null && echo 1` ]; then

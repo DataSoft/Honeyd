@@ -27,16 +27,16 @@ while read name; do
 
 	echo "$name" >> $LOG
 
-	#name=`echo "$name" | gawk '{print toupper($0);}'` 
+	#name=`echo "$name" | awk '{print toupper($0);}'` 
 	cmd=`echo "$name" | grep -i "[A-Z0-9\.][A-Z0-9\.]* [A-Z][A-Z]*"`
 
 	if [ -z "$cmd" ]; then
 		echo "* BAD Invalid tag"
 	else 
-		id=`echo $cmd | gawk '{print $1;}'`
-		param1=`echo $cmd | gawk '{print $3;}'`
-		param2=`echo $cmd | gawk '{print $4;}'`
-		cmd=`echo $cmd | gawk '{print toupper($2);}'`
+		id=`echo $cmd | awk '{print $1;}'`
+		param1=`echo $cmd | awk '{print $3;}'`
+		param2=`echo $cmd | awk '{print $4;}'`
+		cmd=`echo $cmd | awk '{print toupper($2);}'`
 		#echo ":$id:$cmd:$param1:$param2:"
 
 		case $cmd in

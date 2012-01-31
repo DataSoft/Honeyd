@@ -41,7 +41,7 @@ _eof_
 	my_stop
 fi
 
-if [ -z $name ]; then
+if [ -z "$name" ]; then
 	cat << _eof_
 $VERSION at $HOST.$DOMAIN !
 
