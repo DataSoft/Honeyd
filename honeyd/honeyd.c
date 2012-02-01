@@ -2713,6 +2713,11 @@ icmp_recv_cb(struct template *tmpl, u_char *pkt, u_short pktlen)
 
 		/* YM: Add ICMP Timestamp reply capability */
 	case ICMP_TSTAMP:
+
+			/* Sometimes xp_print can be null here... probably shouldn't be, this is just a quick fix */
+			if (xp_print == NULL)
+				return;
+
 		/* Happens only if xp_print != NULL */
 	        if (xp_print->flags.icmp_timestamp_reply) {
 			icmp_tstamp = (struct icmp_msg_timestamp *)
