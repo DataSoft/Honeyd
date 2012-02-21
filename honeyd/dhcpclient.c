@@ -418,7 +418,15 @@ dhcp_recv_cb(struct eth_hdr *eth, struct ip_hdr *ip, u_short iplen)
 	/* Check if we manage a virtual machine with this ethernet address */
 	addr_pack(&eth_dha, ADDR_TYPE_ETH, ETH_ADDR_BITS,
 	    &eth->eth_dst, ETH_ADDR_LEN);
-	if ((arp = arp_find(&eth_dha)) == NULL || !(arp->flags & ARP_INTERNAL))
+
+	udp = (struct udp_hdr *)((u_char *)ip + (ip->ip_hl << 2));
+	msg = (struct dhcp_msg *)((u_char *)udp + UDP_HDR_LEN);
+	msglen = ntohs(udp->uh_ulen) - UDP_HDR_LEN;
+
+	memcpy(&eth_dha.__addr_u.__data8[0], (&msg->dh_chaddr[0]), 16);
+
+	arp = arp_find(&eth_dha);
+	if ( (arp == NULL) || !(arp->flags & ARP_INTERNAL))
 		return;
 
 	tmpl = arp->owner;
@@ -431,11 +439,6 @@ dhcp_recv_cb(struct eth_hdr *eth, struct ip_hdr *ip, u_short iplen)
 
 	if (!(req->state & (DHREQ_STATE_WAITANS | DHREQ_STATE_WAITACK)))
 		return;
-
-	udp = (struct udp_hdr *)((u_char *)ip + (ip->ip_hl << 2));
-
-	msg = (struct dhcp_msg *)((u_char *)udp + UDP_HDR_LEN);
-	msglen = ntohs(udp->uh_ulen) - UDP_HDR_LEN;
 
 	if (msglen != (iplen - (ip->ip_hl << 2) - UDP_HDR_LEN))
 		return;
