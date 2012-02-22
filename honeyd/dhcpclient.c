@@ -423,7 +423,7 @@ dhcp_recv_cb(struct eth_hdr *eth, struct ip_hdr *ip, u_short iplen)
 	msg = (struct dhcp_msg *)((u_char *)udp + UDP_HDR_LEN);
 	msglen = ntohs(udp->uh_ulen) - UDP_HDR_LEN;
 
-	memcpy(&eth_dha.__addr_u.__data8[0], (&msg->dh_chaddr[0]), 16);
+	memcpy(&eth_dha.__addr_u.__data8[0], (&msg->dh_chaddr[0]), ETH_ADDR_LEN);
 
 	arp = arp_find(&eth_dha);
 	if ( (arp == NULL) || !(arp->flags & ARP_INTERNAL))

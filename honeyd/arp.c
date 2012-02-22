@@ -159,7 +159,8 @@ void
 arp_free(struct arp_req *req)
 {
 	SPLAY_REMOVE(paarptree, &pa_arp_reqs, req);
-	if (SPLAY_FIND(haarptree, &ha_arp_reqs, req) == req)
+
+	if (SPLAY_FIND(haarptree, &ha_arp_reqs, req) != NULL)
 		SPLAY_REMOVE(haarptree, &ha_arp_reqs, req);
 
 	evtimer_del(&req->active);
@@ -182,16 +183,27 @@ arp_discover(struct arp_req *req, struct addr *ha)
 	struct interface *inter = req->inter;
 	struct timeval tv = {0, 500000};
 
+	struct addr bcast;
+	addr_pack(&bcast, ADDR_TYPE_ETH, ETH_ADDR_BITS,
+	    ETH_ADDR_BROADCAST, ETH_ADDR_LEN);
+
 	if (ha != NULL) {
-		/* 
-		 * We might get multiple packets, so we need to remove
-		 * the entry before we can insert it again.
-		 */
-		if (SPLAY_FIND(haarptree, &ha_arp_reqs, req) == req)
-			SPLAY_REMOVE(haarptree, &ha_arp_reqs, req);
 		memcpy(&req->ha, ha, sizeof(*ha));
-		if (SPLAY_FIND(haarptree, &ha_arp_reqs, req) == NULL)
-			SPLAY_INSERT(haarptree, &ha_arp_reqs, req);
+
+		// Don't insert the broadcast MAC address into the ARP table
+		if (0 != memcmp(&ha->__addr_u, &bcast.__addr_u, ETH_ADDR_LEN))
+		{
+
+			/*
+			 * We might get multiple packets, so we need to remove
+			 * the entry before we can insert it again.
+			 */
+			if (SPLAY_FIND(haarptree, &ha_arp_reqs, req) != NULL)
+				SPLAY_REMOVE(haarptree, &ha_arp_reqs, req);
+
+			if (SPLAY_FIND(haarptree, &ha_arp_reqs, req) == NULL)
+				SPLAY_INSERT(haarptree, &ha_arp_reqs, req);
+		}
 	}
 
 	if (req->cnt < 2) {
