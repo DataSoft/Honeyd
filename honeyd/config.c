@@ -151,10 +151,7 @@ void template_dump_ips(char* filePath)
 {
 	FILE *fp;
 
-	char *tmpFile = NULL;
-	asprintf(&tmpFile, "%s%s", filePath, ".tmp");
-
-	if ((fp = fopen(tmpFile , "w+")) == NULL)
+	if ((fp = fopen(filePath , "w+")) == NULL)
 	{
 		warn("Error opening the DHCP IP address dump file");
 		return;
@@ -166,13 +163,6 @@ void template_dump_ips(char* filePath)
 			fprintf(fp, "%s\n", tmpl->name);
 	}
 	fclose(fp);
-
-	char* mvCommand = NULL;
-	asprintf(&mvCommand, "mv -f -T %s %s", tmpFile, filePath);
-	system(mvCommand);
-
-	free(tmpFile);
-	free(mvCommand);
 }
 
 void
