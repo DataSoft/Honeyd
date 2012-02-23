@@ -166,6 +166,7 @@ int                      honeyd_show_usage;
 int			 honeyd_debug;
 uid_t			 honeyd_uid = 32767;
 gid_t			 honeyd_gid = 32767;
+char *templateDump = NULL;
 int			 honeyd_needsroot;	/* Need different IDs */
 int			 honeyd_disable_webserver = 0;
 int			 honeyd_disable_update = 0;
@@ -231,6 +232,7 @@ usage(void)
 	    "  -P                     Enable polling mode.\n"
 	    "  -l logfile             Log packets and connections to logfile.\n"
 	    "  -s logfile             Logs service status output to logfile.\n"
+        "  -t ipFile              Dumps currently used DHCP IP addresses to ipFile\n"
 	    "  -i interface           Listen on interface.\n"
 	    "  -p file                Read nmap-style fingerprints from file.\n"
 	    "  -x file                Read xprobe-style fingerprints from file.\n"
@@ -3265,7 +3267,7 @@ main(int argc, char *argv[])
 
 	orig_argc = argc;
 	orig_argv = argv;
-	while ((c = getopt_long(argc, argv, "VPTdc:i:p:x:a:u:g:f:l:s:0:R:h?",
+	while ((c = getopt_long(argc, argv, "VPTdc:i:p:x:a:u:g:f:t:l:s:0:R:h?",
 				honeyd_long_opts, NULL)) != -1) {
 		char *ep;
 		switch (c) {
@@ -3368,6 +3370,9 @@ main(int argc, char *argv[])
 			break;
 		case 's':
 			servicelog = optarg;
+			break;
+		case 't':
+			templateDump = optarg;
 			break;
 		case 'x':
 			config.xprobe = optarg;

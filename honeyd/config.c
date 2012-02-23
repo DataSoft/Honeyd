@@ -146,6 +146,35 @@ template_find(const char *name)
 	return (SPLAY_FIND(templtree, &templates, &tmp));
 }
 
+// Dumps IP addresses of DHCP
+void template_dump_ips(char* filePath)
+{
+	FILE *fp;
+
+	char *tmpFile = NULL;
+	asprintf(&tmpFile, "%s%s", filePath, ".tmp");
+
+	if ((fp = fopen(tmpFile , "w+")) == NULL)
+	{
+		warn("Error opening template IP file");
+		return;
+	}
+
+	struct template *tmpl;
+	SPLAY_FOREACH(tmpl, templtree, &templates) {
+		if (tmpl->dhcp_req != NULL)
+			fprintf(fp, "%s\n", tmpl->name);
+	}
+	fclose(fp);
+
+	char* mvCommand = NULL;
+	asprintf(&mvCommand, "mv -f -T %s %s", tmpFile, filePath);
+	system(mvCommand);
+
+	free(tmpFile);
+	free(mvCommand);
+}
+
 void
 template_list_glob(struct evbuffer *buffer, const char *pattern)
 {

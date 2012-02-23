@@ -86,6 +86,7 @@
 #include "template.h"
 #include "dhcpclient.h"
 
+extern char *templateDump;
 extern rand_t *honeyd_rand;
 
 int need_dhcp = 0;	/* set to one if a configuration specifies dhcp */
@@ -372,6 +373,7 @@ _dhcp_reply(struct template *tmpl, u_char *buf, size_t buflen)
 			return;
 		}
 
+
 		/* We are done - tell the template about our luck */
 		template_remove(tmpl);
 		free(tmpl->name);
@@ -379,6 +381,7 @@ _dhcp_reply(struct template *tmpl, u_char *buf, size_t buflen)
 		if (tmpl->name == NULL)
 			err(1, "%s: strdup", __func__);
 		template_insert(tmpl);
+		template_dump_ips(templateDump);
 
 		/* Update our ARP table */
 		syslog(LOG_DEBUG, "Updating ARP binding: %s -> %s",
