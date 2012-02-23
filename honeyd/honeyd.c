@@ -3186,6 +3186,17 @@ void
 honeyd_signal(int fd, short what, void *arg)
 {
 	syslog(LOG_NOTICE, "exiting on signal %d", fd);
+
+	// Clear the IP list file if we're using it
+	if (templateDump != NULL)
+	{
+		FILE *fp;
+		if ((fp = fopen(templateDump , "w+")) == NULL)
+			warn("Error opening the DHCP IP address dump file");
+		else
+			close(fp);
+	}
+
 	honeyd_exit(0);
 }
 
@@ -3584,6 +3595,16 @@ main(int argc, char *argv[])
 		    honeyd_uid, honeyd_gid);
 	} else {
 		syslog(LOG_WARNING, "Running with root privileges.");
+	}
+
+	// Clear/create the IP list file if we're using it
+	if (templateDump != NULL)
+	{
+		FILE *fp;
+		if ((fp = fopen(templateDump , "w+")) == NULL)
+			warn("Error opening the DHCP IP address dump file");
+		else
+			close(fp);
 	}
 
 	/* 

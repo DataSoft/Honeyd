@@ -156,7 +156,7 @@ void template_dump_ips(char* filePath)
 
 	if ((fp = fopen(tmpFile , "w+")) == NULL)
 	{
-		warn("Error opening template IP file");
+		warn("Error opening the DHCP IP address dump file");
 		return;
 	}
 
