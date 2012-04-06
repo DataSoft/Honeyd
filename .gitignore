@@ -19,10 +19,10 @@
 # Binaries #
 ############
 
-honeyd/honeyd
-honeyd/honeydctl
-honeyd/honeydstats
-honeyd/hsniff
+honeyd
+honeydctl
+honeydstats
+hsniff
 
 # Packages #
 ############
@@ -54,7 +54,7 @@ Thumbs.db
 # Autogen Files #
 #################
 
-honeyd/autom4te.cache/*
+/autom4te.cache/*
 libtool
 stamp-h1
 ylwrap
