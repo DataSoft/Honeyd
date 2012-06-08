@@ -2264,6 +2264,9 @@ personality_line(struct personality *pers, char *line)
 	if (strncasecmp(line, "Class", 5) == 0)
 		return (0);
 
+	if (strncasecmp(line, "CPE", 3) == 0)
+		return (0);
+
 	p2 = line;
 	p = strsep(&p2, "(");
 	if (p2 == NULL)
