@@ -2263,6 +2263,9 @@ personality_line(struct personality *pers, char *line)
 	/* Ignore additional nmap output */
 	if (strncasecmp(line, "Class", 5) == 0)
 		return (0);
+	
+	if (strncasecmp(line, "CPE", 3) == 0)
+		return (0);
 
 	if (strncasecmp(line, "CPE", 3) == 0)
 		return (0);
