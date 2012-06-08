@@ -14422,7 +14422,7 @@ if test "$HAVEMETHOD" = "no"; then
         LIBS="$LIBDL $LIBS"
 
         LIBCGUESS=`echo /lib/libc.so.*`
-    LIBCGUESS64 =`echo /lib/x86_64-linux-gnu/libc.so.*`
+    LIBCGUESS64=`echo /lib/x86_64-linux-gnu/libc.so.*`
     LIBCGUESS386=`echo /lib/i386-linux-gnu/libc.so.*`
 
     USRLIBCGUESS=`echo /usr/lib/libc.so.*`
