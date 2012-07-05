@@ -47,7 +47,7 @@ class regress:
     def __init__(self, name, cmd, config, debug=0):
         self.testname = name
         self.debug = debug
-        self.config = config
+        self.config = os.getcwd() + "/" + config
         self.cmd = cmd
 	self.oktests  = 0
 	self.runtests = 0
