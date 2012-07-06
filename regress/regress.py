@@ -382,8 +382,9 @@ class regress:
             # filter on our dedciated subnets
             pc.setfilter('net 192.18.0.0/15 and net 192.0.2.0/24') 
             for ts, pkt in pc:
-                lp = dpkt.loopback.Loopback(pkt)
-                ip = dpkt.ip.IP(str(lp.data))
+                eth = dpkt.ethernet.Ethernet(pkt)
+                ip = eth.data
+                
                 os.write(self.dpktfh, "SRC=" + dnet.ip_ntoa(ip.src) + "\n")
                 os.write(self.dpktfh, "DST=" + dnet.ip_ntoa(ip.dst) + "\n")
                 os.write(self.dpktfh, "ID=%d\n" % ip.id)

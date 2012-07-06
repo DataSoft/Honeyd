@@ -1,0 +1,1 @@
+Note to future devs: these regression tests currently fail with mismatched output. Some of the failures have been caused by recent honeyd changes, but it's possible these are all old and have been failing for a long time before we started changing things. Basically, these need to be rewritten before they can be used again. - PherricOxide
