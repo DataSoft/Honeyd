@@ -285,7 +285,8 @@ cdef class pcap:
                           <unsigned char *>&ctx)
         if ctx.got_exc:
             exc = sys.exc_info()
-            raise exc[0], exc[1], exc[2]
+            if exc[0] != None:
+                raise Exception(exc)
         return n
 
     def loop(self, callback, *args):
