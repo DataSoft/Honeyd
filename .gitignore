@@ -50,11 +50,12 @@ hsniff
 ehthumbs.db
 Icon?
 Thumbs.db
+*~
 
 # Autogen Files #
 #################
 
-/autom4te.cache/*
+autom4te.cache/*
 libtool
 stamp-h1
 ylwrap
