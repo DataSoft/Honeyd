@@ -19,20 +19,38 @@ typedef struct {
 
 __BEGIN_DECLS
 void SHA1Transform(u_int32_t [5], const unsigned char [64])
+#ifdef __OpenBSD__
 		__attribute__((__bounded__(__minbytes__,1,5)))
-		__attribute__((__bounded__(__minbytes__,2,64)));
+		__attribute__((__bounded__(__minbytes__,2,64)))
+#endif
+;
 void SHA1Init(SHA1_CTX *);
 void SHA1Update(SHA1_CTX *, const unsigned char *, unsigned int)
-		__attribute__((__bounded__(__string__,2,3)));
+#ifdef __OpenBSD__
+		__attribute__((__bounded__(__string__,2,3)))
+#endif
+;
 void SHA1Final(unsigned char [20], SHA1_CTX *)
-		__attribute__((__bounded__(__minbytes__,1,20)));
+#ifdef __OpenBSD__
+		__attribute__((__bounded__(__minbytes__,1,20)))
+#endif
+;
 char *SHA1End(SHA1_CTX *, char *)
-		__attribute__((__bounded__(__minbytes__,2,41)));
+#ifdef __OpenBSD__
+		__attribute__((__bounded__(__minbytes__,2,41)))
+#endif
+;
 char *SHA1File(char *, char *)
-		__attribute__((__bounded__(__minbytes__,2,41)));
+#ifdef __OpenBSD__
+		__attribute__((__bounded__(__minbytes__,2,41)))
+#endif
+;
 char *SHA1Data(const unsigned char *, size_t, char *)
+#ifdef __OpenBSD__
 		__attribute__((__bounded__(__string__,1,2)))
-		__attribute__((__bounded__(__minbytes__,3,41)));
+		__attribute__((__bounded__(__minbytes__,3,41)))
+#endif
+;
 __END_DECLS
 
 #define SHA1_DIGESTSIZE       20
