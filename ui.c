@@ -129,7 +129,7 @@ make_prompt(void)
 int
 ui_write_prompt(struct uiclient *client)
 {
-	u_char *tmp = make_prompt();
+	char *tmp = make_prompt();
 
 	evbuffer_add(client->outbuf, tmp, strlen(tmp));
 	event_add(&client->ev_write, NULL);
@@ -140,7 +140,7 @@ ui_write_prompt(struct uiclient *client)
 int
 ui_buffer_prompt(struct uiclient *client)
 {
-	u_char *tmp = make_prompt();
+	char *tmp = make_prompt();
 
 	evbuffer_add(client->outbuf, tmp, strlen(tmp));
 	return (0);
@@ -278,7 +278,7 @@ ui_handler(int fd, short what, void *arg)
 	}
 
 	n = mybuf->off;
-	p = mybuf->buffer;
+	p = (char*)mybuf->buffer;
 	consumed = 0;
 	while (n--) {
 		consumed++;
@@ -289,11 +289,11 @@ ui_handler(int fd, short what, void *arg)
 		 */
 		if (*p == '\n') {
 			*p = '\0';
-			ui_handle_command(client->outbuf, mybuf->buffer);
+			ui_handle_command(client->outbuf, (char*)mybuf->buffer);
 
 			evbuffer_drain(mybuf, consumed);
 			n = mybuf->off;
-			p = mybuf->buffer;
+			p = (char*)mybuf->buffer;
 			consumed = 0;
 			continue;
 		}

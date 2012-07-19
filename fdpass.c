@@ -63,7 +63,7 @@ send_fd(int socket, int fd, void *base, size_t len)
 	cmsg->cmsg_len = CMSG_LEN(sizeof(int));
 	cmsg->cmsg_level = SOL_SOCKET;
 	cmsg->cmsg_type = SCM_RIGHTS;
-	*(int *)CMSG_DATA(cmsg) = fd;
+	memcpy(CMSG_DATA(cmsg), &fd, sizeof(fd));
 #endif
 
 	if (base == NULL) {
@@ -145,7 +145,7 @@ receive_fd(int socket, void *base, size_t *len)
 	if (cmsg->cmsg_type != SCM_RIGHTS)
 		errx(1, "%s: expected type %d got %d", __func__,
 		    SCM_RIGHTS, cmsg->cmsg_type);
-	fd = (*(int *)CMSG_DATA(cmsg));
+	memcpy(&fd, CMSG_DATA(cmsg), sizeof(fd));
 #endif
 	return fd;
 #else

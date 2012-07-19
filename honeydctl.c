@@ -154,7 +154,10 @@ receive(int fd, int display)
                     last = prompt;
                 if (last) {
                     last++;
-                    write(1, Buffer, last-Buffer);
+                    if(write(1, Buffer, last-Buffer) == -1)
+			{
+				errx(EXIT_FAILURE, "Failed to write to file descriptor");
+			}
                 }
             }
             prompt = prompt == NULL ? Buffer : prompt+1;
@@ -174,7 +177,10 @@ receive(int fd, int display)
                 flush = sizeof (Buffer) / 2;
             else
                 flush = last - Buffer + 1;
-            write(1, Buffer, flush);
+            if(write(1, Buffer, flush) == -1)
+		{
+			errx(EXIT_FAILURE, "Failed to write to file descriptor");
+		}
             strlcpy(Buffer, Buffer + flush, sizeof(Buffer));
             len -= flush;
         }
@@ -201,7 +207,12 @@ check_fd(int sig)
 		if (select(data+1, &f, NULL, NULL, &t) > 0) {
 			len = read(data, buf, sizeof (buf));
 			if (len > 0)
-				write(fileno(stdout), buf, len);
+			{
+				if(write(fileno(stdout), buf, len))
+				{
+					errx(EXIT_FAILURE, "Failed to write to file descriptor");
+				}
+			}
 			else
 				longjmp(pppdead, -1);
 		}
@@ -263,6 +274,8 @@ main(int argc, char **argv)
     
 		case 'v':
 			verbose = REC_VERBOSE;
+			//TODO: Dirty kludge to suppress warning. Fix this unused variable
+			verbose = verbose;
 			break;
 		default:
 			usage();
@@ -358,7 +371,10 @@ main(int argc, char **argv)
 			len++;
 		}
 #endif
-		write(fd, l, len);
+		if(write(fd, l, len) == -1)
+		{
+			errx(EXIT_FAILURE, "Failed to write to file descriptor");
+		}
 		if (receive(fd, REC_SHOW) != 0)
 			break;
 	}

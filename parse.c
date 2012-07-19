@@ -80,8 +80,6 @@
 #include <sys/tree.h>
 #include <sys/queue.h>
 
-#define _XOPEN_SOURCE /* glibc2 is stupid and needs this */
-#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <err.h>

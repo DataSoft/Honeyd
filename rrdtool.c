@@ -77,8 +77,8 @@ rrdtool_evb_readcb(struct bufferevent *bev, void *parameter)
 
 	char *start, *end;
 
-	start = EVBUFFER_DATA(bev->input);
-	if ((end = evbuffer_find(bev->input, "OK ", 3)) == NULL)
+	start = (char*)EVBUFFER_DATA(bev->input);
+	if ((end = (char*)evbuffer_find(bev->input, (unsigned char*)"OK ", 3)) == NULL)
 		return;
 	
 	/* Find the end of the line */

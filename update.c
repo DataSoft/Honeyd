@@ -164,14 +164,14 @@ update_writecb(struct bufferevent *bev, void *parameter)
 static void
 update_errorcb(struct bufferevent *bev, short what, void *parameter)
 {
-	char *data = evbuffer_find(bev->input, "\r\n\r\n", 4);
-	char *p, *end, *error_code;
+	char *data = (char*)evbuffer_find(bev->input, (u_char *)"\r\n\r\n", 4);
+	char *end, *error_code;
 
 	if (!(what & EVBUFFER_EOF) || data == NULL)
 		goto error;
 
-	end = EVBUFFER_DATA(bev->input);
-	p = strsep(&end, " ");
+	end = (char*)EVBUFFER_DATA(bev->input);
+	strsep(&end, " ");
 	if (end == NULL || *end == '\0')
 		goto error;
 
@@ -185,7 +185,7 @@ update_errorcb(struct bufferevent *bev, short what, void *parameter)
 	evbuffer_drain(bev->input,
 	    (int)(data - (int)EVBUFFER_DATA(bev->input) + 4));
 
-	update_parse_information(EVBUFFER_DATA(bev->input),
+	update_parse_information((char*)EVBUFFER_DATA(bev->input),
 	    EVBUFFER_LENGTH(bev->input));
 
 	close(bev->ev_read.ev_fd);

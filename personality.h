@@ -268,6 +268,8 @@ struct personality *personality_random(void);
 void personality_free(struct personality *);
 
 void ip_personality(struct template *, uint16_t *, enum ipid_protocol proto);
+struct personate * tcp_personality_test(const struct tcp_con *con, struct personality *person,
+	uint8_t sndflags);
 int tcp_personality(struct tcp_con *con, uint8_t *pflags, int *pwindow, int *pdf,
 	    uint16_t *pid, struct tcp_options *poptions);
 void tcp_personality_options(struct tcp_con *con, struct tcp_hdr *tcp, struct tcp_options *options);

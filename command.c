@@ -47,7 +47,6 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <signal.h>
-#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -320,7 +319,7 @@ cmd_droppriv(uid_t uid, gid_t gid)
 
 	return;
  error:
-	syslog(LOG_WARNING, error);
+	syslog(LOG_WARNING, error, "");
 	errx(1, "%s: terminated", __func__);
 }
 

@@ -72,7 +72,6 @@
 #include <sys/time.h>
 #endif
 
-#define _GNU_SOURCE
 #include <err.h>
 #include <errno.h>
 #include <stdio.h>

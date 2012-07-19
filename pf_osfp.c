@@ -85,7 +85,7 @@ pf_osfp_fingerprint_hdr(const struct ip_hdr *ip, const struct tcp_hdr *tcp)
 
 
 	cnt = (tcp->th_off << 2) - sizeof(*tcp);
-	optp = (caddr_t)tcp + sizeof(*tcp);
+	optp = (void*)tcp + sizeof(*tcp);
 	for (; cnt > 0; cnt -= optlen, optp += optlen) {
 		if (*optp == TCP_OPT_EOL)
 			break;

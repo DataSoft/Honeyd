@@ -3194,7 +3194,7 @@ honeyd_signal(int fd, short what, void *arg)
 		if ((fp = fopen(templateDump , "w+")) == NULL)
 			warn("Error opening the DHCP IP address dump file");
 		else
-			close(fp);
+			fclose(fp);
 	}
 
 	honeyd_exit(0);
@@ -3271,7 +3271,12 @@ main(int argc, char *argv[])
 	int i, c, orig_argc, ninterfaces = 0;
 	FILE *fp;
 
-	chdir(PATH_HONEYDDATA);
+	if(chdir(PATH_HONEYDDATA) == -1)
+	{
+		printf("ERROR: Could not find path PATH_HONEYDDATA: %s\n", PATH_HONEYDDATA);
+		perror("");
+		exit(EXIT_FAILURE);
+	}
 
 	fprintf(stderr, "Honeyd V%s Copyright (c) 2002-2007 Niels Provos\n",
 	    VERSION);
@@ -3604,7 +3609,7 @@ main(int argc, char *argv[])
 		if ((fp = fopen(templateDump , "w+")) == NULL)
 			warn("Error opening the DHCP IP address dump file");
 		else
-			close(fp);
+			fclose(fp);
 	}
 
 	/* 

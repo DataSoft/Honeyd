@@ -49,8 +49,9 @@ void trace_onoff(int);
 #define TRACE(x, y) do { \
 	if (trace_on) { \
 		char *line = NULL; \
-		asprintf(&line, "%s:%d: fd %d: %s", \
-		    __FILE__, __LINE__, (x), #y); \
+		if(asprintf(&line, "%s:%d: fd %d: %s", \
+		    __FILE__, __LINE__, (x), #y) == -1) \
+			{perror("ERROR: Could not allocate memory for asprintf()\n");} \
 		trace_enter(x, line, 0); \
 	} \
 	y; \
@@ -59,8 +60,9 @@ void trace_onoff(int);
 #define TRACE_RESET(x, y) do { \
 	if (trace_on) { \
 		char *line = NULL; \
-		asprintf(&line, "%s:%d: fd %d: %s", \
-		    __FILE__, __LINE__, (x), #y); \
+		if(asprintf(&line, "%s:%d: fd %d: %s", \
+		    __FILE__, __LINE__, (x), #y)) \
+			{perror("ERROR: Could not allocate memory for asprintf()\n");}  \
 		trace_enter(x, line, 1); \
 	} \
 	y; \

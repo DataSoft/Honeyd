@@ -62,6 +62,7 @@
 #include <time.h>
 #endif
 #include <unistd.h>
+#include <grp.h>
 #include <getopt.h>
 #include <dnet.h>
 
@@ -809,6 +810,6 @@ droppriv(uid_t uid, gid_t gid)
 
 	return;
  error:
-	syslog(LOG_WARNING, error);
+	syslog(LOG_WARNING, error, "");
 	errx(1, "%s: terminated", __func__);
 }

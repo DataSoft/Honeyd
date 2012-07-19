@@ -130,7 +130,8 @@ CFLAGS	= -O2 -Wall -g \
 	-DPATH_HONEYDLIB="\"$(honeydlibdir)\"" \
 	-DHONEYD_PLUGINS_DECLARE="$(honeydpluginsdeclare)" \
 	-DHONEYD_PLUGINS="$(honeydplugins)" \
-	-DPATH_RRDTOOL="\"$(PATH_RRDTOOL)\""
+	-DPATH_RRDTOOL="\"$(PATH_RRDTOOL)\"" \
+	-D_GNU_SOURCE
 
 INCLUDES = -I$(top_srcdir)/@DNETCOMPAT@ -I$(top_srcdir)/compat \
 	@PYTHONINC@ @EVENTINC@ @PCAPINC@ @DNETINC@ @ZINC@

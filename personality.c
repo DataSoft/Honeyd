@@ -665,7 +665,6 @@ tcp_personality_seq(struct tcp_con * con, struct template *tmpl, struct personal
 {
 	struct timeval tmp;
 	extern rand_t *honeyd_rand;
-	int slowhz;
 
 	tmpl->seqcalls++;
 
@@ -681,7 +680,7 @@ tcp_personality_seq(struct tcp_con * con, struct template *tmpl, struct personal
 		}
 	}
 
-	slowhz = tcp_personality_time(tmpl, &tmp);
+	tcp_personality_time(tmpl, &tmp);
 
 	/* 
 	 * This is where new ISNs are generated.  The latest ISN is
@@ -852,7 +851,7 @@ tcp_personality_options(struct tcp_con *con, struct tcp_hdr *tcp,
 			case 'T':
 				if (tmpl != NULL)
 				{
-					struct timeval tv;
+					//struct timeval tv;
 					//tcp_personality_time(tmpl, &tv);
 					//gettimeofday(&tv, NULL);
 					//timestamp = tv.tv_sec;
@@ -2622,7 +2621,7 @@ get_fprint(FILE * fp_in)
 
 /* !!!DEBUG FUNCTION!!! */
 
-static void
+static void __attribute__ ((unused))
 print_xprobe_struct(struct xp_fingerprint *pers)
 {
 	printf ("OS_ID:                             %s\n", pers->os_id);
