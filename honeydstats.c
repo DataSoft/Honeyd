@@ -330,34 +330,46 @@ signature_process(struct evbuffer *evbuf)
 static int
 signature_length(struct evbuffer *evbuf)
 {
-	struct evbuffer tmp;
+	struct evbuffer *tmp = evbuffer_new();
 	uint32_t length, tlen;
 
-	tmp = *evbuf;
+	if(evbuffer_add_buffer(tmp, evbuf) == -1)
+	{
+		evbuffer_free(tmp);
+		return -1;
+	}
 
 	/* name */
-	if (tag_peek_length(&tmp, &tlen) == -1 || EVBUFFER_LENGTH(&tmp) < tlen)
-		return (-1);
+	if (tag_peek_length(tmp, &tlen) == -1 || EVBUFFER_LENGTH(tmp) < tlen)
+	{
+		evbuffer_free(tmp);
+		return -1;
+	}
 		
 	length = tlen;
-	tmp.buffer += tlen;
-	tmp.off -= tlen;
+	evbuffer_drain(tmp, tlen);
 
 	/* signature */
-	if (tag_peek_length(&tmp, &tlen) == -1 || EVBUFFER_LENGTH(&tmp) < tlen)
-		return (-1);
+	if (tag_peek_length(tmp, &tlen) == -1 || EVBUFFER_LENGTH(tmp) < tlen)
+	{
+		evbuffer_free(tmp);
+		return -1;
+	}
 		
 	length += tlen;
-	tmp.buffer += tlen;
-	tmp.off -= tlen;
+	evbuffer_drain(tmp, tlen);
 
 	/* data */
-	if (tag_peek_length(&tmp, &tlen) == -1 || EVBUFFER_LENGTH(&tmp) < tlen)
-		return (-1);
+	if (tag_peek_length(tmp, &tlen) == -1 || EVBUFFER_LENGTH(tmp) < tlen)
+	{
+		evbuffer_free(tmp);
+		return -1;
+	}
 		
 	length += tlen;
 
-	return (length);
+	evbuffer_free(tmp);
+	return length;
 }
 
 void

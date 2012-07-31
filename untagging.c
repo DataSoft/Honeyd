@@ -114,22 +114,34 @@ tag_peek(struct evbuffer *evbuf, uint8_t *ptag)
 int
 tag_peek_length(struct evbuffer *evbuf, uint32_t *plength)
 {
-	struct evbuffer tmp;
+	struct evbuffer *tmp = evbuffer_new();
 	int res;
 
 	if (EVBUFFER_LENGTH(evbuf) < 2)
+	{
+		evbuffer_free(tmp);
 		return (-1);
+	}
 
-	tmp = *evbuf;
-	tmp.buffer += 1;
-	tmp.off -= 1;
+	if(evbuffer_add_buffer(tmp, evbuf) == -1)
+	{
+		//Error, copy failed
+		evbuffer_free(tmp);
+		return -1;
+	}
 
-	res = decode_int_internal(plength, &tmp, 0);
+	evbuffer_drain(tmp, 1);
+
+	res = decode_int_internal(plength, tmp, 0);
 	if (res == -1)
+	{
+		evbuffer_free(tmp);
 		return (-1);
+	}
 
 	*plength += res + 1;
 
+	evbuffer_free(tmp);
 	return (0);
 }
 
