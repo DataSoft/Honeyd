@@ -1,0 +1,50 @@
+#!/bin/bash
+
+usage()
+{
+	echo "Usage: ./generateDebs nmap-os-db ifname"
+	echo -e "\tnmap-os-db = Path to the nmap-os-db file that you wish to test against"
+	echo -e "\tifname = The network interface on which to do the testing"
+}
+
+if [ -z $1 ]; then
+	usage
+	exit 1
+else
+	FILENAME=$1
+fi
+
+if [ -z $2 ]; then
+	usage
+	exit 1
+else
+	IFNAME=$2
+fi
+
+
+count=0
+while read LINE ; do
+
+	#Only consider Fingerprint lines
+	if [[ "$LINE" == Fingerprint* ]]
+	then
+		((count++))
+
+		#Chop off the "Fingerprint " prefix
+		LINE=${LINE:12}
+		#echo $LINE
+
+		CONFIG="create default\nset default default tcp action block\nset default default udp action block\nset default default icmp action block\n\ncreate test\nset test personality \"$LINE\"\nset test uptime 1728650\nset test maxfds 35\nadd test tcp port 8080 open\nadd test udp port 5353 open\nset test ethernet \"dell\"\n\nbind 192.168.56.200 test\n"
+
+		echo -e $CONFIG > test.config
+		cat test.config
+	
+		#honeyd -i $IFNAME -f test.config
+
+		#rm test.config
+		#echo -e $CONFIG
+	fi
+
+done < $FILENAME
+
+echo -e "\nTotal $count Lines read"
