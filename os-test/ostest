@@ -18,6 +18,12 @@ printout()
 
 trap printout SIGINT
 
+#Assert root user
+if [ $USER != "root" ]; then
+	echo "Execute with root privileges: sudo $0"
+	exit 1
+fi
+
 if [ -z $1 ]; then
 	usage
 	exit 1
