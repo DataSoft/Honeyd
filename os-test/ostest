@@ -1,0 +1,121 @@
+#!/bin/bash
+
+usage()
+{
+	echo "Usage: ./generateDebs nmap-os-db ifname ip-addr"
+	echo -e "\tnmap-os-db = Path to the nmap-os-db file that you wish to test against"
+	echo -e "\tifname = The network interface on which to do the testing"
+	echo -e "\tip-addr = The IP address to put the honeyd VM on"
+}
+
+printout()
+{
+	echo -e "\nTotal $count Lines read"
+	echo Total successful personalities: $WIN
+	echo Total failed personalities: $LOSE
+	exit
+}
+
+trap printout SIGINT
+
+#Assert root user
+if [ $USER != "root" ]; then
+	echo "Execute with root privileges: sudo $0"
+	exit 1
+fi
+
+if [ -z $1 ]; then
+	usage
+	exit 1
+else
+	FILENAME=$1
+fi
+
+if [ -z $2 ]; then
+	usage
+	exit 1
+else
+	IFNAME=$2
+fi
+
+if [ -z $3 ]; then
+	usage
+	exit 1
+else
+	VMIP=$3
+fi
+
+
+rm -f result
+
+count=0
+WIN=0
+LOSE=0
+while read LINE ; do
+
+	#Only consider Fingerprint lines
+	if [[ "$LINE" == Fingerprint* ]]
+	then
+		((count++))
+
+		#Chop off the "Fingerprint " prefix
+		LINE=${LINE:12}
+		#echo $LINE
+
+		CONFIG="create test\nset test personality \"$LINE\"\nset test uptime 1728650\nset test maxfds 35\nadd test tcp port 8080 open\nadd test udp port 5353 open\nset test ethernet \"dell\"\nset test default tcp action reset\nset test default udp action reset\nset test default icmp action reset\n\nbind \"$VMIP\" test\n"
+
+		echo -e $CONFIG > test.config
+		#cat test.config
+	
+		honeyd -i $IFNAME -f /home/dan/Code/honeyd/os-test/test.config &
+
+		sleep 1	
+			
+		nmap -O --fuzzy 192.168.10.200 > nmap.out
+
+		killall honeyd
+
+		#cat nmap.out
+
+		#compare results!
+		while read INNERLINE ; do
+			if [[ "$INNERLINE" == "Aggressive OS guesses: "* ]]; then
+				#find where the first '(' character is. Since that's where we stop.
+				END=$(expr index "$INNERLINE" "'('")
+				LENGTH=$((END-25))
+				#echo $LENGTH
+				#echo $INNERLINE
+				if [[ ${INNERLINE:23:$LENGTH} == $LINE ]]; then
+					echo SUCCESS ${INNERLINE:$END:2} $LINE >> result
+					WIN=$((WIN+1))
+				else
+					echo FAIL $LINE >> result
+					LOSE=$((LOSE+1))
+				fi
+				
+				
+			fi
+			if [[ "$INNERLINE" == "OS details: "* ]]; then
+				if [[ $INNERLINE == *"$LINE"* ]]; then
+					echo SUCCESS 100 $LINE >> result
+					WIN=$((WIN+1))
+				else
+					echo FAIL $LINE >> result
+					LOSE=$((LOSE+1))
+				fi
+			fi
+			
+
+		done < nmap.out
+
+		
+
+		#exit
+
+		#rm test.config
+		#echo -e $CONFIG
+	fi
+
+done < $FILENAME
+
+printout

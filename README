@@ -85,6 +85,23 @@ after creating its raw sockets.  This depends on your configuration
 file.  You can force privileges to be dropped by setting Honeyd's uid
 and gid via the -u <uid> and -g <gid> flags.
 
+Testing
+-------
+
+To empirically verify the quality of OS scan results, a bash script named
+ostest is included. There are a few "gotcha"s with this, however. Normally,
+honeyd ignores packets coming from the same machine that it's running on
+so as to avoid routing loops. (or so it claims, at least) So scanning
+yourself doesn't work.
+
+An ugly hack to make this work is to use a separate hardware ethernet
+interface such as a cheap usb-ethernet adapter. You then have two eth adapters,
+call them eth0 and eth1. Set up a route so that the IP address given to 
+ostest is routing to eth0. You then set up honeyd to listen on eth1. 
+
+Honeyd will see packets coming from eth0 and assume that it is a different
+machine than ours, and not drop them.
+
 License:
 --------
 
