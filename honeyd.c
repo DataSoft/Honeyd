@@ -1448,7 +1448,7 @@ tcp_send(struct tcp_con *con, uint8_t flags, u_char *payload, u_int len)
 
 	tcp = (struct tcp_hdr *)(pkt + IP_HDR_LEN);
 
-	if(tmpl->person != NULL)
+	if((tmpl != NULL) && (tmpl->person != NULL))
 	{
 		struct personate * pers;
 		if((pers = tcp_personality_test(con, con->tmpl->person, flags)) != NULL)
