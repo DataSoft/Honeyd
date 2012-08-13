@@ -22,7 +22,7 @@ Installation:
 
 Honeyd depends on several libraries:
 
- - libevent1  - event notification
+ - libevent  - event notification
  - libdnet   - packet creation
  - libpcap   - packet sniffing
  - libpcre   - perl regular expression library (optional; for subsystems)
@@ -35,22 +35,10 @@ To install dependencies in Ubuntu:
 
 $ sudo apt-get install libevent-dev libdumbnet-dev libpcap-dev libpcre3-dev libedit-dev bison flex libtool automake
 
-
-
 To install dependencies in ArchLinux:
 
 # First get these packages
-$ pacman -S libdnet libpcap pcre libedit bison flex libtool automake
-
-# Libevent1 must be downloaded and installed from AUR. Libevent2 does not currently work with honeyd.
-
-$ pacman -S base-devel
-$ wget http://aur.archlinux.org/packages/li/libevent1/libevent1.tar.gz
-$ tar -xzf libevent1.tar.gz
-$ cd libevent1
-$ makepkg
-$ pacman -U libevent1-1.4.14b-1-x86_64.pkg.tar.xz
-
+$ pacman -S libdnet libpcap libevent pcre libedit bison flex libtool automake
 
 For the regression framework to run, you need to install the Python
 module for libdnet.  You might need Python 2.4 for the best results.
