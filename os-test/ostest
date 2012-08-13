@@ -71,7 +71,7 @@ while read LINE ; do
 
 		sleep 1	
 			
-		nmap -O --fuzzy 192.168.10.200 > nmap.out
+		nmap -O --fuzzy $VMIP > nmap.out
 
 		killall honeyd
 
