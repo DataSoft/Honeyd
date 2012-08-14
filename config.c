@@ -628,11 +628,15 @@ template_clone(const char *newname, const struct template *tmpl,
 		 *
 		 * DHCP templates get a temporary IP address assigned.
 		 */
-		if (isipaddr) {
-			if (inter == NULL) {
+		if (isipaddr)
+		{
+			if (inter == NULL)
+			{
 				inter = interface_find_responsible(&addr);
 				if (inter == NULL)
-					errx(1, "%s: cannot find interface");
+				{
+					errx(1, "Cannot find interface");
+				}
 			}
 			newtmpl->inter = inter;
 
