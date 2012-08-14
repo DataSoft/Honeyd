@@ -251,7 +251,7 @@ main(int argc, char **argv)
 {
 	struct sockaddr *sock;
 	struct sockaddr_un ifsun;
-	int fd, len, verbose, save_errno;
+	int fd, len, display, save_errno;
 	unsigned TimeoutVal;
 	struct sigaction act, oact;
 	char *sockname = HONEYD_SOCK;
@@ -263,7 +263,7 @@ main(int argc, char **argv)
 	const char *l;
 	int ch;
 
-	verbose = 0;
+	display = REC_SHOW;
 	TimeoutVal = 2;
 
 	while ((ch = getopt(argc, argv, "t:v")) != -1) {
@@ -273,9 +273,7 @@ main(int argc, char **argv)
 			break;
     
 		case 'v':
-			verbose = REC_VERBOSE;
-			//TODO: Dirty kludge to suppress warning. Fix this unused variable
-			verbose = verbose;
+			display += REC_VERBOSE;
 			break;
 		default:
 			usage();
@@ -334,7 +332,7 @@ main(int argc, char **argv)
 	}
 
 	/* Get Prompt ? */
-	receive(fd, REC_SHOW);
+	receive(fd, display);
 
 #ifdef HAVE_LIBEDIT
 	hist = history_init();
@@ -375,7 +373,7 @@ main(int argc, char **argv)
 		{
 			errx(EXIT_FAILURE, "Failed to write to file descriptor");
 		}
-		if (receive(fd, REC_SHOW) != 0)
+		if (receive(fd, display) != 0)
 			break;
 	}
 	fprintf(stderr, "Connection closed\n");

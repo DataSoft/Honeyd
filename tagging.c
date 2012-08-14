@@ -66,38 +66,6 @@ tagging_init()
 	_buf = evbuffer_new();
 }
 
-/* 
- * We encode integer's by nibbles; the first nibble contains the number
- * of significant nibbles - 1;  this allows us to encode up to 64-bit
- * integers.  This function is byte-order independent.
- */
-
-void
-encode_int(struct evbuffer *evbuf, uint32_t number)
-{
-	int off = 1, nibbles = 0;
-	uint8_t data[5];
-
-	memset(data, 0, sizeof(data));
-	while (number) {
-		if (off & 0x1)
-			data[off/2] = (data[off/2] & 0xf0) | (number & 0x0f);
-		else
-			data[off/2] = (data[off/2] & 0x0f) |
-			    ((number & 0x0f) << 4);
-		number >>= 4;
-		off++;
-	}
-
-	if (off > 2)
-		nibbles = off - 2;
-
-	/* Off - 1 is the number of encoded nibbles */
-	data[0] = (data[0] & 0x0f) | ((nibbles & 0x0f) << 4);
-
-	evbuffer_add(evbuf, data, (off + 1) / 2);
-}
-
 /*
  * Marshal a data type, the general format is as follows:
  *

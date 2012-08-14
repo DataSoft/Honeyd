@@ -140,3 +140,9 @@ Makefile.in
 /dpkt/dpkt/vrrp.pyc
 /dpkt/dpkt/yahoo.pyc
 /regress/regress.pyc
+
+# Generated ostest Files #
+##########################
+os-test/nmap.out
+os-test/result
+os-test/test.config

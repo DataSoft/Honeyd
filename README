@@ -22,7 +22,7 @@ Installation:
 
 Honeyd depends on several libraries:
 
- - libevent1  - event notification
+ - libevent  - event notification
  - libdnet   - packet creation
  - libpcap   - packet sniffing
  - libpcre   - perl regular expression library (optional; for subsystems)
@@ -35,22 +35,10 @@ To install dependencies in Ubuntu:
 
 $ sudo apt-get install libevent-dev libdumbnet-dev libpcap-dev libpcre3-dev libedit-dev bison flex libtool automake
 
-
-
 To install dependencies in ArchLinux:
 
 # First get these packages
-$ pacman -S libdnet libpcap pcre libedit bison flex libtool automake
-
-# Libevent1 must be downloaded and installed from AUR. Libevent2 does not currently work with honeyd.
-
-$ pacman -S base-devel
-$ wget http://aur.archlinux.org/packages/li/libevent1/libevent1.tar.gz
-$ tar -xzf libevent1.tar.gz
-$ cd libevent1
-$ makepkg
-$ pacman -U libevent1-1.4.14b-1-x86_64.pkg.tar.xz
-
+$ pacman -S libdnet libpcap libevent pcre libedit bison flex libtool automake
 
 For the regression framework to run, you need to install the Python
 module for libdnet.  You might need Python 2.4 for the best results.
@@ -96,6 +84,23 @@ under a sandbox like systrace.  If possible, Honeyd drops privileges
 after creating its raw sockets.  This depends on your configuration
 file.  You can force privileges to be dropped by setting Honeyd's uid
 and gid via the -u <uid> and -g <gid> flags.
+
+Testing
+-------
+
+To empirically verify the quality of OS scan results, a bash script named
+ostest is included. There are a few "gotcha"s with this, however. Normally,
+honeyd ignores packets coming from the same machine that it's running on
+so as to avoid routing loops. (or so it claims, at least) So scanning
+yourself doesn't work.
+
+An ugly hack to make this work is to use a separate hardware ethernet
+interface such as a cheap usb-ethernet adapter. You then have two eth adapters,
+call them eth0 and eth1. Set up a route so that the IP address given to 
+ostest is routing to eth0. You then set up honeyd to listen on eth1. 
+
+Honeyd will see packets coming from eth0 and assume that it is a different
+machine than ours, and not drop them.
 
 License:
 --------

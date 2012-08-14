@@ -1448,7 +1448,7 @@ tcp_send(struct tcp_con *con, uint8_t flags, u_char *payload, u_int len)
 
 	tcp = (struct tcp_hdr *)(pkt + IP_HDR_LEN);
 
-	if(tmpl->person != NULL)
+	if((tmpl != NULL) && (tmpl->person != NULL))
 	{
 		struct personate * pers;
 		if((pers = tcp_personality_test(con, con->tmpl->person, flags)) != NULL)
@@ -2562,11 +2562,13 @@ icmp_recv_cb(struct template *tmpl, u_char *pkt, u_short pktlen)
 		nmap_print = &tmpl->person->ie_test;
 
 	/* Without xprobe or nmap fingerprint, we understand only ECHO and UNREACH */
-	if ((xp_print == NULL) && (nmap_print == NULL)) {
-		if (!(icmp->icmp_type == ICMP_ECHO) &&
-		    !(icmp->icmp_type == ICMP_UNREACH &&
-			icmp->icmp_code == ICMP_UNREACH_PORT))
+	if ((xp_print == NULL) && (nmap_print == NULL))
+	{
+		if ((icmp->icmp_type != ICMP_ECHO) && !
+				((icmp->icmp_type == ICMP_UNREACH) && (icmp->icmp_code == ICMP_UNREACH_PORT)))
+		{
 			return;
+		}
 	}
 
 	cksum = icmp->icmp_cksum;
@@ -2590,6 +2592,7 @@ icmp_recv_cb(struct template *tmpl, u_char *pkt, u_short pktlen)
 		spoof = tmpl->spoof;
 	else
 		spoof = no_spoof;
+
 	addr_ntop(&spoof.new_src, ssrc, sizeof(ssrc));
 	addr_ntop(&spoof.new_dst, sdst, sizeof(sdst));
 
@@ -2597,173 +2600,197 @@ icmp_recv_cb(struct template *tmpl, u_char *pkt, u_short pktlen)
 		snprintf(adst, sizeof(adst), "%s (was %s)", ssrc, odst);
 	else
 		snprintf(adst, sizeof(adst), "%s", odst);
+
 	if (spoof.new_dst.addr_type != ADDR_TYPE_NONE)
 		snprintf(asrc, sizeof(asrc), "%s (was %s)", sdst, osrc);
 	else
 		snprintf(asrc, sizeof(asrc), "%s", osrc);
 
-	switch (icmp->icmp_type) {
-	case ICMP_ECHO:
-	        icmp_echo = (struct icmp_msg_echo *)(icmp + 1);
-		dat = (u_char *)(icmp_echo + 1);
-	  
-		syslog(LOG_DEBUG, "Sending ICMP Echo Reply: %s -> %s",
-		    adst, asrc);
-
-		if(((icmp->icmp_code == 9) && (ip->ip_tos == 0)) || ((icmp->icmp_code == 0) && (ip->ip_tos == 4)))
+	switch (icmp->icmp_type)
+	{
+		case ICMP_ECHO:
 		{
-			if(nmap_print->response)
+			icmp_echo = (struct icmp_msg_echo *)(icmp + 1);
+			dat = (u_char *)(icmp_echo + 1);
+
+			syslog(LOG_DEBUG, "Sending ICMP Echo Reply: %s -> %s",
+				adst, asrc);
+
+			if(((icmp->icmp_code == 9) && (ip->ip_tos == 0)) || ((icmp->icmp_code == 0) && (ip->ip_tos == 4)))
 			{
-				uint8_t code = 0;
-				switch(nmap_print->replyCode)
+				//If we don't have an icmp personality, just quit (no response, aka block)
+				if(nmap_print == NULL)
 				{
-					case 'Z':
-						code = 0;
-						break;
-					case 'S':
-						code = icmp->icmp_code;
-						break;
-					//This case is just something thats not the others not sure what to use here
-						//but it doesn't occur currently in the nmap db
-					case 'O':
-						code = 7;
-						break;
-					case 'N':
-						code = nmap_print->replyVal;
-						break;
+					return;
 				}
-				uint16_t offset = 0;
-				//for case N, df bit = 0, so do nothing
-				switch(nmap_print->dfi_test)
-				{
-					//echos DF of probe
-					case 'S':
-						//16384 is an empty offset field with the DF bit set to 1
-						//Create empty offset field with the DF bit of the probe.
-						offset = (ntohs(ip->ip_off) & 16384);
-						break;
 
-					//DF bit is set in this case;
-					case 'Y':
-						offset = 16384;
-						break;
-
-					//DF Bit is toggled
-					case 'O':
-						//49151 is the inverse of an empty offset field with the DF bit set to 1
-						// we mask all but the DF bit to 1, the inverse is an empty offset field
-						// with the DF bit toggled.
-						offset = ~(ntohs(ip->ip_off) | 49151);
-						break;
-				}
-				if((nmap_print->ttl == nmap_print->ttl_guess) && (nmap_print->ttl_max != nmap_print->ttl_min))
+				if(nmap_print->response)
 				{
-					extern rand_t *honeyd_rand;
-					nmap_print->ttl = nmap_print->ttl_min + rand_uint32(honeyd_rand)%(nmap_print->ttl_max - nmap_print->ttl_min);
-					nmap_print->ttl_guess = nmap_print->ttl+1;
+					uint8_t code = 0;
+					switch(nmap_print->replyCode)
+					{
+						case 'Z':
+						{
+							code = 0;
+							break;
+						}
+						case 'S':
+						{
+							code = icmp->icmp_code;
+							break;
+						}
+						//This case is just something thats not the others not sure what to use here
+							//but it doesn't occur currently in the nmap db
+						case 'O':
+						{
+							code = 7;
+							break;
+						}
+						case 'N':
+						{
+							code = nmap_print->replyVal;
+							break;
+						}
+					}
+					uint16_t offset = 0;
+					//for case N, df bit = 0, so do nothing
+					switch(nmap_print->dfi_test)
+					{
+						//echos DF of probe
+						case 'S':
+							//16384 is an empty offset field with the DF bit set to 1
+							//Create empty offset field with the DF bit of the probe.
+							offset = (ntohs(ip->ip_off) & 16384);
+							break;
+
+						//DF bit is set in this case;
+						case 'Y':
+							offset = 16384;
+							break;
+
+						//DF Bit is toggled
+						case 'O':
+							//49151 is the inverse of an empty offset field with the DF bit set to 1
+							// we mask all but the DF bit to 1, the inverse is an empty offset field
+							// with the DF bit toggled.
+							offset = ~(ntohs(ip->ip_off) | 49151);
+							break;
+					}
+					if((nmap_print->ttl == nmap_print->ttl_guess) && (nmap_print->ttl_max != nmap_print->ttl_min))
+					{
+						extern rand_t *honeyd_rand;
+						nmap_print->ttl = nmap_print->ttl_min + rand_uint32(honeyd_rand)%(nmap_print->ttl_max - nmap_print->ttl_min);
+						nmap_print->ttl_guess = nmap_print->ttl+1;
+					}
+					//In this first probe the TOS is zero so we just set it to 0 as well
+					icmp_echo_reply(tmpl, ip, code, 0, offset, nmap_print->ttl, dat, dlen, spoof);
 				}
-				//In this first probe the TOS is zero so we just set it to 0 as well
-				icmp_echo_reply(tmpl, ip, code, 0, offset, nmap_print->ttl, dat, dlen, spoof);
+				break;
+			}
+
+			if (xp_print)
+			{
+				/* ym: Use our own icmp echo reply function */
+				icmp_echo_reply(tmpl, ip, xp_print->flags.icmp_echo_code,
+					xp_print->flags.icmp_echo_tos_bits ? ip->ip_tos : 0,
+					xp_print->flags.icmp_echo_df_bit ? IP_DF : 0,
+					xp_print->ttl_vals.icmp_echo_reply_ttl.ttl_val,
+					dat, dlen, spoof);
+			}
+			else
+			{
+				icmp_echo_reply(tmpl, ip, ICMP_CODE_NONE, 0, 0, honeyd_ttl, dat, dlen, spoof);
 			}
 			break;
 		}
-		if (xp_print)
+		case ICMP_UNREACH:
 		{
-			/* ym: Use our own icmp echo reply function */
-			icmp_echo_reply(tmpl, ip, xp_print->flags.icmp_echo_code,
-				xp_print->flags.icmp_echo_tos_bits ? ip->ip_tos : 0,
-				xp_print->flags.icmp_echo_df_bit ? IP_DF : 0,
-				xp_print->ttl_vals.icmp_echo_reply_ttl.ttl_val,
-				dat, dlen, spoof);
-		}
-		else
-		{
-			icmp_echo_reply(tmpl, ip,
-					ICMP_CODE_NONE, 0, 0, honeyd_ttl, dat, dlen, spoof);
-		}
-		break;
+			/* Only port unreachable at the moment */
+			icmp_quote = (struct icmp_msg_quote *)(icmp + 1);
+			rip = (struct ip_hdr *)(&icmp_quote->icmp_ip);
 
-	case ICMP_UNREACH:
-		/* Only port unreachable at the moment */
-		icmp_quote = (struct icmp_msg_quote *)(icmp + 1);
-		rip = (struct ip_hdr *)(&icmp_quote->icmp_ip);
+			if (rip->ip_p != IP_PROTO_UDP)
+				break;
 
-		if (rip->ip_p != IP_PROTO_UDP)
+			udp = (struct udp_hdr *)((u_char *)rip + (ip->ip_hl<<2));
+			tmpip.ip_src = rip->ip_dst;
+			tmpip.ip_dst = rip->ip_src;
+			tmpudp.uh_sport = udp->uh_dport;
+			tmpudp.uh_dport = udp->uh_sport;
+			honeyd_setudp(&honeyd_udp, &tmpip, &tmpudp, 0);
+
+			/* Find matching state */
+			con = (struct udp_con *)SPLAY_FIND(tree, &udpcons,
+				&honeyd_udp.conhdr);
+			if (con == NULL)
+				break;
+
+			con->softerrors++;
+			syslog(LOG_DEBUG,
+				"Received port unreachable: %s -> %s: errors %d",
+				asrc, adst, con->softerrors);
+			if (con->softerrors >= HONEYD_MAX_SOFTERRS)
+				udp_free(con);
+
 			break;
 
-		udp = (struct udp_hdr *)((u_char *)rip + (ip->ip_hl<<2));
-		tmpip.ip_src = rip->ip_dst;
-		tmpip.ip_dst = rip->ip_src;
-		tmpudp.uh_sport = udp->uh_dport;
-		tmpudp.uh_dport = udp->uh_sport;
-		honeyd_setudp(&honeyd_udp, &tmpip, &tmpudp, 0);
-
-		/* Find matching state */
-		con = (struct udp_con *)SPLAY_FIND(tree, &udpcons,
-		    &honeyd_udp.conhdr);
-		if (con == NULL)
-			break;
-
-		con->softerrors++;
-		syslog(LOG_DEBUG,
-		    "Received port unreachable: %s -> %s: errors %d",
-		    asrc, adst, con->softerrors);
-		if (con->softerrors >= HONEYD_MAX_SOFTERRS)
-			udp_free(con);
-
-		break;
-
+		}
 		/* YM: Add ICMP Timestamp reply capability */
-	case ICMP_TSTAMP:
+		case ICMP_TSTAMP:
+		{
+				/* Sometimes xp_print can be null here... probably shouldn't be, this is just a quick fix */
+				if (xp_print == NULL)
+					return;
 
-			/* Sometimes xp_print can be null here... probably shouldn't be, this is just a quick fix */
-			if (xp_print == NULL)
-				return;
+			/* Happens only if xp_print != NULL */
+				if (xp_print->flags.icmp_timestamp_reply)
+				{
+					icmp_tstamp = (struct icmp_msg_timestamp *)
+						((u_char*)pkt + (ip->ip_hl << 2));
 
-		/* Happens only if xp_print != NULL */
-	        if (xp_print->flags.icmp_timestamp_reply) {
-			icmp_tstamp = (struct icmp_msg_timestamp *)
-			    ((u_char*)pkt + (ip->ip_hl << 2));
-		    
-			syslog(LOG_DEBUG, "Sending ICMP Timestamp Reply: %s -> %s",
-			    adst, asrc);
-		    
-			icmp_timestamp_reply(tmpl, ip, icmp_tstamp,
-			    xp_print->ttl_vals.icmp_timestamp_reply_ttl.ttl_val, spoof);
+					syslog(LOG_DEBUG, "Sending ICMP Timestamp Reply: %s -> %s", adst, asrc);
+
+					icmp_timestamp_reply(tmpl, ip, icmp_tstamp,
+						xp_print->ttl_vals.icmp_timestamp_reply_ttl.ttl_val, spoof);
+				}
+				break;
 		}
-	        break;
-
 		/* YM: Added ICMP Address Mask reply capability */
-	case ICMP_MASK:
-		/* Happens only if xp_print != NULL */
-	        if (xp_print->flags.icmp_addrmask_reply) {
-			icmp_idseq = (struct icmp_msg_idseq *)(icmp + 1);
-		    
-			syslog(LOG_DEBUG, "Sending ICMP Address Mask Reply: %s -> %s",
-			    adst, asrc);
-		
-			icmp_mask_reply(tmpl, ip, icmp_idseq,
-			    xp_print->ttl_vals.icmp_addrmask_reply_ttl.ttl_val,
-			    HONEYD_ADDR_MASK, spoof);
-		}
-		break;
+		case ICMP_MASK:
+		{
+			/* Happens only if xp_print != NULL */
+				if (xp_print->flags.icmp_addrmask_reply) {
+				icmp_idseq = (struct icmp_msg_idseq *)(icmp + 1);
 
+				syslog(LOG_DEBUG, "Sending ICMP Address Mask Reply: %s -> %s",
+					adst, asrc);
+
+				icmp_mask_reply(tmpl, ip, icmp_idseq,
+					xp_print->ttl_vals.icmp_addrmask_reply_ttl.ttl_val,
+					HONEYD_ADDR_MASK, spoof);
+			}
+			break;
+
+		}
 		/* YM: Added ICMP Information reply capability */
-	case ICMP_INFO:
-		/* Happens only if xp_print != NULL */
-	        if (xp_print->flags.icmp_info_reply) {
-			icmp_idseq = (struct icmp_msg_idseq *)(icmp + 1);
-		    
-			syslog(LOG_DEBUG, "Sending ICMP Info Reply: %s -> %s",
-			    adst, asrc);
-		
-			icmp_info_reply(tmpl, ip, icmp_idseq,
-			    xp_print->ttl_vals.icmp_info_reply_ttl.ttl_val, spoof);
-		}
-		break;
+		case ICMP_INFO:
+		{
+			/* Happens only if xp_print != NULL */
+				if (xp_print->flags.icmp_info_reply) {
+				icmp_idseq = (struct icmp_msg_idseq *)(icmp + 1);
 
-	default:
-		break;
+				syslog(LOG_DEBUG, "Sending ICMP Info Reply: %s -> %s",
+					adst, asrc);
+
+				icmp_info_reply(tmpl, ip, icmp_idseq,
+					xp_print->ttl_vals.icmp_info_reply_ttl.ttl_val, spoof);
+			}
+			break;
+		}
+		default:
+		{
+			break;
+		}
 	}
 }
 

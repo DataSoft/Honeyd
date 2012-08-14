@@ -246,7 +246,7 @@ ui_writer(int fd, short what, void *arg)
 	struct evbuffer *buffer = client->outbuf;
 	int n;
 
-	n = write(fd, buffer->buffer, buffer->off);
+	n = evbuffer_write(buffer, fd);
 	if (n == -1) {
 		if (errno == EINTR || errno == EAGAIN)
 			goto schedule;
@@ -260,7 +260,7 @@ ui_writer(int fd, short what, void *arg)
 	evbuffer_drain(buffer, n);
 
  schedule:
-	if (buffer->off)
+	if (evbuffer_get_length(buffer))
 		event_add(&client->ev_write, NULL);
 }
 
@@ -269,39 +269,24 @@ ui_handler(int fd, short what, void *arg)
 {
 	struct uiclient *client = arg;
 	struct evbuffer *mybuf = client->inbuf;
-	char *p;
-	int n, consumed;
 
-	if (evbuffer_read(mybuf, fd, -1) <= 0) {
+	if (evbuffer_read(mybuf, fd, -1) <= 0)
+	{
 		ui_dead(client);
 		return;
 	}
 
-	n = mybuf->off;
-	p = (char*)mybuf->buffer;
-	consumed = 0;
-	while (n--) {
-		consumed++;
+	size_t length;
+	char *line;
 
-		/*
-		 * When we find a newline, cut off the line and feed it to the
-		 * command processor.  Then move the rest up-front.
-		 */
-		if (*p == '\n') {
-			*p = '\0';
-			ui_handle_command(client->outbuf, (char*)mybuf->buffer);
+	while((line = evbuffer_readln(mybuf, &length, EVBUFFER_EOL_LF)) != NULL);
+	{
+		ui_handle_command(client->outbuf, line);
 
-			evbuffer_drain(mybuf, consumed);
-			n = mybuf->off;
-			p = (char*)mybuf->buffer;
-			consumed = 0;
-			continue;
-		}
-		p++;
+		evbuffer_drain(mybuf, length);
 	}
 
 	ui_write_prompt(client);
-
 	event_add(&client->ev_read, NULL);
 }
 

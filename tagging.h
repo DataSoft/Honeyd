@@ -86,8 +86,6 @@ void addr_marshal(struct evbuffer *, struct addr *);
 void tag_marshal(struct evbuffer *evbuf, uint8_t tag, void *data,
     uint16_t len);
 
-void encode_int(struct evbuffer *evbuf, uint32_t number);
-
 void tag_marshal_int(struct evbuffer *evbuf, uint8_t tag, uint32_t integer);
 
 void tag_marshal_string(struct evbuffer *buf, uint8_t tag, char *string);
