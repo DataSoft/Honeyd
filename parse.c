@@ -151,13 +151,15 @@ int curtype = -1;	/* Lex sets it to SOCK_STREAM or _DGRAM */
 # define YYDEBUG 0
 #endif
 
-/* Enabling verbose error messages.  */
+/* Enabling verbose error messages.
 #ifdef YYERROR_VERBOSE
 # undef YYERROR_VERBOSE
 # define YYERROR_VERBOSE 1
 #else
 # define YYERROR_VERBOSE 0
 #endif
+*/
+#define YYERROR_VERBOSE 1
 
 /* Enabling the token table.  */
 #ifndef YYTOKEN_TABLE
