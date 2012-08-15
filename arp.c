@@ -206,7 +206,7 @@ arp_discover(struct arp_req *req, struct addr *ha)
 		}
 	}
 
-	if (req->cnt < 2) {
+	if ((req->cnt < 2) && (inter != NULL)) {
 		arp_send(inter->if_eth, ARP_OP_REQUEST,
 		    &req->src_ha,   /* ethernet */
 		    &req->src_pa,   /* ip */
