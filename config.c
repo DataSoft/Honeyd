@@ -602,8 +602,7 @@ template_clone(const char *newname, const struct template *tmpl,
 	struct condition *condition;
 	struct template *newtmpl;
 	struct port *port;
-	struct addr addr;
-	int isipaddr = 0;
+	struct in_addr in_addr;
 
 	if ((newtmpl = template_create(newname)) == NULL)
 		return (NULL);
@@ -614,11 +613,11 @@ template_clone(const char *newname, const struct template *tmpl,
 			return (NULL);
 	}
 
+	if(tmpl == NULL)
+		return NULL;
+
 	if (tmpl->person)
 		newtmpl->person = personality_clone(tmpl->person);
-
-	/* Keeps track of the type of template */
-	isipaddr = addr_aton(newtmpl->name, &addr) != -1;
 
 	if (tmpl->ethernet_addr) {
 		newtmpl->ethernet_addr = ethernetcode_clone(tmpl->ethernet_addr);
@@ -628,8 +627,22 @@ template_clone(const char *newname, const struct template *tmpl,
 		 *
 		 * DHCP templates get a temporary IP address assigned.
 		 */
-		if (isipaddr) {
-			if (inter == NULL) {
+
+		//If the template name is a valid IP address
+		if(inet_pton(AF_INET, newtmpl->name, &in_addr) == 1)
+		{
+			//convert struct in_addr to addr
+			struct sockaddr_in tmpSockaddr;
+			struct addr addr;
+
+			tmpSockaddr.sin_family = AF_INET;
+			tmpSockaddr.sin_addr = in_addr;
+			tmpSockaddr.sin_port = 0;	//There is no socket yet. No ports.
+
+			addr_ston((struct sockaddr*)&tmpSockaddr, &addr);
+
+			if (inter == NULL)
+			{
 				inter = interface_find_responsible(&addr);
 				if (inter == NULL)
 					errx(1, "%s: cannot find interface");
