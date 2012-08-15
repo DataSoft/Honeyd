@@ -645,7 +645,9 @@ template_clone(const char *newname, const struct template *tmpl,
 			{
 				inter = interface_find_responsible(&addr);
 				if (inter == NULL)
-					errx(1, "%s: cannot find interface");
+				{
+					errx(1, "Cannot find interface");
+				}
 			}
 			newtmpl->inter = inter;
 
