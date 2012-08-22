@@ -3483,7 +3483,6 @@ main(int argc, char *argv[])
 	/* Initialize honeyd's callback hooks */
 	hooks_init();
 
-	tagging_init();
 	arp_init();
 	interface_initialize(honeyd_recv_cb);
 	config_init();

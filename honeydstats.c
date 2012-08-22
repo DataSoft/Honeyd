@@ -201,14 +201,14 @@ measurement_process(struct user *user, struct evbuffer *evbuf)
 	uint32_t counter;
 	struct timeval tv_start, tv_end, tv_diff;
 	time_t tstart;
-	uint8_t tag;
+	ev_uint32_t tag;
 
-	if (tag_unmarshal_int(evbuf, M_COUNTER, &counter) == -1)
+	if (evtag_unmarshal_int(evbuf, M_COUNTER, &counter) == -1)
 		return (-1);
-	if (tag_unmarshal_timeval(evbuf, M_TV_START, &tv_start) == -1)
+	if (evtag_unmarshal_timeval(evbuf, M_TV_START, &tv_start) == -1)
 		return (-1);
 
-	if (tag_unmarshal_timeval(evbuf, M_TV_END, &tv_end) == -1)
+	if (evtag_unmarshal_timeval(evbuf, M_TV_END, &tv_end) == -1)
 		return (-1);
 
 	timersub(&tv_end, &tv_start, &tv_diff);
@@ -244,9 +244,9 @@ measurement_process(struct user *user, struct evbuffer *evbuf)
 	user->nreports++;
 	user->seqnr = counter;
 
-	while (tag_peek(evbuf, &tag) != -1) {
+	while (evtag_peek(evbuf, &tag) != -1) {
 		if (tag != M_RECORD) {
-			tag_consume(evbuf);
+			evtag_consume(evbuf);
 			continue;
 		}
 
@@ -261,7 +261,7 @@ int
 signature_process(struct evbuffer *evbuf)
 {
 	struct user *user = NULL, tmpuser;
-	uint8_t tag;
+	ev_uint32_t tag;
 	struct evbuffer *tmp = NULL;
 	char *username = NULL;
 	u_char digest[SHA1_DIGESTSIZE];
@@ -273,9 +273,9 @@ signature_process(struct evbuffer *evbuf)
 		    EVBUFFER_DATA(evbuf), EVBUFFER_LENGTH(evbuf));
 	}
 
-	if (tag_unmarshal_string(evbuf, SIG_NAME, &username) == -1)
+	if (evtag_unmarshal_string(evbuf, SIG_NAME, &username) == -1)
 		goto out;
-	if (tag_unmarshal_fixed(evbuf, SIG_DIGEST, digest,
+	if (evtag_unmarshal_fixed(evbuf, SIG_DIGEST, digest,
 		sizeof(digest)) == -1)
 		goto out;
 
@@ -287,7 +287,7 @@ signature_process(struct evbuffer *evbuf)
 
 	if ((tmp = evbuffer_new()) == NULL)
 		err(1, "%s: evbuffer_new");
-	if (tag_unmarshal(evbuf, &tag, tmp) == -1)
+	if (evtag_unmarshal(evbuf, &tag, tmp) == -1)
 		goto out;
 
 	/* Validate signature */
@@ -340,7 +340,7 @@ signature_length(struct evbuffer *evbuf)
 	}
 
 	/* name */
-	if (tag_peek_length(tmp, &tlen) == -1 || EVBUFFER_LENGTH(tmp) < tlen)
+	if (evtag_peek_length(tmp, &tlen) == -1 || EVBUFFER_LENGTH(tmp) < tlen)
 	{
 		evbuffer_free(tmp);
 		return -1;
@@ -350,7 +350,7 @@ signature_length(struct evbuffer *evbuf)
 	evbuffer_drain(tmp, tlen);
 
 	/* signature */
-	if (tag_peek_length(tmp, &tlen) == -1 || EVBUFFER_LENGTH(tmp) < tlen)
+	if (evtag_peek_length(tmp, &tlen) == -1 || EVBUFFER_LENGTH(tmp) < tlen)
 	{
 		evbuffer_free(tmp);
 		return -1;
@@ -360,7 +360,7 @@ signature_length(struct evbuffer *evbuf)
 	evbuffer_drain(tmp, tlen);
 
 	/* data */
-	if (tag_peek_length(tmp, &tlen) == -1 || EVBUFFER_LENGTH(tmp) < tlen)
+	if (evtag_peek_length(tmp, &tlen) == -1 || EVBUFFER_LENGTH(tmp) < tlen)
 	{
 		evbuffer_free(tmp);
 		return -1;

@@ -129,7 +129,6 @@ struct _unittest {
 	void (*cb)(void);
 } unittests[] = {
 	{ "histogram", histogram_test },
-	{ "tagging", tagging_test },
 	{ "stats", stats_test },
 	{ "analyze", analyze_test },
 	{ NULL, NULL}
@@ -338,7 +337,6 @@ main(int argc, char *argv[])
 
 	count_init();
 
-	tagging_init();
 	analyze_init();
 	timeseries_init();
 
