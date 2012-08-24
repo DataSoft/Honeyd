@@ -2,7 +2,7 @@
 
 usage()
 {
-	echo "Usage: ./generateDebs nmap-os-db ifname ip-addr"
+	echo "Usage: ./ostest nmap-os-db ifname ip-addr"
 	echo -e "\tnmap-os-db = Path to the nmap-os-db file that you wish to test against"
 	echo -e "\tifname = The network interface on which to do the testing"
 	echo -e "\tip-addr = The IP address to put the honeyd VM on"
@@ -64,10 +64,13 @@ while read LINE ; do
 
 		CONFIG="create test\nset test personality \"$LINE\"\nset test uptime 1728650\nset test maxfds 35\nadd test tcp port 8080 open\nadd test udp port 5353 open\nset test ethernet \"dell\"\nset test default tcp action reset\nset test default udp action reset\nset test default icmp action reset\n\nbind \"$VMIP\" test\n"
 
+		configFile=$(pwd)
+		configFile="$configFile/test.config"
+
 		echo -e $CONFIG > test.config
 		#cat test.config
 	
-		honeyd -i $IFNAME -f /home/dan/Code/honeyd/os-test/test.config &
+		honeyd -i $IFNAME -f $configFile &
 
 		sleep 1	
 			
