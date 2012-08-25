@@ -47,10 +47,12 @@ fi
 
 
 rm -f result
+mkdir -p results
 
 count=0
 WIN=0
 LOSE=0
+PERSONALITY=""
 while read LINE ; do
 
 	#Only consider Fingerprint lines
@@ -60,7 +62,8 @@ while read LINE ; do
 
 		#Chop off the "Fingerprint " prefix
 		LINE=${LINE:12}
-		#echo $LINE
+		PERSONALITY=$LINE
+		echo "Testing personality $PERSONALITY"
 
 		CONFIG="create test\nset test personality \"$LINE\"\nset test uptime 1728650\nset test maxfds 35\nadd test tcp port 8080 open\nadd test udp port 5353 open\nset test ethernet \"dell\"\nset test default tcp action reset\nset test default udp action reset\nset test default icmp action reset\n\nbind \"$VMIP\" test\n"
 
@@ -70,30 +73,38 @@ while read LINE ; do
 		echo -e $CONFIG > test.config
 		#cat test.config
 	
-		honeyd -i $IFNAME -f $configFile &
+		echo -e "START PERSONALITY $PERSONALITY \n" >> results/honeyd.txt
+		honeyd -i $IFNAME -f $configFile &>> results/honeyd.txt
+		echo -e "STOP PERSONALITY $PERSONALITY \n" >> results/honeyd.txt
 
 		sleep 1	
 			
-		nmap -O --fuzzy $VMIP > nmap.out
+		nmap -O --fuzzy $VMIP &> "results/nmap.temp"
 
 		killall honeyd
 
 		#cat nmap.out
 
 		#compare results!
+		found="false"
 		while read INNERLINE ; do
 			if [[ "$INNERLINE" == "Aggressive OS guesses: "* ]]; then
+				found=true
 				#find where the first '(' character is. Since that's where we stop.
 				END=$(expr index "$INNERLINE" "'('")
+				PERCENT_END=$(expr index "$INNERLINE" "')'")
+				PERCENT_LENGTH=$((PERCENT_END - END - 1));
 				LENGTH=$((END-25))
 				#echo $LENGTH
 				#echo $INNERLINE
 				if [[ ${INNERLINE:23:$LENGTH} == $LINE ]]; then
 					echo SUCCESS ${INNERLINE:$END:2} $LINE >> result
 					WIN=$((WIN+1))
+					found="Correct Partial Match ${INNERLINE:$END:$PERCENT_LENGTH}"
 				else
 					echo FAIL $LINE >> result
 					LOSE=$((LOSE+1))
+					found="Incorrect Partial Match"
 				fi
 				
 				
@@ -102,21 +113,27 @@ while read LINE ; do
 				if [[ $INNERLINE == *"$LINE"* ]]; then
 					echo SUCCESS 100 $LINE >> result
 					WIN=$((WIN+1))
+					found="Correct Exact Match"
 				else
 					echo FAIL $LINE >> result
 					LOSE=$((LOSE+1))
+					found="Incorrect Exact Match"
 				fi
 			fi
 			
 
-		done < nmap.out
+		done < "results/nmap.temp"
 
-		
+		# Aggregate our nmap output for later analysis
+		echo -e "START PERSONALITY $PERSONALITY \n" >> results/nmap.txt
+		cat results/nmap.temp >> results/nmap.txt
+		echo -e "STOP PERSONALITY $PERSONALITY \n" >> results/nmap.txt
 
-		#exit
-
-		#rm test.config
-		#echo -e $CONFIG
+		if [[ $found == "false" ]]; then
+			echo -e "FAILED! No OS lines found in nmap output. \n"
+		else
+			echo -e "$found \n"
+		fi
 	fi
 
 done < $FILENAME
