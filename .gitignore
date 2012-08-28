@@ -146,3 +146,4 @@ Makefile.in
 os-test/nmap.out
 os-test/result
 os-test/test.config
+os-test/results*

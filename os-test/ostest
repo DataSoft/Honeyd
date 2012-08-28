@@ -49,10 +49,21 @@ fi
 rm -f result
 mkdir -p results
 
+TOTALFINGERPRINTS=0
 count=0
 WIN=0
 LOSE=0
 PERSONALITY=""
+
+# Figure out total count for status so far/percent complete
+while read LINE ; do
+	#Only consider Fingerprint lines
+	if [[ "$LINE" == Fingerprint* ]]
+	then
+		((TOTALFINGERPRINTS++))
+	fi
+done < $FILENAME
+
 while read LINE ; do
 
 	#Only consider Fingerprint lines
@@ -63,7 +74,7 @@ while read LINE ; do
 		#Chop off the "Fingerprint " prefix
 		LINE=${LINE:12}
 		PERSONALITY=$LINE
-		echo "Testing personality $PERSONALITY"
+		echo "Testing personality $count/$TOTALFINGERPRINTS ($((100*$count/$TOTALFINGERPRINTS))%) : $PERSONALITY"
 
 		CONFIG="create test\nset test personality \"$LINE\"\nset test uptime 1728650\nset test maxfds 35\nadd test tcp port 8080 open\nadd test udp port 5353 open\nset test ethernet \"dell\"\nset test default tcp action reset\nset test default udp action reset\nset test default icmp action reset\n\nbind \"$VMIP\" test\n"
 
