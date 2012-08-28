@@ -10,13 +10,20 @@ usage()
 
 printout()
 {
+	echo "Exiting now. Cleaning up honeyd and nmap processes..."
+	killall honeyd
+	killall nmap
+	
 	echo -e "\nTotal $count Lines read"
 	echo Total successful personalities: $WIN
 	echo Total failed personalities: $LOSE
+
 	exit
 }
 
 trap printout SIGINT
+trap printout KILL
+trap printout TERM
 
 #Assert root user
 if [ $USER != "root" ]; then
