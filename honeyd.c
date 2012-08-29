@@ -1448,6 +1448,10 @@ tcp_send(struct tcp_con *con, uint8_t flags, u_char *payload, u_int len)
 
 	tcp = (struct tcp_hdr *)(pkt + IP_HDR_LEN);
 
+	tcp_pack_hdr(tcp,
+	    con->con_dport, con->con_sport,
+	    con->snd_una, con->rcv_next, flags, window, 0);
+
 	if((tmpl != NULL) && (tmpl->person != NULL))
 	{
 		struct personate * pers;
@@ -1458,14 +1462,14 @@ tcp_send(struct tcp_con *con, uint8_t flags, u_char *payload, u_int len)
 				case NONE:
 					break;
 				case RESERVED:
-					*((uint8_t *)(tcp + 13)) = 1;
+					tcp->th_x2 = 1;
 					break;
 				case URGENT:
-					*((uint16_t*)(tcp + 18)) = rand_uint16(honeyd_rand);
+					tcp->th_urp = rand_uint16(honeyd_rand);
 					break;
 				case BOTH:
-					*((uint8_t *)(tcp + 13)) = 1;
-					*((uint16_t*)(tcp + 18)) = rand_uint16(honeyd_rand);
+					tcp->th_x2 = 1;
+					tcp->th_urp = rand_uint16(honeyd_rand);
 					break;
 			}
 			if((pers->ttl == pers->ttl_guess) && (pers->ttl_max != pers->ttl_min))
@@ -1476,11 +1480,6 @@ tcp_send(struct tcp_con *con, uint8_t flags, u_char *payload, u_int len)
 			pers->ttl_guess = pers->ttl+1;
 		}
 	}
-
-	tcp_pack_hdr(tcp,
-	    con->con_dport, con->con_sport,
-	    con->snd_una, con->rcv_next, flags, window, 0);
-
 
 	/* ET - options is non-NULL if a personality was found.  If a
          * personality was found, it means that this packet is a response
