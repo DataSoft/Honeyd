@@ -981,13 +981,6 @@ icmp_error_personality(struct template *tmpl,
 		if (test->dat == RVAL_BAD)
 			*p = 0;
 	}
-	if(test->un != 0)
-	{
-		//Sets the unused 4 byte field to the expected value in nmap fingerprint
-		//This is the 5th through 8th bytes of the icmp header
-		memcpy((ip+(ip->ip_hl << 2)+4),&test->un, 4);
-		iphdr_changed = 1;
-	}
 	
 	return (1);
 }
