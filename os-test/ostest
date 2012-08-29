@@ -111,7 +111,7 @@ bind \"$VMIP\" test\n"
 		honeyd -i $IFNAME -f $configFile &>> results/honeyd.txt
 		echo -e "STOP PERSONALITY $PERSONALITY \n" >> results/honeyd.txt
 
-		sleep 1
+		sleep 2
 			
 		nmap -O --fuzzy $VMIP &> "results/nmap.temp"
 
