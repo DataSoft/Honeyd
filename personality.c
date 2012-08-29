@@ -1527,7 +1527,15 @@ parse_tl(struct personality *pers, int off, char *line)
 					if(*end == '-')
 					{
 						strsep(&p2, "-");
-						test->ttl_max = strtoul(p2, &end, 16);
+						int max = strtoul(p2, &end, 16);
+						if (max > 255)
+						{
+							test->ttl_max = 255;
+						}
+						else
+						{
+							test->ttl_max = max;
+						}
 					}
 					//If there isn't a second value the TTL is flat
 					else
@@ -1710,7 +1718,15 @@ parse_u1(struct personality *pers, int off, char *line)
 					if(*end == '-')
 					{
 						strsep(&p2, "-");
-						test->ttl_max = strtoul(p2, &end, 16);
+						int max = strtoul(p2, &end, 16);
+						if (max > 255)
+						{
+							test->ttl_max = 255;
+						}
+						else
+						{
+							test->ttl_max = max;
+						}
 					}
 					//If there isn't a second value the TTL is flat
 					else
@@ -2052,7 +2068,15 @@ parse_ecn(struct personality *pers, int off, char *line)
 						if(*end == '-')
 						{
 							strsep(&p2, "-");
-							ecn->ttl_max = strtoul(p2, &end, 16);
+							int max = strtoul(p2, &end, 16);
+							if (max > 255)
+							{
+								ecn->ttl_max = 255;
+							}
+							else
+							{
+								ecn->ttl_max = max;
+							}
 						}
 						//If there isn't a second value the TTL is flat
 						else
@@ -2196,7 +2220,15 @@ parse_ie(struct personality *pers, int off, char *line)
 					if(*end == '-')
 					{
 						strsep(&p2, "-");
-						ie->ttl_max = strtoul(p2, &end, 16);
+						int max = strtoul(p2, &end, 16);
+						if (max > 255)
+						{
+							ie->ttl_max = 255;
+						}
+						else
+						{
+							ie->ttl_max = max;
+						}
 					}
 					//If there isn't a second value the TTL is flat
 					else
