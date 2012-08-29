@@ -1475,9 +1475,9 @@ tcp_send(struct tcp_con *con, uint8_t flags, u_char *payload, u_int len)
 			if((pers->ttl == pers->ttl_guess) && (pers->ttl_max != pers->ttl_min))
 			{
 				pers->ttl = pers->ttl_min + rand_uint32(honeyd_rand)%(pers->ttl_max - pers->ttl_min);
+				pers->ttl_guess = pers->ttl+1;
 			}
 			ttl = pers->ttl;
-			pers->ttl_guess = pers->ttl+1;
 		}
 	}
 
@@ -1610,7 +1610,6 @@ icmp_send(struct template *tmpl,
 		ip_personality(tmpl, &ipid, ICMP);
 	else
 		ipid = rand_uint16(honeyd_rand);
-
 	ip_pack_hdr(pkt, tos, iplen, ipid, df ? IP_DF: 0, ttl,
 	    IP_PROTO_ICMP, src, dst);
 
@@ -2385,7 +2384,7 @@ udp_send(struct udp_con *con, u_char *payload, u_int len)
 
 	/* Src and Dst are reversed both for ip and tcp */
 	ip_pack_hdr(pkt, 0, iplen, id,
-	    dontfragment ? IP_DF : 0, honeyd_ttl,
+	    dontfragment ? IP_DF : 0, tmpl->person->udptest.ttl,
 	    IP_PROTO_UDP, con->con_ipdst, con->con_ipsrc);
 
 	memcpy(pkt + IP_HDR_LEN + UDP_HDR_LEN, payload, len);
@@ -2942,6 +2941,13 @@ honeyd_route_packet(struct ip_hdr *ip, u_int iplen,
 		lastrouter = r;
 		r = rte->gw;
 		host = r->addr;
+
+		// Prevent underflows of ip_ttl
+		// TODO: throw error/warning. This shouldn't happen.
+		if (addr_cmp(&host, addr) != 0 && ip->ip_ttl == 0)
+		{
+			ip->ip_ttl = 1;
+		}
 	}
 
 	/* Calculate the packet loss rate */
