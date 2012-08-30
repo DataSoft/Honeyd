@@ -674,7 +674,6 @@ main(int argc, char *argv[])
 	/* Initialize Honeyd's callback hooks */
 	hooks_init();
 
-	tagging_init();
 	interface_initialize(hsniff_recv_cb);
 
 	if (stats_username == NULL)
