@@ -99,7 +99,6 @@
 #include "dhcpclient.h"
 #include "rrdtool.h"
 #include "histogram.h"
-#include "update.h"
 #include "util.h"
 #include "personality.h"
 
@@ -169,7 +168,6 @@ gid_t			 honeyd_gid = 32767;
 char *templateDump = NULL;
 int			 honeyd_needsroot;	/* Need different IDs */
 int			 honeyd_disable_webserver = 0;
-int			 honeyd_disable_update = 0;
 int			 honeyd_ignore_parse_errors = 0;
 int			 honeyd_verify_config = 0;
 int			 honeyd_webserver_fix_permissions = 0;
@@ -215,7 +213,6 @@ static struct option honeyd_long_opts[] = {
 	{"webserver-root", required_argument, NULL, 'X'},
 	{"rrdtool-path", required_argument, NULL, 'Y'},
 	{"disable-webserver", 0, &honeyd_disable_webserver, 1},
-	{"disable-update", 0, &honeyd_disable_update, 1},
 	{"verify-config", 0, &honeyd_verify_config, 1},
 	{"ignore-parse-errors", 0, &honeyd_ignore_parse_errors, 1},
 	{"fix-webserver-permissions", 0, &honeyd_webserver_fix_permissions, 1},
@@ -248,7 +245,6 @@ usage(void)
 	    "  --fix-webserver-permissions Change ownership and permissions.\n"
 	    "  --rrdtool-path=path    Path to rrdtool.\n"
 	    "  --disable-webserver    Disables internal webserver\n"
-	    "  --disable-update       Disables checking for security fixes.\n"
 	    "  --verify-config        Verify configuration file then exit.\n"
 	    "  -V, --version          Print program version and exit.\n"
 	    "  -h, --help             Print this message and exit.\n"
@@ -3655,14 +3651,6 @@ main(int argc, char *argv[])
 		else
 			fclose(fp);
 	}
-
-	/* 
-	 * Check that this version of Honeyd does not have any critical
-	 * security holes.
-	 */
-
-	if (!honeyd_disable_update)
-		update_check();
 
 #ifdef HAVE_PYTHON
 	/* Verify that the webserver space is setup correctly */
