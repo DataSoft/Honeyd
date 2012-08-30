@@ -958,7 +958,7 @@ icmp_error_personality(struct template *tmpl,
 	if (test->rid != RVAL_OKAY)
 	{
 		iphdr_changed = 1;
-		ip->ip_id = test->ridVal;
+		ip->ip_id = htons(test->ridVal);
 	}
 
 	/* We need to recompute the ip header checksum in some cases */
