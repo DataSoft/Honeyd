@@ -539,6 +539,13 @@ honeyd_exit(int status)
 void
 honeyd_ether_cb(struct arp_req *req, int success, void *arg)
 {
+
+	if((req == NULL) || (arg == NULL))
+	{
+		syslog(LOG_WARNING, "%s: invalid packet to encapsulate",  __func__);
+		return;
+	}
+
 	u_char pkt[HONEYD_MTU + 40]; /* XXX - Enough? */
 	struct interface *inter = req->inter;
 	struct ip_hdr *ip = arg;
@@ -556,12 +563,18 @@ honeyd_ether_cb(struct arp_req *req, int success, void *arg)
 		goto out;
 	}
 
-	memcpy(pkt + ETH_HDR_LEN, ip, iplen);
-	if (eth_send(inter->if_eth, pkt, len) != len) {
-		syslog(LOG_ERR, "%s: couldn't send packet size %d: %m",
-		    __func__, len);
-	} else {
-		count_increment(stats_network.output_bytes, iplen);
+	if(inter != NULL)
+	{
+		memcpy(pkt + ETH_HDR_LEN, ip, iplen);
+		if (eth_send(inter->if_eth, pkt, len) != len)
+		{
+			syslog(LOG_ERR, "%s: couldn't send packet size %d: %m",
+				__func__, len);
+		}
+		else
+		{
+			count_increment(stats_network.output_bytes, iplen);
+		}
 	}
 
  out:
