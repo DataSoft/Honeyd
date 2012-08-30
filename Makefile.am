@@ -83,8 +83,7 @@ honeyd_SOURCES	= honeyd.c command.c parse.y lex.l config.c personality.c \
 	osfp.c osfp.h ui.c ui.h ethernet.c ethernet.h \
 	parser.h tagging.c tagging.h stats.c stats.h \
 	dhcpclient.c dhcpclient.h rrdtool.c rrdtool.h \
-	histogram.c histogram.h update.c update.h \
-	untagging.c untagging.h
+	histogram.c histogram.h untagging.c untagging.h
 
 honeyd_DEPENDENCIES = @PYEXTEND@ @LIBOBJS@
 honeyd_LDADD = @PYEXTEND@ @LIBOBJS@ @PYTHONLIB@ @EVENTLIB@ @PCAPLIB@ \
