@@ -2100,8 +2100,7 @@ parse_ecn(struct personality *pers, int off, char *line)
 					{
 						return -1;
 					}
-					break;
-
+					continue;
 				case 'C':
 					strsep(&p2, "=");
 					c = *p2;
