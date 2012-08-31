@@ -1639,9 +1639,12 @@ icmp_error_send(struct template *tmpl, struct addr *addr,
 
 	pkt = pool_alloc(pool_pkt);
 
-	if(type == ICMP_UNREACH && code == ICMP_UNREACH_PORT && tmpl->person->udptest.un)
+	if (tmpl != NULL && tmpl->person != NULL)
 	{
-		voidword = tmpl->person->udptest.un;
+		if(type == ICMP_UNREACH && code == ICMP_UNREACH_PORT && tmpl->person->udptest.un)
+		{
+			voidword = tmpl->person->udptest.un;
+		}
 	}
 
 	icmp_pack_hdr_quote(pkt + IP_HDR_LEN, type, code, voidword, rip, quotelen);
