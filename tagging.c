@@ -58,14 +58,6 @@
 
 #include "tagging.h"
 
-struct evbuffer *_buf;
-
-void
-tagging_init()
-{
-	_buf = evbuffer_new();
-}
-
 void
 tag_marshal_record(struct evbuffer *evbuf, uint8_t tag, struct record *record)
 {
