@@ -688,9 +688,10 @@ honeyd_delay_cb(int fd, short which, void *arg)
 		addr_pack(&dst, ADDR_TYPE_IP, IP_ADDR_BITS,
 		    &ip->ip_dst, IP_ADDR_LEN);
 
+		struct interface* inter = interface_find_responsible(&dst);
 		/* This is the source template */
-		if (tmpl != NULL && tmpl->ethernet_addr != NULL &&
-		    interface_find_responsible(&dst) == tmpl->inter) {
+		if (tmpl != NULL && tmpl->ethernet_addr != NULL && tmpl->inter != NULL &&
+		    inter == tmpl->inter) {
 			struct addr src;
 		
 			/* To do ARP, we need to know all this information */
