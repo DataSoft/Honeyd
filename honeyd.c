@@ -697,9 +697,10 @@ honeyd_delay_cb(int fd, short which, void *arg)
 		addr_pack(&dst, ADDR_TYPE_IP, IP_ADDR_BITS,
 		    &ip->ip_dst, IP_ADDR_LEN);
 
+		struct interface* inter = interface_find_responsible(&dst);
 		/* This is the source template */
-		if (tmpl != NULL && tmpl->ethernet_addr != NULL &&
-		    interface_find_responsible(&dst) == tmpl->inter) {
+		if (tmpl != NULL && tmpl->ethernet_addr != NULL && tmpl->inter != NULL &&
+		    inter == tmpl->inter) {
 			struct addr src;
 		
 			/* To do ARP, we need to know all this information */
@@ -1631,6 +1632,7 @@ icmp_error_send(struct template *tmpl, struct addr *addr,
 {
 	u_char *pkt;
 	u_int iplen;
+	u_int voidword = 0;
 	uint8_t tos = 0, df = 0, ttl = honeyd_ttl;
 	int quotelen, riplen;
 
@@ -1647,7 +1649,15 @@ icmp_error_send(struct template *tmpl, struct addr *addr,
 
 	pkt = pool_alloc(pool_pkt);
 
-	icmp_pack_hdr_quote(pkt + IP_HDR_LEN, type, code, 0, rip, quotelen);
+	if (tmpl != NULL && tmpl->person != NULL)
+	{
+		if(type == ICMP_UNREACH && code == ICMP_UNREACH_PORT && tmpl->person->udptest.un)
+		{
+			voidword = tmpl->person->udptest.un;
+		}
+	}
+
+	icmp_pack_hdr_quote(pkt + IP_HDR_LEN, type, code, voidword, rip, quotelen);
 	icmp_send(tmpl, pkt, tos, iplen, df ? IP_DF: 0, ttl,
 	    IP_PROTO_ICMP, addr->addr_ip, rip->ip_src, spoof);
 }

@@ -190,8 +190,8 @@ struct xp_fingerprint {
 /* ------------------------------------------------------------------- */
 
 /* JVR - improve IPID sequencing capability */
-enum ipidtype {ID_SEQUENTIAL, ID_RANDOM, ID_SEQUENTIAL_BROKEN, ID_ZERO,
-               ID_CONSTANT, ID_RPI, ID_NONE = 0};
+enum ipidtype {ID_NONE = 0, ID_SEQUENTIAL, ID_RANDOM, ID_SEQUENTIAL_BROKEN, ID_ZERO,
+               ID_CONSTANT, ID_RPI};
 enum ipid_protocol {TCP, ICMP, TCP_CLOSED};
 enum seqtype {SEQ_CLASS64K, SEQ_RI, SEQ_TRIVIALTIME, SEQ_RANDOM,
 	      SEQ_CONSTANT, SEQ_I800};
