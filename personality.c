@@ -958,7 +958,7 @@ icmp_error_personality(struct template *tmpl,
 	if (test->rid != RVAL_OKAY)
 	{
 		iphdr_changed = 1;
-		ip->ip_id = test->ridVal;
+		ip->ip_id = htons(test->ridVal);
 	}
 
 	/* We need to recompute the ip header checksum in some cases */
@@ -976,17 +976,10 @@ icmp_error_personality(struct template *tmpl,
 		u_char *p = (u_char *)(udp + 1);
 		if(test->uck != RVAL_OKAY)
 		{
-			udp->uh_sum = test->uckVal;
+			udp->uh_sum = htons(test->uckVal);
 		}
 		if (test->dat == RVAL_BAD)
 			*p = 0;
-	}
-	if(test->un != 0)
-	{
-		//Sets the unused 4 byte field to the expected value in nmap fingerprint
-		//This is the 5th through 8th bytes of the icmp header
-		memcpy((ip+(ip->ip_hl << 2)+4),&test->un, 4);
-		iphdr_changed = 1;
 	}
 	
 	return (1);
@@ -2107,8 +2100,7 @@ parse_ecn(struct personality *pers, int off, char *line)
 					{
 						return -1;
 					}
-					break;
-
+					continue;
 				case 'C':
 					strsep(&p2, "=");
 					c = *p2;
