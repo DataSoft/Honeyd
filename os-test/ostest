@@ -124,17 +124,19 @@ bind \"$VMIP\" test\n"
 		while read INNERLINE ; do
 			if [[ "$INNERLINE" == "Aggressive OS guesses: "* ]]; then
 				found=true
-				#find where the first '(' character is. Since that's where we stop.
-				END=$(expr index "$INNERLINE" "'('")
-				PERCENT_END=$(expr index "$INNERLINE" "')'")
-				PERCENT_LENGTH=$((PERCENT_END - END - 1));
-				LENGTH=$((END-25))
-				#echo $LENGTH
-				#echo $INNERLINE
-				if [[ ${INNERLINE:23:$LENGTH} == $LINE ]]; then
+				# Cut off everything past the first comma if there is one
+				PERC=$(expr index "$INNERLINE" "'%'")
+				if [[ $PERC != 0 ]]; then
+					PERCENTMATCH=${INNERLINE:$(expr $PERC - 3):3}
+					INNERLINE=${INNERLINE:0:$(expr $PERC - 5)}
+				fi
+
+				INNERLINE=${INNERLINE:23}
+				#echo "INNERLINE IS '$INNERLINE'"
+				if [[ $INNERLINE == $LINE ]]; then
 					echo SUCCESS ${INNERLINE:$END:2} $LINE >> result
 					WIN=$((WIN+1))
-					found="Correct Partial Match ${INNERLINE:$END:$PERCENT_LENGTH}"
+					found="Correct Partial Match $PERCENTMATCH"
 				else
 					echo FAIL $LINE >> result
 					LOSE=$((LOSE+1))
