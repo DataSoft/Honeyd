@@ -39,8 +39,6 @@ side_content = ("<div class=graphs>"
                 "<img height=155 width=484 src=/graphs/traffic_daily.gif>"
                 "</div>")
 
-support.security_check(tproc)
-
 if message:
     tproc.set("message", message)
 
