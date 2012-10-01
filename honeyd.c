@@ -3602,6 +3602,9 @@ main(int argc, char *argv[])
 	if (honeyd_verify_config)
 		errx(0, "parsing configuration file successful");
 
+	//Start sending DHCP discoveries that have been queue'd up
+	dhcp_send_discover();
+
 	/* Attach the UI interface */
 	ui_init();
 	
