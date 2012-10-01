@@ -10,21 +10,6 @@ def quote(data):
     escape_quotes = 1
     return cgi.escape(data, escape_quotes)
 
-def security_check(tproc):
-    """Produces security warnings if necessary."""
-    info = honeyd.security_info()
-    if not info:
-        return
-
-    tokens = info.split('@')
-    kv = dict(map(lambda x: x.split('=',1), tokens))
-
-    tproc.set('security_topic', quote(kv['TITLE']))
-    tproc.set('security', quote(kv['DESCRIB']))
-    tproc.set('security_url', quote(kv['URL']))
-
-    return
-
 def parse_query(query):
     if not query:
         return None
