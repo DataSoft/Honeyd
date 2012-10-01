@@ -133,9 +133,10 @@ struct dhcp_msg {
 } __attribute__((__packed__));
 
 struct template;
-int  dhcp_getconf(struct template *);
 void dhcp_abort(struct template *);
 int dhcp_release(struct template *);
+void queue_dhcp_discover(struct template *tmpl);
+void dhcp_send_discover();
 
 void dhcp_recv_cb(struct eth_hdr *, struct ip_hdr *, u_short);
 

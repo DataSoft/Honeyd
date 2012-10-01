@@ -103,9 +103,92 @@ static int  _unicast(struct template *,
                 int (*)(struct dhcpclient_req *, void *, size_t *));
 static void _dhcp_timeout_cb(int, short, void *);
 static void _dhcp_reply(struct template *, u_char *, size_t);
+static struct template * _dhcp_dequeue();
+int 		 _dhcp_getconf(struct template *);
+
+//DHCP Queue type definitions
+typedef struct node
+{
+	struct template* m_template;
+	struct node* m_next;
+} QueueNode;
+
+typedef struct
+{
+	QueueNode* m_front;
+	QueueNode* m_rear;
+	unsigned int m_count;
+} Queue;
+
+static Queue *dhcp_queue = NULL;
+
+void
+queue_dhcp_discover(struct template *tmpl)
+{
+	//Initialize the queue if this is the first operation
+	if(dhcp_queue == NULL)
+	{
+		dhcp_queue = (Queue*) malloc(sizeof dhcp_queue);
+	}
+
+	QueueNode* nextQueueNode;
+
+	if(!(nextQueueNode = (QueueNode*)malloc(sizeof(QueueNode))))
+	{
+		//TODO: malloc returned an error, let's at least make a warning
+		return;
+	}
+
+	nextQueueNode->m_template = tmpl;
+	nextQueueNode->m_next = NULL;
+
+	if (dhcp_queue->m_count == 0)
+	{
+		dhcp_queue->m_front = nextQueueNode;
+	}
+	else
+	{
+		dhcp_queue->m_rear->m_next = nextQueueNode;
+	}
+
+	(dhcp_queue->m_count)++;
+	dhcp_queue->m_rear = nextQueueNode;
+}
+
+struct template *_dhcp_dequeue()
+{
+	if(dhcp_queue == NULL)
+	{
+		return NULL;
+	}
+	if(dhcp_queue->m_count == 0)
+	{
+		return 0;
+	}
+
+	(dhcp_queue->m_count)--;
+	QueueNode* front = dhcp_queue->m_front;
+	dhcp_queue->m_front = front->m_next;
+
+	struct template *template = front->m_template;
+	free(front);
+	return template;
+}
+
+void
+dhcp_send_discover()
+{
+	//This will start the chain of discoveries. We only need to start it
+	//	out with the front of the queue if this is the first run
+	struct template *template = _dhcp_dequeue();
+	if(template != NULL)
+	{
+		_dhcp_getconf(template);
+	}
+}
 
 int
-dhcp_getconf(struct template *tmpl)
+_dhcp_getconf(struct template *tmpl)
 {
 	struct dhcpclient_req *req = tmpl->dhcp_req;
 	struct interface *inter = tmpl->inter;
@@ -136,11 +219,6 @@ dhcp_getconf(struct template *tmpl)
 
 	if (_bcast(tmpl, _pack_request) < 0)
 		return (-1);
-
-	/*
-	 * XXX - This sort of timeout policy is bad.  We should be
-	 * exponentially backing off.
-	 */
 
 	req->ntries = 0;
 
@@ -197,6 +275,8 @@ _dhcp_timeout_cb(int fd, short ev, void *arg)
 	  	printf("aborting dhclient on interface %s after %d tries\n", 
 		    inter->if_ent.intf_name, req->ntries);
 		dhcp_abort(tmpl);
+		//Try the next template
+		dhcp_send_discover();
 		return;
 	}
 
@@ -396,6 +476,8 @@ _dhcp_reply(struct template *tmpl, u_char *buf, size_t buflen)
 		else
 			req->nc.hostaddr.addr_bits = 24;
 
+		//If we got an ack, then go ahead and send another discover
+		dhcp_send_discover();
 	}
 }
 

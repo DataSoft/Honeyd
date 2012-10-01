@@ -3415,11 +3415,7 @@ dhcp_template(struct template *tmpl, char *interface, char *mac_addr)
 		return;
 
 	/* Wow - now we can assign the DHCP object to it */
-	if (dhcp_getconf(newtmpl) == -1) {
-		yyerror("Failed to start DHCP on %s",
-		    inter->if_ent.intf_name);
-		return;
-	}
+	queue_dhcp_discover(newtmpl);
 
 	need_arp = need_dhcp = 1;
 }
