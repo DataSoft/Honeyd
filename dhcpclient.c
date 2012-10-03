@@ -658,7 +658,6 @@ _pack_request(struct dhcpclient_req *req, void *buf, size_t *restlen)
 {
 	struct dhcp_msg *msg;
 	u_char *p;
-	const char *G_hostname = "someone";
 	size_t optlen, padlen = 0;
 	struct timeval tv, difftv;
 	struct netconf *nc = &req->nc;
@@ -666,7 +665,10 @@ _pack_request(struct dhcpclient_req *req, void *buf, size_t *restlen)
 	gettimeofday(&tv, NULL);
 	timersub(&tv, &req->timer, &difftv);
 
-	optlen = (3) + (2 + strlen(G_hostname)) + (8) + (1);
+	//3 bytes for Message type
+	//8 bytes for Requested Parameters
+	//1 byte for End of Options
+	optlen = (3) + (8) + (1);
 
 	optlen += 6 * (nc->defined & NC_HOSTADDR) + 
 	    6 * (req->servident.addr_type != 0);
@@ -696,12 +698,6 @@ _pack_request(struct dhcpclient_req *req, void *buf, size_t *restlen)
 	*p++ = 1;
 	*p++ = req->state & DHREQ_STATE_WAITANS ?
 	    DH_MSGTYPE_DISCOVER : DH_MSGTYPE_REQUEST;
-
-	/* Hostname */
-	*p++ = DH_HOSTNAME;
-	*p++ = strlen(G_hostname);
-	memcpy(p, G_hostname, strlen(G_hostname));
-	p += strlen(G_hostname);
 
 	/* Requested Parameters */
 	*p++ = DH_PARAMREQ;
