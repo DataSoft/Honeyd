@@ -666,9 +666,9 @@ _pack_request(struct dhcpclient_req *req, void *buf, size_t *restlen)
 	timersub(&tv, &req->timer, &difftv);
 
 	//3 bytes for Message type
-	//8 bytes for Requested Parameters
+	//7 bytes for Requested Parameters
 	//1 byte for End of Options
-	optlen = (3) + (8) + (1);
+	optlen = (3) + (7) + (1);
 
 	optlen += 6 * (nc->defined & NC_HOSTADDR) + 
 	    6 * (req->servident.addr_type != 0);
@@ -701,15 +701,13 @@ _pack_request(struct dhcpclient_req *req, void *buf, size_t *restlen)
 
 	/* Requested Parameters */
 	*p++ = DH_PARAMREQ;
-	*p++ = 5;		/* Number of parameters */
+	*p++ = 4;		/* Number of parameters */
 	*p++ = 1;		/* Subnet mask */
 	padlen += 4;
 	*p++ = 28;		/* Broadcast address */
 	padlen += 4;	
 	*p++ = 3;		/* Router */
 	padlen += 4;	
-	*p++ = 15;		/* Domain name */
-	padlen += 256;
 	*p++ = 6;		/* Domain name server */
 	padlen += 4;
 /* 	*p++ = 12;		/\* Host name *\/ */
