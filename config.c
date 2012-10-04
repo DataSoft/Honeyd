@@ -159,8 +159,15 @@ void template_dump_ips(char* filePath)
 
 	struct template *tmpl;
 	SPLAY_FOREACH(tmpl, templtree, &templates) {
-		if (tmpl->dhcp_req != NULL)
-			fprintf(fp, "%s\n", tmpl->name);
+		if((tmpl->dhcp_req != NULL) && (tmpl->dhcp_req->state == DHREQ_STATE_GOTACK))
+		{
+			char hwAddrString[18];
+			memset(hwAddrString, '\0', sizeof(hwAddrString));
+			if(addr_ntop(tmpl->ethernet_addr, hwAddrString, sizeof(hwAddrString)) != NULL)
+			{
+				fprintf(fp, "%s, %s\n", tmpl->name, hwAddrString);
+			}
+		}
 	}
 	fclose(fp);
 }

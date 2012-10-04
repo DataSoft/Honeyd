@@ -75,6 +75,7 @@ struct netconf {
 #define DHREQ_STATE_BUSY         0x01
 #define DHREQ_STATE_WAITANS      0x02
 #define DHREQ_STATE_WAITACK      0x04
+#define DHREQ_STATE_GOTACK      0x08
 
 struct dhcpclient_req {
 	int             state;
