@@ -441,6 +441,8 @@ _dhcp_reply(struct template *tmpl, u_char *buf, size_t buflen)
 		struct addr addr = req->nc.hostaddr;
 		struct interface *inter = tmpl->inter;
 
+		req->state = DHREQ_STATE_GOTACK;
+
 		syslog(LOG_NOTICE, "[%s] got DHCP offer: %s",
 		    inter->if_ent.intf_name, addr_ntoa(&addr));
 
