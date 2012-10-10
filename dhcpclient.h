@@ -75,6 +75,7 @@ struct netconf {
 #define DHREQ_STATE_BUSY         0x01
 #define DHREQ_STATE_WAITANS      0x02
 #define DHREQ_STATE_WAITACK      0x04
+#define DHREQ_STATE_GOTACK      0x08
 
 struct dhcpclient_req {
 	int             state;
@@ -133,9 +134,10 @@ struct dhcp_msg {
 } __attribute__((__packed__));
 
 struct template;
-int  dhcp_getconf(struct template *);
 void dhcp_abort(struct template *);
 int dhcp_release(struct template *);
+void queue_dhcp_discover(struct template *tmpl);
+void dhcp_send_discover();
 
 void dhcp_recv_cb(struct eth_hdr *, struct ip_hdr *, u_short);
 

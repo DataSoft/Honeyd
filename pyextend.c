@@ -145,7 +145,6 @@ static PyObject *pyextend_config(PyObject *, PyObject *);
 static PyObject *pyextend_config_ips(PyObject *, PyObject *);
 static PyObject *pyextend_delete_template(PyObject *, PyObject *);
 static PyObject *pyextend_delete_connection(PyObject *, PyObject *);
-static PyObject *pyextend_security_info(PyObject *, PyObject *);
 
 static PyMethodDef HoneydMethods[] = {
     {"read_selector", pyextend_readselector, METH_VARARGS,
@@ -172,8 +171,6 @@ static PyMethodDef HoneydMethods[] = {
      "Deletes the specified template."},
     {"delete_connection", pyextend_delete_connection, METH_VARARGS,
      "Deletes the specified connection."},
-    {"security_info", pyextend_security_info, METH_VARARGS,
-     "Returns a string with pertinent security information."},
     {NULL, NULL, 0, NULL}
 };
 
@@ -524,20 +521,6 @@ pyextend_delete_connection(PyObject *self, PyObject *args)
 
  done:
 	return (Py_BuildValue("i", result));
-}
-
-static PyObject*
-pyextend_security_info(PyObject *self, PyObject *args)
-{
-	extern char *security_update;
-	PyObject *pValue;
-
-	if (security_update == NULL || strlen(security_update) == 0)
-		return Py_None;
-
-	pValue = Py_BuildValue("s", security_update);
-
-	return (pValue);
 }
 
 static PyObject*

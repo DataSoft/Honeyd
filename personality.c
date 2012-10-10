@@ -976,7 +976,7 @@ icmp_error_personality(struct template *tmpl,
 		u_char *p = (u_char *)(udp + 1);
 		if(test->uck != RVAL_OKAY)
 		{
-			udp->uh_sum = test->uckVal;
+			udp->uh_sum = htons(test->uckVal);
 		}
 		if (test->dat == RVAL_BAD)
 			*p = 0;
@@ -2100,8 +2100,7 @@ parse_ecn(struct personality *pers, int off, char *line)
 					{
 						return -1;
 					}
-					break;
-
+					continue;
 				case 'C':
 					strsep(&p2, "=");
 					c = *p2;

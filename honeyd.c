@@ -697,9 +697,10 @@ honeyd_delay_cb(int fd, short which, void *arg)
 		addr_pack(&dst, ADDR_TYPE_IP, IP_ADDR_BITS,
 		    &ip->ip_dst, IP_ADDR_LEN);
 
+		struct interface* inter = interface_find_responsible(&dst);
 		/* This is the source template */
-		if (tmpl != NULL && tmpl->ethernet_addr != NULL &&
-		    interface_find_responsible(&dst) == tmpl->inter) {
+		if (tmpl != NULL && tmpl->ethernet_addr != NULL && tmpl->inter != NULL &&
+		    inter == tmpl->inter) {
 			struct addr src;
 		
 			/* To do ARP, we need to know all this information */
@@ -1648,9 +1649,12 @@ icmp_error_send(struct template *tmpl, struct addr *addr,
 
 	pkt = pool_alloc(pool_pkt);
 
-	if(type == ICMP_UNREACH && code == ICMP_UNREACH_PORT && tmpl->person->udptest.un)
+	if (tmpl != NULL && tmpl->person != NULL)
 	{
-		voidword = tmpl->person->udptest.un;
+		if(type == ICMP_UNREACH && code == ICMP_UNREACH_PORT && tmpl->person->udptest.un)
+		{
+			voidword = tmpl->person->udptest.un;
+		}
 	}
 
 	icmp_pack_hdr_quote(pkt + IP_HDR_LEN, type, code, voidword, rip, quotelen);
@@ -3597,6 +3601,9 @@ main(int argc, char *argv[])
 	/* Just verify the configuration - exit with success */
 	if (honeyd_verify_config)
 		errx(0, "parsing configuration file successful");
+
+	//Start sending DHCP discoveries that have been queue'd up
+	dhcp_send_discover();
 
 	/* Attach the UI interface */
 	ui_init();

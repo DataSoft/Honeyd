@@ -158,9 +158,21 @@ void template_dump_ips(char* filePath)
 	}
 
 	struct template *tmpl;
-	SPLAY_FOREACH(tmpl, templtree, &templates) {
-		if (tmpl->dhcp_req != NULL)
-			fprintf(fp, "%s\n", tmpl->name);
+	SPLAY_FOREACH(tmpl, templtree, &templates)
+	{
+		if((tmpl->dhcp_req != NULL))
+		{
+			if(tmpl->dhcp_req->state == DHREQ_STATE_GOTACK)
+			{
+				char hwAddrString[19];
+				memset(hwAddrString, '\0', sizeof(hwAddrString));
+				//Only write to the size of the array-1, so that we're sure there's a NULL byte at the end
+				if(addr_ntop(tmpl->ethernet_addr, hwAddrString, sizeof(hwAddrString) -1) != NULL)
+				{
+					fprintf(fp, "%s, %s\n", tmpl->name, hwAddrString);
+				}
+			}
+		}
 	}
 	fclose(fp);
 }

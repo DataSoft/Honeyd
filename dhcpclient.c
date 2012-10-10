@@ -103,9 +103,92 @@ static int  _unicast(struct template *,
                 int (*)(struct dhcpclient_req *, void *, size_t *));
 static void _dhcp_timeout_cb(int, short, void *);
 static void _dhcp_reply(struct template *, u_char *, size_t);
+static struct template * _dhcp_dequeue();
+int 		 _dhcp_getconf(struct template *);
+
+//DHCP Queue type definitions
+typedef struct node
+{
+	struct template* m_template;
+	struct node* m_next;
+} QueueNode;
+
+typedef struct
+{
+	QueueNode* m_front;
+	QueueNode* m_rear;
+	unsigned int m_count;
+} Queue;
+
+static Queue *dhcp_queue = NULL;
+
+void
+queue_dhcp_discover(struct template *tmpl)
+{
+	//Initialize the queue if this is the first operation
+	if(dhcp_queue == NULL)
+	{
+		dhcp_queue = (Queue*) malloc(sizeof dhcp_queue);
+	}
+
+	QueueNode* nextQueueNode;
+
+	if(!(nextQueueNode = (QueueNode*)malloc(sizeof(QueueNode))))
+	{
+		//TODO: malloc returned an error, let's at least make a warning
+		return;
+	}
+
+	nextQueueNode->m_template = tmpl;
+	nextQueueNode->m_next = NULL;
+
+	if (dhcp_queue->m_count == 0)
+	{
+		dhcp_queue->m_front = nextQueueNode;
+	}
+	else
+	{
+		dhcp_queue->m_rear->m_next = nextQueueNode;
+	}
+
+	(dhcp_queue->m_count)++;
+	dhcp_queue->m_rear = nextQueueNode;
+}
+
+struct template *_dhcp_dequeue()
+{
+	if(dhcp_queue == NULL)
+	{
+		return NULL;
+	}
+	if(dhcp_queue->m_count == 0)
+	{
+		return 0;
+	}
+
+	(dhcp_queue->m_count)--;
+	QueueNode* front = dhcp_queue->m_front;
+	dhcp_queue->m_front = front->m_next;
+
+	struct template *template = front->m_template;
+	free(front);
+	return template;
+}
+
+void
+dhcp_send_discover()
+{
+	//This will start the chain of discoveries. We only need to start it
+	//	out with the front of the queue if this is the first run
+	struct template *template = _dhcp_dequeue();
+	if(template != NULL)
+	{
+		_dhcp_getconf(template);
+	}
+}
 
 int
-dhcp_getconf(struct template *tmpl)
+_dhcp_getconf(struct template *tmpl)
 {
 	struct dhcpclient_req *req = tmpl->dhcp_req;
 	struct interface *inter = tmpl->inter;
@@ -136,11 +219,6 @@ dhcp_getconf(struct template *tmpl)
 
 	if (_bcast(tmpl, _pack_request) < 0)
 		return (-1);
-
-	/*
-	 * XXX - This sort of timeout policy is bad.  We should be
-	 * exponentially backing off.
-	 */
 
 	req->ntries = 0;
 
@@ -197,6 +275,8 @@ _dhcp_timeout_cb(int fd, short ev, void *arg)
 	  	printf("aborting dhclient on interface %s after %d tries\n", 
 		    inter->if_ent.intf_name, req->ntries);
 		dhcp_abort(tmpl);
+		//Try the next template
+		dhcp_send_discover();
 		return;
 	}
 
@@ -365,6 +445,8 @@ _dhcp_reply(struct template *tmpl, u_char *buf, size_t buflen)
 		    inter->if_ent.intf_name, addr_ntoa(&addr));
 
 		dhcp_abort(tmpl);
+		//Abort resets the state variable, so we have to set it again afterward
+		req->state = DHREQ_STATE_GOTACK;
 
 		if (template_find(addr_ntoa(&addr)) != NULL) {
 			syslog(LOG_WARNING,
@@ -396,6 +478,8 @@ _dhcp_reply(struct template *tmpl, u_char *buf, size_t buflen)
 		else
 			req->nc.hostaddr.addr_bits = 24;
 
+		//If we got an ack, then go ahead and send another discover
+		dhcp_send_discover();
 	}
 }
 
@@ -576,7 +660,6 @@ _pack_request(struct dhcpclient_req *req, void *buf, size_t *restlen)
 {
 	struct dhcp_msg *msg;
 	u_char *p;
-	const char *G_hostname = "someone";
 	size_t optlen, padlen = 0;
 	struct timeval tv, difftv;
 	struct netconf *nc = &req->nc;
@@ -584,7 +667,10 @@ _pack_request(struct dhcpclient_req *req, void *buf, size_t *restlen)
 	gettimeofday(&tv, NULL);
 	timersub(&tv, &req->timer, &difftv);
 
-	optlen = (3) + (2 + strlen(G_hostname)) + (8) + (1);
+	//3 bytes for Message type
+	//7 bytes for Requested Parameters
+	//1 byte for End of Options
+	optlen = (3) + (7) + (1);
 
 	optlen += 6 * (nc->defined & NC_HOSTADDR) + 
 	    6 * (req->servident.addr_type != 0);
@@ -615,23 +701,15 @@ _pack_request(struct dhcpclient_req *req, void *buf, size_t *restlen)
 	*p++ = req->state & DHREQ_STATE_WAITANS ?
 	    DH_MSGTYPE_DISCOVER : DH_MSGTYPE_REQUEST;
 
-	/* Hostname */
-	*p++ = DH_HOSTNAME;
-	*p++ = strlen(G_hostname);
-	memcpy(p, G_hostname, strlen(G_hostname));
-	p += strlen(G_hostname);
-
 	/* Requested Parameters */
 	*p++ = DH_PARAMREQ;
-	*p++ = 5;		/* Number of parameters */
+	*p++ = 4;		/* Number of parameters */
 	*p++ = 1;		/* Subnet mask */
 	padlen += 4;
 	*p++ = 28;		/* Broadcast address */
 	padlen += 4;	
 	*p++ = 3;		/* Router */
 	padlen += 4;	
-	*p++ = 15;		/* Domain name */
-	padlen += 256;
 	*p++ = 6;		/* Domain name server */
 	padlen += 4;
 /* 	*p++ = 12;		/\* Host name *\/ */
