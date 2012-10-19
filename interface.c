@@ -96,6 +96,7 @@ interface_prevent_init(void)
 #endif
 }
 
+// Set the callback function to be called when external packet are recieved via pcap
 void
 interface_initialize(pcap_handler cb)
 {
