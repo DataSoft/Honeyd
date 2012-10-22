@@ -19,17 +19,17 @@ if [ -z "$REQUEST" ] ; then
 HTTP/1.1 404 NOT FOUND
 Server: Microsoft-IIS/5.0
 P3P: CP='ALL IND DSP COR ADM CONo CUR CUSo IVAo IVDo PSA PSD TAI TELo OUR SAMo CNT COM INT NAV ONL PHY PRE PUR UNI'
-Content-Location: http://cpmsftwbw27/default.htm
-Date: Thu, 04 Apr 2002 06:42:18 GMT
+Content-Location:
+Date: $DATE
 Content-Type: text/html
 Accept-Ranges: bytes
 
-<html><title>You are in Error</title>
+<html><title>404 Not Found</title>
 <body>
-<h1>You are in Error</h1>
-O strange and inconceivable thing! We did not really die, we were not really buried, we were not really crucified and raised again, but our imitation was but a figure, while our salvation is in reality. Christ was actually crucified, and actually buried, and truly rose again; and all these things have been vouchsafed to us, that we, by imitation communicating in His sufferings, might gain salvation in reality. O surpassing loving-kindness! Christ received the nails in His undefiled hands and feet, and endured anguish; while to me without suffering or toil, by the fellowship of His pain He vouchsafed salvation.
-<p>
-St. Cyril of Jerusalem, On the Christian Sacraments.
+<h1>Not Found</h1>
+
+<p> The requested URL was not found on this server.
+<hr>
 </body>
 </html>
 _eof_
