@@ -16376,9 +16376,9 @@ void
 ethernetcode_test(void)
 {
 	TEST("cisco", 0x00000c);
-	TEST("cisco catalyst", 0x001007);
+	TEST("netkit solutions", 0x0003b8);
 	TEST("juniper networks", 0x000585);
-	TEST("3com", 0x00103);
+	TEST("cooperative linux virtual nic", 0x00ffd1);
 	TEST("zzzzzzzz xxxxxxxx", 0x000000);
 
 	fprintf(stderr, "\t%s: OK\n", __func__);

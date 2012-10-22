@@ -3147,7 +3147,7 @@ honeyd_input(const struct interface *inter, struct ip_hdr *ip, u_short iplen)
 	honeyd_delay_packet(NULL, ip, iplen, NULL, NULL, delay, flags, no_spoof);
 }
 
-
+// This is the callback that will be called whenever an external packet is recieved via pcap
 void
 honeyd_recv_cb(u_char *ag, const struct pcap_pkthdr *pkthdr, const u_char *pkt)
 {
