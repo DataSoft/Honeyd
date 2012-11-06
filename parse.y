@@ -103,7 +103,7 @@ int curtype = -1;	/* Lex sets it to SOCK_STREAM or _DGRAM */
 
 %}
 
-%token	CREATE ADD PORT BIND CLONE DOT BLOCK OPEN RESET DEFAULT SET ACTION
+%token	CREATE ADD PORT BIND CLONE DOT FILTERED OPEN CLOSED DEFAULT SET ACTION
 %token	PERSONALITY RANDOM ANNOTATE NO FINSCAN FRAGMENT DROP OLD NEW COLON
 %token	PROXY UPTIME DROPRATE IN SYN UID GID ROUTE ENTRY LINK NET UNREACH
 %token	SLASH LATENCY MS LOSS BANDWIDTH SUBSYSTEM OPTION TO SHARED NETWORK
@@ -752,16 +752,16 @@ action		: flags STRING
 				yyerror("Out of memory");
 		free($5);
 	}
-		| BLOCK
+		| FILTERED
 	{
 		memset(&$$, 0, sizeof($$));
-		$$.status = PORT_BLOCK;
+		$$.status = PORT_FILTERED;
 		$$.action = NULL;
 	}
-		| RESET
+		| CLOSED
 	{
 		memset(&$$, 0, sizeof($$));
-		$$.status = PORT_RESET;
+		$$.status = PORT_CLOSED;
 		$$.action = NULL;
 	}
 		| flags OPEN

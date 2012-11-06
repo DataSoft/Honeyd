@@ -1036,7 +1036,7 @@ YY_RULE_SETUP
 case 6:
 YY_RULE_SETUP
 #line 88 "lex.l"
-{ return BLOCK; }
+{ return FILTERED; }
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
@@ -1046,7 +1046,7 @@ YY_RULE_SETUP
 case 8:
 YY_RULE_SETUP
 #line 90 "lex.l"
-{ return RESET; }
+{ return CLOSED; }
 	YY_BREAK
 case 9:
 YY_RULE_SETUP

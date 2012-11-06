@@ -179,9 +179,9 @@ int curtype = -1;	/* Lex sets it to SOCK_STREAM or _DGRAM */
      BIND = 261,
      CLONE = 262,
      DOT = 263,
-     BLOCK = 264,
+     FILTERED = 264,
      OPEN = 265,
-     RESET = 266,
+     CLOSED = 266,
      DEFAULT = 267,
      SET = 268,
      ACTION = 269,
@@ -257,9 +257,9 @@ int curtype = -1;	/* Lex sets it to SOCK_STREAM or _DGRAM */
 #define BIND 261
 #define CLONE 262
 #define DOT 263
-#define BLOCK 264
+#define FILTERED 264
 #define OPEN 265
-#define RESET 266
+#define CLOSED 266
 #define DEFAULT 267
 #define SET 268
 #define ACTION 269
@@ -729,7 +729,7 @@ static const yytype_uint16 yyrline[] =
 static const char *const yytname[] =
 {
   "$end", "error", "$undefined", "CREATE", "ADD", "PORT", "BIND", "CLONE",
-  "DOT", "BLOCK", "OPEN", "RESET", "DEFAULT", "SET", "ACTION",
+  "DOT", "FILTERED", "OPEN", "CLOSED", "DEFAULT", "SET", "ACTION",
   "PERSONALITY", "RANDOM", "ANNOTATE", "NO", "FINSCAN", "FRAGMENT", "DROP",
   "OLD", "NEW", "COLON", "PROXY", "UPTIME", "DROPRATE", "IN", "SYN", "UID",
   "GID", "ROUTE", "ENTRY", "LINK", "NET", "UNREACH", "SLASH", "LATENCY",

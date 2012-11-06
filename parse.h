@@ -45,9 +45,9 @@
      BIND = 261,
      CLONE = 262,
      DOT = 263,
-     BLOCK = 264,
+     FILTERED = 264,
      OPEN = 265,
-     RESET = 266,
+     CLOSED = 266,
      DEFAULT = 267,
      SET = 268,
      ACTION = 269,
@@ -123,9 +123,9 @@
 #define BIND 261
 #define CLONE 262
 #define DOT 263
-#define BLOCK 264
+#define FILTERED 264
 #define OPEN 265
-#define RESET 266
+#define CLOSED 266
 #define DEFAULT 267
 #define SET 268
 #define ACTION 269
