@@ -133,7 +133,7 @@ interface_new(char *dev)
 		err(1, "%s: intf_get", __func__);
 
 	if (inter->if_ent.intf_addr.addr_type != ADDR_TYPE_IP)
-		errx(1, "%s: bad interface configuration: %s is not IP",
+		warn("%s: bad interface configuration: %s is not IP",
 		    __func__, dev);
 
 	return (inter);
