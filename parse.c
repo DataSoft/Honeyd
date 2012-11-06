@@ -2600,7 +2600,7 @@ yyreduce:
 #line 752 "parse.y"
     {
 		memset(&(yyval.action), 0, sizeof((yyval.action)));
-		(yyval.action).status = PORT_BLOCK;
+		(yyval.action).status = PORT_FILTERED;
 		(yyval.action).action = NULL;
 	}
     break;
@@ -2611,7 +2611,7 @@ yyreduce:
 #line 758 "parse.y"
     {
 		memset(&(yyval.action), 0, sizeof((yyval.action)));
-		(yyval.action).status = PORT_RESET;
+		(yyval.action).status = PORT_CLOSED;
 		(yyval.action).action = NULL;
 	}
     break;

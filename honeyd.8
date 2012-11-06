@@ -189,7 +189,7 @@ route	= "route" "entry" ipaddr |
 		["bandwidth" number["Mbps"|"Kbps"] \\
 		["drop" "between" number "ms" "-" number "ms" ]
 proto	= "tcp" | "udp" | "icmp"
-action	= ["tarpit"] ("block" | "open" | "reset" | cmd-string | \\
+action	= ["tarpit"] ("filtered" | "open" | "closed" | cmd-string | \\
   "internal" cmd-string \\
   "proxy" ipaddr":"port )
 condition = "source os =" cmd-string |
