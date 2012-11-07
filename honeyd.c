@@ -2570,7 +2570,7 @@ icmp_recv_cb(struct template *tmpl, u_char *pkt, u_short pktlen)
 	honeyd_log_probe(honeyd_logfp, IP_PROTO_ICMP, &icmphdr, pktlen, 0, NULL);
 
 	/* We can block ICMP, too */
-	if (tmpl && tmpl->icmp.status == PORT_FILTERED)
+	if (tmpl && (tmpl->icmp.status == PORT_FILTERED || tmpl->icmp.status == PORT_CLOSED))
 		return;
 
 	if (tmpl != NULL && tmpl->person != NULL)
