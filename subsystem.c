@@ -59,6 +59,7 @@
 
 #include <event.h>
 
+#include "tuple.h"
 #include "honeyd.h"
 #include "template.h"
 #include "subsystem.h"

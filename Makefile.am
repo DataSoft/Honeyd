@@ -74,11 +74,11 @@ pkginclude_HEADERS = hooks.h plugins.h plugins_config.h debug.h
 honeyd_SOURCES	= honeyd.c command.c parse.y lex.l config.c personality.c \
 	util.c ipfrag.c router.c tcp.c udp.c xprobe_assoc.c log.c \
 	fdpass.c atomicio.c subsystem.c hooks.c plugins.c \
-	plugins_config.c pool.c interface.c arp.c gre.c \
-	honeyd.h personality.h ipfrag.h	router.h network.c network.h \
+	plugins_config.c pool.c interface.c arp.c ndp.c gre.c \
+	icmpv6.h honeyd.h personality.h ipfrag.h	router.h network.c network.h \
 	tcp.h udp.h parse.h \
 	xprobe_assoc.h subsystem.h fdpass.h hooks.h plugins.h \
-	plugins_config.h template.h pool.h interface.h arp.h gre.h \
+	plugins_config.h template.h pool.h interface.h tuple.h arp.h ndp.h gre.h \
 	log.h pfctl_osfp.c pf_osfp.c pfvar.h condition.c condition.h \
 	osfp.c osfp.h ui.c ui.h ethernet.c ethernet.h \
 	parser.h tagging.c tagging.h stats.c stats.h \

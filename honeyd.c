@@ -73,6 +73,7 @@
 #include <event.h>
 
 #include "honeyd.h"
+#include "tuple.h"
 #include "template.h"
 #include "subsystem.h"
 #include "personality.h"
@@ -101,6 +102,9 @@
 #include "histogram.h"
 #include "util.h"
 #include "personality.h"
+
+#include "icmpv6.h"
+#include "ndp.h"
 
 #ifdef HAVE_PYTHON
 #include <Python.h>
@@ -1996,6 +2000,32 @@ generic_timeout(struct event *ev, int seconds)
 } while (0)
 
 void
+icmpv6_recv_cb(struct template *tmpl, u_char *pkt, struct tuple *summary, u_short pktlen)
+{
+	struct icmpv6_hdr *icmpv6;
+	struct icmpv6_msg_nd *ndp_msg;
+
+	icmpv6 = (struct icmpv6_hdr *)(pkt);
+
+	if (pktlen < ICMPV6_HDR_LEN)
+		return;
+
+	switch (icmpv6->icmpv6_type)
+	{
+	case ICMPV6_NEIGHBOR_SOLICITATION:
+		ndp_msg = (struct icmpv6_msg_nd*)(pkt + ICMPV6_HDR_LEN);
+
+		ndp_recv_cb(summary, ndp_msg);
+		break;
+
+	default:
+
+		break;
+
+	}
+}
+
+void
 tcp_recv_cb(struct template *tmpl, u_char *pkt, struct tuple *summary, u_short pktlen)
 {
 	char *comment = NULL;
@@ -2870,12 +2900,8 @@ honeyd_dispatch_ipv6(struct template *tmpl, struct ip6_hdr *ip, u_short iplen)
 		// TODO ipv6
 		//udp_recv_cb(tmpl, (u_char *)ip, iplen);
 		break;
-	case IP_PROTO_ICMP:
-		// TODO ipv6
-
-		//hooks_dispatch(ip->ip_p, HD_INCOMING, &iphdr,
-		//    (u_char *)ip, iplen);
-		//icmp_recv_cb(tmpl, (u_char *)ip, iplen);
+	case IP_PROTO_ICMPV6:
+		icmpv6_recv_cb(tmpl, (u_char*)ip + IP6_HDR_LEN, &iphdr, iplen - IP6_HDR_LEN);
 		break;
 	default:
 		// TODO ipv6
@@ -3272,6 +3298,8 @@ honeyd_recv_cb(u_char *ag, const struct pcap_pkthdr *pkthdr, const u_char *pkt)
 		if (pkthdr->caplen - inter->if_dloff < iplen)
 			return;
 
+
+
 		/* Check our own address */
 		addr_pack(&addr, ADDR_TYPE_IP6, IP6_ADDR_BITS, &ip6->ip6_dst, IP6_ADDR_LEN);
 		if (addr_cmp(&addr, &inter->if_ent.intf_addr) == 0) {
@@ -3284,7 +3312,13 @@ honeyd_recv_cb(u_char *ag, const struct pcap_pkthdr *pkthdr, const u_char *pkt)
 		/* Check alias addresses for the interface. If it has both ipv4 and ipv6 address, ipv6 shows as an alias */
 		int alias;
 		for (alias = 0; alias < inter->if_ent.intf_alias_num; alias++) {
-			if (addr_cmp(&addr, &inter->if_ent.intf_alias_addrs[alias]))
+
+			/* TOOD: Figure out correct way to do this. Ugly hack to make addr_cmp work with ipv6 interface IPs
+			 * that keep having addr_bits set to 64 */
+			if (addr.addr_type == ADDR_TYPE_IP6)
+				addr.addr_bits = inter->if_ent.intf_alias_addrs[alias].addr_bits;
+
+			if (addr_cmp(&addr, &inter->if_ent.intf_alias_addrs[alias]) == 0)
 			{
 				return;
 			}
@@ -3292,15 +3326,11 @@ honeyd_recv_cb(u_char *ag, const struct pcap_pkthdr *pkthdr, const u_char *pkt)
 
 		// xxx ipv6: we bypass a lot of routing and GRE stuff for now
 
-		struct addr;
 		addr_pack(&addr, ADDR_TYPE_IP6, IP6_ADDR_BITS, &ip6->ip6_dst ,IP6_ADDR_LEN);
 		struct template *t = template_find_best(addr_ntoa(&addr), NULL, 0);
 		honeyd_dispatch_ipv6(t, ip6, iplen);
 
 		return;
-
-
-		// TODO ipv6: Check for DHCPv6 responses
 	}
 
 
