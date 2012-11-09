@@ -361,8 +361,16 @@ make_socket(int (*f)(int, const struct sockaddr *, socklen_t), int type,
 int
 conhdr_compare(struct tuple *a, struct tuple *b)
 {
-	DIFF(a->ip_src, b->ip_src);
-	DIFF(a->ip_dst, b->ip_dst);
+	// TODO ipv6: Is this going to break things with ipv6?
+
+	int src = addr_cmp(&a->address_src, &b->address_src);
+	if (src != 0)
+		return src;
+
+	int dst = addr_cmp(&a->address_dst, &b->address_dst);
+	if (dst != 0)
+		return dst;
+
 	DIFF(a->sport, b->sport);
 	DIFF(a->dport, b->dport);
 
@@ -377,8 +385,8 @@ honeyd_contoa(const struct tuple *hdr)
 	struct addr src, dst;
 	u_short sport, dport;
 	
-	addr_pack(&src, ADDR_TYPE_IP, IP_ADDR_BITS, &hdr->ip_src, IP_ADDR_LEN);
-	addr_pack(&dst, ADDR_TYPE_IP, IP_ADDR_BITS, &hdr->ip_dst, IP_ADDR_LEN);
+	src = hdr->address_src;
+	dst = hdr->address_dst;
 
 	/* For a local connection switch the address around */
 	if (hdr->local) {

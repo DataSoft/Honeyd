@@ -148,8 +148,9 @@ struct tuple {
 	SPLAY_ENTRY(tuple) node;
 	TAILQ_ENTRY(tuple) next;
 
-	ip_addr_t ip_src;
-	ip_addr_t ip_dst;
+	struct addr address_src;
+	struct addr address_dst;
+
 	uint16_t sport;
 	uint16_t dport;
 
@@ -211,8 +212,8 @@ struct port_encapsulate {
 struct tcp_con {
 	/* Has to be the first member of the structure */
 	struct tuple conhdr;
-#define con_ipsrc conhdr.ip_src
-#define con_ipdst conhdr.ip_dst
+#define con_ipsrc conhdr.address_src.addr_ip
+#define con_ipdst conhdr.address_dst.addr_ip
 #define con_sport conhdr.sport
 #define con_dport conhdr.dport
 
@@ -336,6 +337,7 @@ struct tuple *tuple_find(struct tree *, struct tuple *);
 
 void honeyd_ip_send(u_char *, u_int, struct spoof spoof);
 void honeyd_dispatch(struct template *, struct ip_hdr *, u_short);
+void honeyd_dispatch_ipv6(struct template *, struct ip6_hdr *, u_short);
 char *honeyd_contoa(const struct tuple *);
 
 void honeyd_input(const struct interface *, struct ip_hdr *, u_short);
@@ -365,7 +367,7 @@ int cmd_subsystem_localconnect(struct tuple *hdr, struct command *cmd,
     struct port *, void *arg);
 
 /* Network connection elements */
-struct tcp_con *tcp_new(struct ip_hdr *, struct tcp_hdr *, int);
+struct tcp_con *tcp_new(struct addr src, struct addr dst, struct tcp_hdr *tcp, int local);
 struct udp_con *udp_new(struct ip_hdr *, struct udp_hdr *, int);
 int tcp_setupconnect(struct tcp_con *);
 void tcp_connectfail(struct tcp_con *con);

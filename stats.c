@@ -659,17 +659,15 @@ record_fill(struct record *r, const struct tuple *hdr)
 	TAILQ_INIT(&r->hashes);
 
 	/* Fill the connection header */
-	addr_pack(&r->src, ADDR_TYPE_IP, IP_ADDR_BITS,
-	    &hdr->ip_src, IP_ADDR_LEN);
-	addr_pack(&r->dst, ADDR_TYPE_IP, IP_ADDR_BITS,
-	    &hdr->ip_dst, IP_ADDR_LEN);
+	r->src = hdr->address_src;
+	r->dst = hdr->address_dst;
 
 	r->src_port = hdr->sport;
 	r->dst_port = hdr->dport;
 	gettimeofday(&r->tv_start, NULL);
 	r->proto = hdr->type == SOCK_STREAM ? IP_PROTO_TCP : IP_PROTO_UDP;
 
-        ip.ip_src = hdr->ip_src;
+        ip.ip_src = hdr->address_src.addr_ip;
         name = honeyd_osfp_name(&ip);
 	if (name != NULL)
 		r->os_fp = strdup(name);
@@ -747,7 +745,7 @@ stats_tcp_input(struct tuple *conhdr, u_char *pkt, u_int pktlen, void *arg)
 		/* Update the passive fingerprint, if possible */
 		char *name;
 		struct ip_hdr ip;
-		ip.ip_src = conhdr->ip_src;
+		ip.ip_src = conhdr->address_src.addr_ip;
 		name = honeyd_osfp_name(&ip);
 		if (name != NULL)
 			stats->record.os_fp = strdup(name);

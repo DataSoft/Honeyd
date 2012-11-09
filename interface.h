@@ -33,10 +33,14 @@
 #ifndef _INTERFACE_
 #define _INTERFACE_
 
+#define MAX_INTERFACE_ALIASES 4
+
 struct interface {
 	TAILQ_ENTRY(interface) next;
 
 	struct intf_entry if_ent;
+	struct addr aliases[MAX_INTERFACE_ALIASES];
+
 	int if_addrbits;
 	struct event if_recvev;
 	pcap_t *if_pcap;

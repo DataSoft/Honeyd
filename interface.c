@@ -126,7 +126,8 @@ interface_new(char *dev)
 
 	TAILQ_INSERT_TAIL(&interfaces, inter, next);
 
-	inter->if_ent.intf_len = sizeof(struct intf_entry);
+	inter->if_ent.intf_len = sizeof(struct intf_entry) + MAX_INTERFACE_ALIASES * sizeof(struct addr);
+	//inter->if_ent.intf_len = sizeof(struct intf_entry);
 	strlcpy(inter->if_ent.intf_name, dev, sizeof(inter->if_ent.intf_name));
 	
 	if (intf_get(intf, &inter->if_ent) < 0)
@@ -255,7 +256,7 @@ interface_ether_filter(struct interface *inter,
 
 	if (snprintf(inter->if_filter, sizeof(inter->if_filter),
 		"(arp or ip proto 47 or "
-		"(udp and src port 67 and dst port 68) or (ip %s%s%s))",
+		"(udp and src port 67 and dst port 68) or (ip or ip6 %s%s%s))",
 		dst ? "and (" : "", dst ? dst : "", dst ? ")" : "") >= 
 	    sizeof(inter->if_filter))
 		errx(1, "%s: pcap filter exceeds maximum length", __func__);
@@ -279,7 +280,7 @@ interface_regular_filter(struct interface *inter,
 	dst = interface_expandips(naddresses, addresses, 1);
 
 	if (snprintf(inter->if_filter, sizeof(inter->if_filter),
-		"ip %s%s%s",
+		"ip or ip6 %s%s%s",
 		dst ? "and (" : "", dst ? dst : "", dst ? ")" : "") >= 
 	    sizeof(inter->if_filter))
 		errx(1, "%s: pcap filter exceeds maximum length", __func__);

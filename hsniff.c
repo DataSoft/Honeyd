@@ -119,9 +119,11 @@ hsniff_settcp(struct tcp_track *con, struct ip_hdr *ip, struct tcp_hdr *tcp,
 {
 	struct tuple *hdr = &con->conhdr;
 
-	memset(hdr, 0, sizeof(struct tuple));
-	hdr->ip_src = ip->ip_src;
-	hdr->ip_dst = ip->ip_dst;
+	memset(hdr, 0, sizeof(struct tuple));;
+	// TOOD ipv6: Move this up a layer
+	addr_pack(&hdr->address_src, ADDR_TYPE_IP, IP_ADDR_BITS, &ip->ip_src, IP_ADDR_LEN);
+	addr_pack(&hdr->address_dst, ADDR_TYPE_IP, IP_ADDR_BITS, &ip->ip_dst, IP_ADDR_LEN);
+
 	hdr->sport = ntohs(tcp->th_sport);
 	hdr->dport = ntohs(tcp->th_dport);
 	hdr->type = SOCK_STREAM;
@@ -137,8 +139,8 @@ hsniff_setudp(struct udp_con *con, struct ip_hdr *ip, struct udp_hdr *udp,
 	struct tuple *hdr = &con->conhdr;
 
 	memset(hdr, 0, sizeof(struct tuple));
-	hdr->ip_src = ip->ip_src;
-	hdr->ip_dst = ip->ip_dst;
+	addr_pack(&hdr->address_src, ADDR_TYPE_IP, IP_ADDR_BITS, &ip->ip_src, IP_ADDR_LEN);
+	addr_pack(&hdr->address_dst, ADDR_TYPE_IP, IP_ADDR_BITS, &ip->ip_dst, IP_ADDR_LEN);
 	hdr->sport = ntohs(udp->uh_sport);
 	hdr->dport = ntohs(udp->uh_dport);
 	hdr->type = SOCK_DGRAM;

@@ -273,14 +273,16 @@ print_spoof(char *msg, struct spoof s) {
 }
 
 void
-honeyd_settcp(struct tcp_con *con, struct ip_hdr *ip, struct tcp_hdr *tcp,
+honeyd_settcp(struct tcp_con *con, struct addr *src, struct addr *dst, struct tcp_hdr *tcp,
     int local)
 {
 	struct tuple *hdr = &con->conhdr;
 
 	memset(hdr, 0, sizeof(struct tuple));
-	hdr->ip_src = ip->ip_src;
-	hdr->ip_dst = ip->ip_dst;
+	hdr->address_src = *src;
+	hdr->address_dst = *dst;
+
+
 	hdr->sport = ntohs(tcp->th_sport);
 	hdr->dport = ntohs(tcp->th_dport);
 	hdr->type = SOCK_STREAM;
@@ -297,8 +299,11 @@ honeyd_setudp(struct udp_con *con, struct ip_hdr *ip, struct udp_hdr *udp,
 	struct tuple *hdr = &con->conhdr;
 
 	memset(hdr, 0, sizeof(struct tuple));
-	hdr->ip_src = ip->ip_src;
-	hdr->ip_dst = ip->ip_dst;
+
+	// TODO: Move this up a layer
+	addr_pack(&hdr->address_dst, ADDR_TYPE_IP, IP_ADDR_BITS,&ip->ip_dst, IP_ADDR_LEN);
+	addr_pack(&hdr->address_src, ADDR_TYPE_IP, IP_ADDR_BITS,&ip->ip_src, IP_ADDR_LEN);
+
 	hdr->sport = ntohs(udp->uh_sport);
 	hdr->dport = ntohs(udp->uh_dport);
 	hdr->type = SOCK_DGRAM;
@@ -955,7 +960,7 @@ connection_update(struct conlru *head, struct tuple *hdr)
 }
 
 struct tcp_con *
-tcp_new(struct ip_hdr *ip, struct tcp_hdr *tcp, int local)
+tcp_new(struct addr src, struct addr dst, struct tcp_hdr *tcp, int local)
 {
 	struct tcp_con *con;
 
@@ -974,7 +979,7 @@ tcp_new(struct ip_hdr *ip, struct tcp_hdr *tcp, int local)
 	}
 
 	honeyd_nconnects++;
-	honeyd_settcp(con, ip, tcp, local);
+	honeyd_settcp(con, &src, &dst, tcp, local);
 	evtimer_set(&con->conhdr.timeout, honeyd_tcp_timeout, con);
 	evtimer_set(&con->retrans_timeout, tcp_retrans_timeout, con);
 
@@ -1938,9 +1943,10 @@ generic_timeout(struct event *ev, int seconds)
 		} \
 } while(0)
 
+// TODO: Document what's going on here (or refactor it out)
 #define TCP_RECV_SEND_DATA	do { \
 		/* Find new data: doff contains already acked data */ \
-		dlen = ntohs(ip->ip_len) - (ip->ip_hl * 4) -(tcp->th_off * 4);\
+		dlen = pktlen - (tcp->th_off * 4);\
 		doff = con->rcv_next - th_seq; \
 		if (doff > dlen ||(doff == dlen && (tiflags & TH_FIN) == 0)) {\
 			/* Need to ACK this segments */ \
@@ -1990,10 +1996,9 @@ generic_timeout(struct event *ev, int seconds)
 } while (0)
 
 void
-tcp_recv_cb(struct template *tmpl, u_char *pkt, u_short pktlen)
+tcp_recv_cb(struct template *tmpl, u_char *pkt, struct tuple *summary, u_short pktlen)
 {
 	char *comment = NULL;
-	struct ip_hdr *ip;
 	struct tcp_hdr *tcp;
 	struct tcp_con *con;
 	struct action *action;
@@ -2004,31 +2009,32 @@ tcp_recv_cb(struct template *tmpl, u_char *pkt, u_short pktlen)
 	u_int dlen, doff;
 	uint8_t tiflags, flags;
 
-	ip = (struct ip_hdr *)pkt;
-	tcp = (struct tcp_hdr *)(pkt + (ip->ip_hl << 2));
-	data = (u_char *)(pkt + (ip->ip_hl*4) + (tcp->th_off*4));
+	tcp = (struct tcp_hdr *)(pkt);
+	data = (u_char *)(pkt + (tcp->th_off*4));
 	
-	if (pktlen < (ip->ip_hl << 2) + TCP_HDR_LEN)
+	if (pktlen < TCP_HDR_LEN)
 		return;
 
 	/* 
 	 * Check if we have a real connection header for this connection, so
 	 * that we can look at potential flags like local origination.
 	 */
-	honeyd_settcp(&honeyd_tmp, ip, tcp, 0);
+	honeyd_settcp(&honeyd_tmp, &summary->address_src, &summary->address_dst, tcp, 0);
 	con = (struct tcp_con *)SPLAY_FIND(tree, &tcpcons, &honeyd_tmp.conhdr);
 
-	hooks_dispatch(ip->ip_p, HD_INCOMING, 
+	/* TODO ipv6: disabled for ipv6 work
+	hooks_dispatch(IP_PROTO_TCP, HD_INCOMING,
 	    con != NULL ? &con->conhdr : &honeyd_tmp.conhdr, pkt, pktlen);
+	*/
 	
 	if (honeyd_block(tmpl, IP_PROTO_TCP, ntohs(tcp->th_dport)))
 		goto justlog;
 
 	/* Check the checksum the brutal way, until libdnet supports */
 	th_sum = tcp->th_sum;
-	ip_checksum(ip, pktlen);
-	if (th_sum != tcp->th_sum)
-		goto justlog;
+	//ip_checksum(ip, pktlen);
+	//if (th_sum != tcp->th_sum)
+	//	goto justlog;
 
 	action = honeyd_port(tmpl, IP_PROTO_TCP, ntohs(tcp->th_dport));
 	honeyd_tmp.state = action == NULL || PORT_ISOPEN(action) ? 
@@ -2085,7 +2091,7 @@ tcp_recv_cb(struct template *tmpl, u_char *pkt, u_short pktlen)
 		}
 
 		/* Out of memory is dealt with by killing the connection */
-		if ((con = tcp_new(ip, tcp, 0)) == NULL) {
+		if ((con = tcp_new(summary->address_src, summary->address_dst, tcp, 0)) == NULL) {
 			goto kill;
 		}
 		con->rcv_flags = tiflags;
@@ -2373,8 +2379,9 @@ tcp_recv_cb(struct template *tmpl, u_char *pkt, u_short pktlen)
 	return;
 
  justlog:
-	honeyd_settcp(&honeyd_tmp, ip, tcp, 0);
-	honeyd_log_probe(honeyd_logfp, IP_PROTO_TCP,&honeyd_tmp.conhdr,
+ 	 honeyd_settcp(&honeyd_tmp, &summary->address_src, &summary->address_dst, tcp, 0);
+
+ 	 honeyd_log_probe(honeyd_logfp, IP_PROTO_TCP,&honeyd_tmp.conhdr,
 	    pktlen, tcp->th_flags, comment);
 }
 
@@ -2562,8 +2569,10 @@ icmp_recv_cb(struct template *tmpl, u_char *pkt, u_short pktlen)
 	icmp = (struct icmp_hdr *)(pkt + (ip->ip_hl << 2));
 
 	icmphdr.local = 0;
-	icmphdr.ip_src = ip->ip_src;
-	icmphdr.ip_dst = ip->ip_dst;
+	// TOOD ipv6: Move this up a layer
+	addr_pack(&icmphdr.address_src, ADDR_TYPE_IP, IP_ADDR_BITS, &ip->ip_src, IP_ADDR_LEN);
+	addr_pack(&icmphdr.address_dst, ADDR_TYPE_IP, IP_ADDR_BITS, &ip->ip_dst, IP_ADDR_LEN);
+
 	icmphdr.type = SOCK_RAW;
 	icmphdr.sport = icmp->icmp_type; /* XXX - horrible cludge */
 	icmphdr.dport = icmp->icmp_code;
@@ -2816,8 +2825,9 @@ honeyd_dispatch(struct template *tmpl, struct ip_hdr *ip, u_short iplen)
 {
 	struct tuple iphdr;
 
-	iphdr.ip_src = ip->ip_src;
-	iphdr.ip_dst = ip->ip_dst;
+	addr_pack(&iphdr.address_dst, ADDR_TYPE_IP, IP_ADDR_BITS, &ip->ip_dst ,IP_ADDR_LEN);
+	addr_pack(&iphdr.address_src, ADDR_TYPE_IP, IP_ADDR_BITS, &ip->ip_src ,IP_ADDR_LEN);
+
 	iphdr.type = -1;
 	
 	/*
@@ -2827,7 +2837,7 @@ honeyd_dispatch(struct template *tmpl, struct ip_hdr *ip, u_short iplen)
 
 	switch(ip->ip_p) {
 	case IP_PROTO_TCP:
-		tcp_recv_cb(tmpl, (u_char *)ip, iplen);
+		tcp_recv_cb(tmpl, (u_char *)ip + (ip->ip_hl*4), &iphdr, iplen - (ip->ip_hl*4));
 		break;
 	case IP_PROTO_UDP:
 		udp_recv_cb(tmpl, (u_char *)ip, iplen);
@@ -2841,6 +2851,38 @@ honeyd_dispatch(struct template *tmpl, struct ip_hdr *ip, u_short iplen)
 		hooks_dispatch(ip->ip_p, HD_INCOMING, &iphdr,
 		    (u_char *)ip, iplen);
 		honeyd_log_probe(honeyd_logfp, ip->ip_p, &iphdr, iplen, 0, NULL);
+		return;
+	}
+}
+
+void
+honeyd_dispatch_ipv6(struct template *tmpl, struct ip6_hdr *ip, u_short iplen)
+{
+	struct tuple iphdr;
+	addr_pack(&iphdr.address_dst, ADDR_TYPE_IP6, IP6_ADDR_BITS, &ip->ip6_dst ,IP6_ADDR_LEN);
+	addr_pack(&iphdr.address_src, ADDR_TYPE_IP6, IP6_ADDR_BITS, &ip->ip6_src ,IP6_ADDR_LEN);
+
+	switch(ip->ip6_nxt) {
+	case IP_PROTO_TCP:
+		tcp_recv_cb(tmpl, (u_char *)ip + IP6_HDR_LEN, &iphdr, iplen - IP6_HDR_LEN);
+		break;
+	case IP_PROTO_UDP:
+		// TODO ipv6
+		//udp_recv_cb(tmpl, (u_char *)ip, iplen);
+		break;
+	case IP_PROTO_ICMP:
+		// TODO ipv6
+
+		//hooks_dispatch(ip->ip_p, HD_INCOMING, &iphdr,
+		//    (u_char *)ip, iplen);
+		//icmp_recv_cb(tmpl, (u_char *)ip, iplen);
+		break;
+	default:
+		// TODO ipv6
+
+		//hooks_dispatch(ip->ip_p, HD_INCOMING, &iphdr,
+		//    (u_char *)ip, iplen);
+		//honeyd_log_probe(honeyd_logfp, ip->ip_p, &iphdr, iplen, 0, NULL);
 		return;
 	}
 }
@@ -3153,6 +3195,7 @@ honeyd_recv_cb(u_char *ag, const struct pcap_pkthdr *pkthdr, const u_char *pkt)
 {
 	const struct interface *inter = (const struct interface *)ag;
 	struct ip_hdr *ip;
+	struct ip6_hdr *ip6;
 	struct addr addr;
 	u_short iplen;
 	struct eth_hdr *eth = (struct eth_hdr *)pkt;
@@ -3182,41 +3225,85 @@ honeyd_recv_cb(u_char *ag, const struct pcap_pkthdr *pkthdr, const u_char *pkt)
 		}
 	}
 
-	/* Everything below assumes that the packet is IPv4 */
-	if (pkthdr->caplen < inter->if_dloff + IP_HDR_LEN)
-		return;
-
-	ip = (struct ip_hdr *)(pkt + inter->if_dloff);
-
-	iplen = ntohs(ip->ip_len);
-	if (pkthdr->caplen - inter->if_dloff < iplen)
-		return;
-	if (ip->ip_hl << 2 > iplen)
-		return;
-	if (ip->ip_hl << 2 < sizeof(struct ip_hdr))
-		return;
-
-	/* Check our own address */
-	addr_pack(&addr, ADDR_TYPE_IP, IP_ADDR_BITS, &ip->ip_dst, IP_ADDR_LEN);
-	if (addr_cmp(&addr, &inter->if_ent.intf_addr) == 0) {
-		/* Only accept packets for own address if they are GRE */
-		if (!router_used || ip->ip_p != IP_PROTO_GRE)
+	if (ntohs(eth->eth_type) == ETH_TYPE_IP) {
+		/* Everything below assumes that the packet is IPv4 */
+		if (pkthdr->caplen < inter->if_dloff + IP_HDR_LEN)
 			return;
-	}
 
-	/* Check for a DHCP server response */
-	if (is_etherpkt && ip->ip_p == IP_PROTO_UDP) {
-		struct udp_hdr *udp;
+		ip = (struct ip_hdr *)(pkt + inter->if_dloff);
 
-		udp = (struct udp_hdr *)((u_char *)ip + (ip->ip_hl << 2));
-		if (iplen < (ip->ip_hl << 2) + UDP_HDR_LEN)
-			goto out;
+		iplen = ntohs(ip->ip_len);
+		if (pkthdr->caplen - inter->if_dloff < iplen)
+			return;
+		if (ip->ip_hl << 2 > iplen)
+			return;
+		if (ip->ip_hl << 2 < sizeof(struct ip_hdr))
+			return;
 
-		if (ntohs(udp->uh_dport) == 68 && ntohs(udp->uh_sport) == 67) {
-			dhcp_recv_cb(eth, ip, iplen);
+		/* Check our own address */
+		addr_pack(&addr, ADDR_TYPE_IP, IP_ADDR_BITS, &ip->ip_dst, IP_ADDR_LEN);
+		if (addr_cmp(&addr, &inter->if_ent.intf_addr) == 0) {
+			/* Only accept packets for own address if they are GRE */
+			if (!router_used || ip->ip_p != IP_PROTO_GRE)
+				return;
+		}
+
+		/* Check for a DHCP server response */
+		if (is_etherpkt && ip->ip_p == IP_PROTO_UDP) {
+			struct udp_hdr *udp;
+
+			udp = (struct udp_hdr *)((u_char *)ip + (ip->ip_hl << 2));
+			if (iplen < (ip->ip_hl << 2) + UDP_HDR_LEN)
+				goto out;
+
+			if (ntohs(udp->uh_dport) == 68 && ntohs(udp->uh_sport) == 67) {
+				dhcp_recv_cb(eth, ip, iplen);
+				return;
+			}
+		}
+	} else if (ntohs(eth->eth_type) == ETH_TYPE_IPV6) {
+		/* Everything below assumes that the packet is IPv6 */
+		if (pkthdr->caplen < inter->if_dloff + IP6_HDR_LEN)
+			return;
+
+		ip6 = (struct ip6_hdr *)(pkt + inter->if_dloff);
+
+		iplen = ntohs(ip6->ip6_plen) + IP6_HDR_LEN;
+		if (pkthdr->caplen - inter->if_dloff < iplen)
+			return;
+
+		/* Check our own address */
+		addr_pack(&addr, ADDR_TYPE_IP6, IP6_ADDR_BITS, &ip6->ip6_dst, IP6_ADDR_LEN);
+		if (addr_cmp(&addr, &inter->if_ent.intf_addr) == 0) {
+			/* Only accept packets for own address if they are GRE */
+			// TODO ipv6: GRE tunnels?
+			//if (!router_used || ip->ip_p != IP_PROTO_GRE)
 			return;
 		}
+
+		/* Check alias addresses for the interface. If it has both ipv4 and ipv6 address, ipv6 shows as an alias */
+		int alias;
+		for (alias = 0; alias < inter->if_ent.intf_alias_num; alias++) {
+			if (addr_cmp(&addr, &inter->if_ent.intf_alias_addrs[alias]))
+			{
+				return;
+			}
+		}
+
+		// xxx ipv6: we bypass a lot of routing and GRE stuff for now
+
+		struct addr;
+		addr_pack(&addr, ADDR_TYPE_IP6, IP6_ADDR_BITS, &ip6->ip6_dst ,IP6_ADDR_LEN);
+		struct template *t = template_find_best(addr_ntoa(&addr), NULL, 0);
+		honeyd_dispatch_ipv6(t, ip6, iplen);
+
+		return;
+
+
+		// TODO ipv6: Check for DHCPv6 responses
 	}
+
+
  out:
 	honeyd_input(inter, ip, iplen);
 }

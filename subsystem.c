@@ -590,10 +590,6 @@ subsystem_read(int fd, short what, void *arg)
 		syslog(LOG_DEBUG, "Connect: allocated port %d",
 		    sub_port->number);
 
-		/* The remote side is the source */
-		ip.ip_src = dst.addr_ip;
-		ip.ip_dst = src.addr_ip;
-
 		/* Try to setup a TCP connection */
 		if (proto == IP_PROTO_TCP) {
 			struct tcp_con *con;
@@ -603,7 +599,7 @@ subsystem_read(int fd, short what, void *arg)
 			tcp.th_sport = htons(port);
 			tcp.th_dport = htons(sub_port->number);
 
-			if ((con = tcp_new(&ip, &tcp, 1)) == NULL)
+			if ((con = tcp_new(src, dst, &tcp, 1)) == NULL)
 				goto out;
 			con->tmpl = template_ref(tmpl);
 

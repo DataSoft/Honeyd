@@ -249,6 +249,8 @@ template_find_best(const char *addr, const struct ip_hdr *ip, u_short iplen)
 	if (tmpl == NULL)
 		tmpl = template_find("default");
 	
+
+	// TODO ipv6: Add support for dynamic ipv6 templates or at least disable the ability to create them
 	if (tmpl != NULL && tmpl->flags & TEMPLATE_DYNAMIC)
 		tmpl = template_dynamic(tmpl, ip, iplen);
 

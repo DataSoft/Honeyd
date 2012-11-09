@@ -211,7 +211,6 @@ void
 cmd_environment(struct template *tmpl, struct tuple *hdr)
 {
 	char line[256];
-	struct addr addr;
 	struct ip_hdr ip;
 	char *os_name;
 
@@ -224,18 +223,16 @@ cmd_environment(struct template *tmpl, struct tuple *hdr)
 		return;
 	     
 	/* Determine the remote operating system */
-	ip.ip_src = hdr->ip_src;
+	ip.ip_src = hdr->address_src.addr_ip;
 	os_name = honeyd_osfp_name(&ip);
 	if (os_name != NULL) {
 		setenv("HONEYD_REMOTE_OS", os_name, 1);
 	}
 
-	addr_pack(&addr, ADDR_TYPE_IP, IP_ADDR_BITS, &hdr->ip_src,IP_ADDR_LEN);
-	snprintf(line, sizeof(line), "%s", addr_ntoa(&addr));
+	snprintf(line, sizeof(line), "%s", addr_ntoa(&hdr->address_src));
 	setenv("HONEYD_IP_SRC", line, 1);
 
-	addr_pack(&addr, ADDR_TYPE_IP, IP_ADDR_BITS, &hdr->ip_dst,IP_ADDR_LEN);
-	snprintf(line, sizeof(line), "%s", addr_ntoa(&addr));
+	snprintf(line, sizeof(line), "%s", addr_ntoa(&hdr->address_dst));
 	setenv("HONEYD_IP_DST", line, 1);
 
 	snprintf(line, sizeof(line), "%d", hdr->sport);
@@ -664,10 +661,10 @@ cmd_subsystem_connect(struct tuple *hdr, struct command *cmd,
 	TRACE(pair[0], cmd->pfd = pair[0]);
 
 	/* Prepare sockaddr for both src and destination */
-	addr_pack(&src, ADDR_TYPE_IP, IP_ADDR_BITS, &hdr->ip_src,IP_ADDR_LEN);
+	src = hdr->address_src;
 	addr_ntos(&src, (struct sockaddr *)&bundle.src);
 	bundle.src.sin_port = htons(hdr->sport);
-	addr_pack(&dst, ADDR_TYPE_IP, IP_ADDR_BITS, &hdr->ip_dst,IP_ADDR_LEN);
+	dst = hdr->address_dst;
 	addr_ntos(&dst, (struct sockaddr *)&bundle.dst);
 	bundle.dst.sin_port = htons(hdr->dport);
 
@@ -752,7 +749,7 @@ cmd_subsystem_localconnect(struct tuple *hdr, struct command *cmd,
 	TRACE(fd, cmd->pfd = fd);
 
 	/* Prepare sockaddr */
-	addr_pack(&src, ADDR_TYPE_IP, IP_ADDR_BITS, &hdr->ip_dst, IP_ADDR_LEN);
+	src = hdr->address_dst;
 	addr_ntos(&src, (struct sockaddr *)&si);
 	si.sin_port = htons(hdr->dport);
 

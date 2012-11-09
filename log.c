@@ -72,8 +72,8 @@ honeyd_logtuple(const struct tuple *hdr)
 	struct addr src, dst;
 	ushort sport, dport;
 	
-	addr_pack(&src, ADDR_TYPE_IP, IP_ADDR_BITS, &hdr->ip_src, IP_ADDR_LEN);
-	addr_pack(&dst, ADDR_TYPE_IP, IP_ADDR_BITS, &hdr->ip_dst, IP_ADDR_LEN);
+	src = hdr->address_src;
+	dst = hdr->address_dst;
 
 	if (hdr->local) {
 		struct addr tmp;
@@ -240,7 +240,7 @@ honeyd_log_comment(int proto, const struct tuple *hdr, const char *remark)
 	
 	comment[0] = '\0';
 
-	ip.ip_src = hdr->ip_src;
+	ip.ip_src = hdr->address_src.addr_ip;
 	name = honeyd_osfp_name(&ip);
 	if (name != NULL)
 		snprintf(comment, sizeof(comment), " [%s]", name);
