@@ -9,7 +9,6 @@
 *.so
 *.swp
 *.guess
-*.h
 *.h.in
 *.sub
 *.status
@@ -55,6 +54,7 @@ Thumbs.db
 # Autogen Files #
 #################
 
+config.h
 autom4te.cache/*
 libtool
 stamp-h1
