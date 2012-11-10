@@ -72,6 +72,8 @@
 #include "parser.h"
 #include "ethernet.h"
 #include "arp.h"
+#include "icmpv6.h"
+#include "ndp.h"
 #include "pool.h"
 #include "dhcpclient.h"
 #include "util.h"
@@ -590,6 +592,20 @@ template_post_arp(struct template *tmpl, struct addr *ipaddr)
 }
 
 void
+template_post_ndp(struct template *tmpl, struct addr *ipaddr)
+{
+	struct ndp_req *req;
+
+	/* Register this mac address as our own */
+	req = ndp_new(tmpl->inter, NULL, NULL, ipaddr, tmpl->ethernet_addr);
+	if (req == NULL)
+		errx(1, "%s: cannot create arp entry");
+
+	req->flags |= ARP_INTERNAL;
+	req->owner = tmpl;
+}
+
+void
 template_remove_arp(struct template *tmpl)
 {
 	struct arp_req *arp;
@@ -617,6 +633,7 @@ template_clone(const char *newname, const struct template *tmpl,
 	struct template *newtmpl;
 	struct port *port;
 	struct in_addr in_addr;
+	struct in6_addr in6_addr;
 
 	if ((newtmpl = template_create(newname)) == NULL)
 		return (NULL);
@@ -642,13 +659,12 @@ template_clone(const char *newname, const struct template *tmpl,
 		 * DHCP templates get a temporary IP address assigned.
 		 */
 
+		struct sockaddr_in tmpSockaddr;
+		struct addr addr;
+
 		//If the template name is a valid IP address
 		if(inet_pton(AF_INET, newtmpl->name, &in_addr) == 1)
 		{
-			//convert struct in_addr to addr
-			struct sockaddr_in tmpSockaddr;
-			struct addr addr;
-
 			tmpSockaddr.sin_family = AF_INET;
 			tmpSockaddr.sin_addr = in_addr;
 			tmpSockaddr.sin_port = 0;	//There is no socket yet. No ports.
@@ -667,6 +683,23 @@ template_clone(const char *newname, const struct template *tmpl,
 
 			/* Register this mac address as our own */
 			template_post_arp(newtmpl, &addr);
+		}
+		else if(inet_pton(AF_INET6, newtmpl->name, &in6_addr) == 1)
+		{
+			addr_pack(&addr, ADDR_TYPE_IP6, IP6_ADDR_BITS, &in6_addr,IP6_ADDR_LEN);
+
+			if (inter == NULL)
+			{
+				inter = interface_find_responsible(&addr);
+				if (inter == NULL)
+				{
+					errx(1, "Cannot find interface");
+				}
+			}
+			newtmpl->inter = inter;
+
+			/* Register this mac address as our own */
+			template_post_ndp(newtmpl, &addr);
 		}
 	}
 

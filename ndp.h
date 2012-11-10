@@ -34,6 +34,38 @@
 #ifndef NPD_H_
 #define NPD_H_
 
+struct ndp_req {
+	SPLAY_ENTRY(ndp_req)	next_pa;
+	SPLAY_ENTRY(ndp_req)	next_ha;
+
+	struct interface	*inter;
+
+	int			cnt;
+
+	struct event		active;
+	struct event		discover;
+
+	/* The address that we want to know about */
+	struct addr		pa;
+	struct addr		ha;
+
+	/* The address that is requesting the information */
+	struct addr		src_pa;
+	struct addr		src_ha;
+
+	void *arg;
+	void (*cb)(struct ndp_req *, int, void *);
+
+	int flags;
+	struct template	       *owner;	/* template this req refers to */
+};
+
+void ndp_init();
+
+struct ndp_req *ndp_new(struct interface *,
+    struct addr *src_pa, struct addr *src_ha,
+    struct addr *pa, struct addr *ha);
+
 void ndp_recv_cb(struct tuple *summary, const struct icmpv6_msg_nd *query);
 
 

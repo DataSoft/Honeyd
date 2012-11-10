@@ -1,10 +1,8 @@
+/* A Bison parser, made by GNU Bison 2.5.  */
 
-/* A Bison parser, made by GNU Bison 2.4.1.  */
-
-/* Skeleton interface for Bison's Yacc-like parsers in C
+/* Bison interface for Yacc-like parsers in C
    
-      Copyright (C) 1984, 1989, 1990, 2000, 2001, 2002, 2003, 2004, 2005, 2006
-   Free Software Foundation, Inc.
+      Copyright (C) 1984, 1989-1990, 2000-2011 Free Software Foundation, Inc.
    
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -111,9 +109,10 @@
      STRING = 327,
      CMDSTRING = 328,
      IPSTRING = 329,
-     NUMBER = 330,
-     PROTO = 331,
-     FLOAT = 332
+     IP6STRING = 330,
+     NUMBER = 331,
+     PROTO = 332,
+     FLOAT = 333
    };
 #endif
 /* Tokens.  */
@@ -189,9 +188,10 @@
 #define STRING 327
 #define CMDSTRING 328
 #define IPSTRING 329
-#define NUMBER 330
-#define PROTO 331
-#define FLOAT 332
+#define IP6STRING 330
+#define NUMBER 331
+#define PROTO 332
+#define FLOAT 333
 
 
 
@@ -200,7 +200,7 @@
 typedef union YYSTYPE
 {
 
-/* Line 1676 of yacc.c  */
+/* Line 2068 of yacc.c  */
 #line 141 "parse.y"
 
 	char *string;
@@ -219,7 +219,7 @@ typedef union YYSTYPE
 
 
 
-/* Line 1676 of yacc.c  */
+/* Line 2068 of yacc.c  */
 #line 224 "parse.h"
 } YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1

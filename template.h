@@ -132,6 +132,7 @@ void		template_list_glob(struct evbuffer *buffer,
 		    const char *pattern);
 
 void		template_post_arp(struct template *, struct addr *);
+void		template_post_ndp(struct template *, struct addr *);
 void		template_remove_arp(struct template *);
 
 int		template_insert_dynamic(struct template *, struct template *,

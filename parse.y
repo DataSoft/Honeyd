@@ -114,10 +114,12 @@ int curtype = -1;	/* Lex sets it to SOCK_STREAM or _DGRAM */
 %token	<string> STRING
 %token	<string> CMDSTRING
 %token	<string> IPSTRING
+%token  <string> IP6STRING
 %token	<number> NUMBER
 %token	<number> PROTO
 %token	<floatp> FLOAT
 %type	<addr> ipaddr
+%type   <addr> ip6addr
 %type	<addr> ipnet
 %type	<ai> ipaddrplusport
 %type	<action> action
@@ -286,6 +288,20 @@ binding		: BIND ipaddr template
 			break;
 		}
 	}
+		| BIND ip6addr template
+	{
+		/* Bind to an IP address and start subsystems */
+		if ($3 == NULL) {
+			yyerror("Unknown template");
+			break;
+		}
+
+		if (template_clone(addr_ntoa(&$2), $3, NULL, 1) == NULL) {
+			yyerror("Binding to %s failed", addr_ntoa(&$2));
+			break;
+		}
+	}
+	
 		| BIND condition ipaddr template
 	{
 		struct template *tmpl;
@@ -600,6 +616,39 @@ ipaddr		: IPSTRING
 	{
 		if (addr_pton($1, &$$) < 0)
 			yyerror("Illegal IP address %s", $1);
+		else
+			yywarn("Parsed valid IP %s", $1);
+			
+		free($1);
+	}
+		| CMDSTRING
+	{
+		struct addrinfo ai, *aitop;
+
+		memset(&ai, 0, sizeof (ai));
+		ai.ai_family = AF_INET;
+		ai.ai_socktype = 0;
+		ai.ai_flags = 0;
+
+		/* Remove quotation marks */
+		$1[strlen($1) - 1] = '\0';
+		if (getaddrinfo($1+1, NULL, &ai, &aitop) != 0) {
+			yyerror("getaddrinfo failed: %s", $1+1);
+			break;
+		}
+		addr_ston(aitop->ai_addr, &$$);
+		freeaddrinfo(aitop);
+		free($1);
+	}
+;
+ip6addr		: IP6STRING
+	{
+		if (addr_pton($1, &$$) < 0) {
+			yyerror("Illegal IP address %s", $1);
+		} else {
+			yywarn("Parsed valid IP %s", $1);
+		}
+		
 		free($1);
 	}
 		| CMDSTRING

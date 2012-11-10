@@ -184,6 +184,7 @@ include		{ BEGIN(incl); }
 		  }
 		}
 [0-9]+\.[0-9]+\.[0-9]+\.[0-9]+  { yylval.string = strdup(yytext); return IPSTRING; }
+[0-9A-Fa-f]+(:[0-9A-Fa-f]+){7} { yylval.string = strdup(yytext); return IP6STRING; }
 [0-9]+		{ yylval.number = atoi(yytext); return NUMBER; }
 [0-9]+\.[0-9]+  { yylval.floatp = atof(yytext); return FLOAT; }
 [\$A-Za-z][\.\(\)\/A-Za-z_\-0-9\*]* { yylval.string = strdup(yytext); return STRING; }

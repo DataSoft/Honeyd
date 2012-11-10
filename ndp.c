@@ -67,6 +67,62 @@
 
 #include "debug.h"
 
+/* For the physical (IP) address */
+static SPLAY_HEAD(pandptree, ndp_req) pa_ndp_reqs;
+
+static int
+pandp_compare(struct ndp_req *a, struct ndp_req *b)
+{
+	return (addr_cmp(&a->pa, &b->pa));
+}
+
+SPLAY_PROTOTYPE(pandptree, ndp_req, next_pa, pandp_compare);
+SPLAY_GENERATE(pandptree, ndp_req, next_pa, pandp_compare);
+
+void
+ndp_init(void)
+{
+	SPLAY_INIT(&pa_ndp_reqs);
+}
+
+struct ndp_req *
+ndp_new(struct interface *inter,
+    struct addr *src_pa, struct addr *src_ha,
+    struct addr *pa, struct addr *ha)
+{
+	struct ndp_req *req;
+
+	if ((req = calloc(1, sizeof(*req))) == NULL)
+		return (NULL);
+
+	req->inter = inter;
+
+	if (src_pa != NULL)
+		req->src_pa = *src_pa;
+	if (src_ha != NULL)
+		req->src_ha = *src_ha;
+
+	if (pa != NULL) {
+		req->pa = *pa;
+		SPLAY_INSERT(pandptree, &pa_ndp_reqs, req);
+	}
+
+	// TODO ipv6: Do we want another MAC -> thing tree here? Need to think about this. Maybe refactor the hardware mapping out.
+	/*
+	if (ha != NULL) {
+		req->ha = *ha;
+		assert (SPLAY_FIND(haarptree, &ha_arp_reqs, req) == NULL);
+		SPLAY_INSERT(haarptree, &ha_arp_reqs, req);
+	}
+	*/
+
+	// TODO ipv6: Why's this happening here? Is this just init stuff?
+	//evtimer_set(&req->active, arp_timeout, req);
+	//evtimer_set(&req->discover, arp_discovercb, req);
+
+	return (req);
+}
+
 void
 ndp_recv_cb(struct tuple *summary, const struct icmpv6_msg_nd *query)
 {
