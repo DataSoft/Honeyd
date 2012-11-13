@@ -2036,18 +2036,19 @@ icmpv6_recv_cb(struct template *tmpl, u_char *pkt, struct tuple *summary, u_shor
 		// TODO ipv6: We should do work more here to emulate an OS from the nmap ipv6 detection
 		struct icmpv6_msg_echo *echo_msg = (struct icmpv6_msg_echo*)(pkt + ICMPV6_HDR_LEN);
 
-		uint packetLength = ETH_HDR_LEN + IP6_HDR_LEN + pktlen;
-		u_char reply[packetLength];
+		uint replyLength = ETH_HDR_LEN + IP6_HDR_LEN + pktlen;
+		u_char reply[replyLength];
 
-		eth_pack_hdr(&reply, summary->linkLayer_src, summary->linkLayer_dst, ETH_TYPE_IPV6);
-		ip6_pack_hdr(&reply + ETH_HDR_LEN, 0, 0, packetLength, IP_PROTO_ICMPV6, IP6_HLIM_MAX, summary->address_src.addr_ip6, summary->address_dst.addr_ip6);
-		icmpv6_pack_hdr_echo(&reply + ETH_HDR_LEN + IP6_HDR_LEN, ICMPV6_ECHOREPLY, 0, echo_msg->icmpv6_id, echo_msg->icmpv6_seq, echo_msg->icmpv6_data, pktlen - sizeof(struct icmpv6_msg_echo));
+		eth_pack_hdr(reply, summary->linkLayer_src.addr_eth, summary->linkLayer_dst.addr_eth, ETH_TYPE_IPV6);
+		ip6_pack_hdr(reply + ETH_HDR_LEN, 0, 0, replyLength, IP_PROTO_ICMPV6, IP6_HLIM_MAX, summary->address_dst.addr_ip6, summary->address_src.addr_ip6);
+		icmpv6_pack_hdr_echo(reply + ETH_HDR_LEN + IP6_HDR_LEN, ICMPV6_ECHOREPLY, 0, echo_msg->icmpv6_id, echo_msg->icmpv6_seq, echo_msg->icmpv6_data, replyLength - (ETH_HDR_LEN + IP6_HDR_LEN + ICMPV6_HDR_LEN + 4));
 
-		ip6_checksum(pkt + ETH_HDR_LEN, packetLength - ETH_HDR_LEN);
+
+		ip6_checksum(reply + ETH_HDR_LEN, replyLength - ETH_HDR_LEN);
 
 		syslog(LOG_INFO, "icmpv6 echo reply to %s", addr_ntoa(&summary->address_src));
 
-		if (eth_send(summary->inter->if_eth, &reply, packetLength) != sizeof(pkt))
+		if (eth_send(summary->inter->if_eth, reply, replyLength) != replyLength)
 			syslog(LOG_ERR, "couldn't send packet: %m");
 
 		break;
@@ -3354,7 +3355,7 @@ honeyd_recv_cb(u_char *ag, const struct pcap_pkthdr *pkthdr, const u_char *pkt)
 
 			if (addr_cmp(&addr, &inter->if_ent.intf_alias_addrs[alias]) == 0)
 			{
-				return;
+				//return;
 			}
 		}
 

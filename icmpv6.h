@@ -107,8 +107,8 @@ union icmpv6_msg {
 	struct icmpv6_msg_echo *echo_pack_p = (struct icmpv6_msg_echo *)\
 		((uint8_t *)(hdr) + ICMPV6_HDR_LEN);			\
 	icmpv6_pack_hdr(hdr, type, code);				\
-	echo_pack_p->icmpv6_id = htons(id);				\
-	echo_pack_p->icmpv6_seq = htons(seq);				\
+	echo_pack_p->icmpv6_id = id;				\
+	echo_pack_p->icmpv6_seq = seq;				\
 	memmove(echo_pack_p->icmpv6_data, data, len);			\
 } while (0)
 
