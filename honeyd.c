@@ -2002,21 +2002,56 @@ generic_timeout(struct event *ev, int seconds)
 void
 icmpv6_recv_cb(struct template *tmpl, u_char *pkt, struct tuple *summary, u_short pktlen)
 {
-	struct icmpv6_hdr *icmpv6;
-	struct icmpv6_msg_nd *ndp_msg;
+	// TODO ipv6: We need to check the processing rules in rfc2463:2.4 to make sure we aren't replying
+	// to a multicast address or doing some other illegal thing here.
 
-	icmpv6 = (struct icmpv6_hdr *)(pkt);
+	struct icmpv6_hdr *icmpv6 = (struct icmpv6_hdr *)(pkt);
 
 	if (pktlen < ICMPV6_HDR_LEN)
 		return;
 
-	switch (icmpv6->icmpv6_type)
-	{
+	// TODO ipv6: Is this actually defined in the spec? It's useful for avoiding overflows, but could
+	// make it easier to detect honeyd if we're not careful and drop the wrong packets.
+	if (pktlen > IP6_MTU_MIN)
+		return;
+
+	switch (icmpv6->icmpv6_type) {
+
 	case ICMPV6_NEIGHBOR_SOLICITATION:
-		ndp_msg = (struct icmpv6_msg_nd*)(pkt + ICMPV6_HDR_LEN);
+	{
+		if (pktlen < ICMPV6_HDR_LEN + sizeof(struct icmpv6_msg_nd))
+			return;
+
+		struct icmpv6_msg_nd *ndp_msg = (struct icmpv6_msg_nd*)(pkt + ICMPV6_HDR_LEN);
 
 		ndp_recv_cb(summary, ndp_msg);
 		break;
+	}
+
+	case ICMPV6_ECHO:
+	{
+		if (pktlen < ICMPV6_HDR_LEN + sizeof(struct icmpv6_msg_echo))
+			return;
+
+		// TODO ipv6: We should do work more here to emulate an OS from the nmap ipv6 detection
+		struct icmpv6_msg_echo *echo_msg = (struct icmpv6_msg_echo*)(pkt + ICMPV6_HDR_LEN);
+
+		uint packetLength = ETH_HDR_LEN + IP6_HDR_LEN + pktlen;
+		u_char reply[packetLength];
+
+		eth_pack_hdr(&reply, summary->linkLayer_src, summary->linkLayer_dst, ETH_TYPE_IPV6);
+		ip6_pack_hdr(&reply + ETH_HDR_LEN, 0, 0, packetLength, IP_PROTO_ICMPV6, IP6_HLIM_MAX, summary->address_src.addr_ip6, summary->address_dst.addr_ip6);
+		icmpv6_pack_hdr_echo(&reply + ETH_HDR_LEN + IP6_HDR_LEN, ICMPV6_ECHOREPLY, 0, echo_msg->icmpv6_id, echo_msg->icmpv6_seq, echo_msg->icmpv6_data, pktlen - sizeof(struct icmpv6_msg_echo));
+
+		ip6_checksum(pkt + ETH_HDR_LEN, packetLength - ETH_HDR_LEN);
+
+		syslog(LOG_INFO, "icmpv6 echo reply to %s", addr_ntoa(&summary->address_src));
+
+		if (eth_send(summary->inter->if_eth, &reply, packetLength) != sizeof(pkt))
+			syslog(LOG_ERR, "couldn't send packet: %m");
+
+		break;
+	}
 
 	default:
 

@@ -151,8 +151,8 @@ void ndp_send_advertisement(eth_t *eth,
 	u_char pkt[packetLength];
 
 	eth_pack_hdr(pkt, linkLayerDestination.addr_eth, linkLayerSource.addr_eth, ETH_TYPE_IPV6);
-	ip6_pack_hdr(pkt + ETH_HDR_LEN, 0, 0, 32, IP_PROTO_ICMPV6, IP6_HLIM_MAX, ipLayerSource.__addr_u.__ip6, ipLayerDestination.__addr_u.__ip6);
-	icmpv6_pack_hdr_na_mac(pkt + ETH_HDR_LEN + IP6_HDR_LEN, advertisementIpTarget.__addr_u.__ip6, advertisementLinkTarget.__addr_u.__eth);
+	ip6_pack_hdr(pkt + ETH_HDR_LEN, 0, 0, 32, IP_PROTO_ICMPV6, IP6_HLIM_MAX, ipLayerSource.addr_ip6, ipLayerDestination.addr_ip6);
+	icmpv6_pack_hdr_na_mac(pkt + ETH_HDR_LEN + IP6_HDR_LEN, advertisementIpTarget.addr_ip6, advertisementLinkTarget.addr_eth);
 
 	ip6_checksum(pkt + ETH_HDR_LEN, packetLength - ETH_HDR_LEN);
 
