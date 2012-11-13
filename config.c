@@ -676,7 +676,9 @@ template_clone(const char *newname, const struct template *tmpl,
 				inter = interface_find_responsible(&addr);
 				if (inter == NULL)
 				{
-					errx(1, "Cannot find interface");
+					// TODO: This hasn't been well tested. Could break things.
+					//errx(1, "Cannot find interface");
+					printf("WARNING: Cannot find interface responsible for IP %s\n", addr_ntoa(&addr));
 				}
 			}
 			newtmpl->inter = inter;
@@ -693,7 +695,9 @@ template_clone(const char *newname, const struct template *tmpl,
 				inter = interface_find_responsible(&addr);
 				if (inter == NULL)
 				{
-					errx(1, "Cannot find interface");
+					// TODO: This hasn't been well tested. Could break things.
+					//errx(1, "Cannot find interface");
+					printf("WARNING: Cannot find interface responsible for IP %s\n", addr_ntoa(&addr));
 				}
 			}
 			newtmpl->inter = inter;
