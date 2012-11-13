@@ -62,10 +62,17 @@ struct ndp_req {
 
 void ndp_init();
 
-struct ndp_req *ndp_new(struct interface *,
+struct ndp_req *ndp_new(struct interface *inter,
     struct addr *src_pa, struct addr *src_ha,
     struct addr *pa, struct addr *ha);
 
+
+void ndp_send_advertisement(eth_t *eth,
+    struct addr linkLayerSource, struct addr linkLayerDestination,
+    struct addr ipLayerSource, struct addr ipLayerDestination,
+    struct addr advertisementLinkTarget, struct addr advertisementIpTarget);
+
+struct ndp_req * ndp_find(struct addr *addr);
 void ndp_recv_cb(struct tuple *summary, const struct icmpv6_msg_nd *query);
 
 

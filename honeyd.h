@@ -294,7 +294,7 @@ struct tuple *tuple_find(struct tree *, struct tuple *);
 
 void honeyd_ip_send(u_char *, u_int, struct spoof spoof);
 void honeyd_dispatch(struct template *, struct ip_hdr *, u_short);
-void honeyd_dispatch_ipv6(struct template *, struct ip6_hdr *, u_short);
+void honeyd_dispatch_ipv6(struct tuple *summary, struct template *, struct ip6_hdr *, u_short);
 char *honeyd_contoa(const struct tuple *);
 
 void honeyd_input(const struct interface *, struct ip_hdr *, u_short);

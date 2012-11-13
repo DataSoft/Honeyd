@@ -68,7 +68,7 @@
 #include "debug.h"
 
 /* For the physical (IP) address */
-static SPLAY_HEAD(pandptree, ndp_req) pa_ndp_reqs;
+static SPLAY_HEAD(ndpTree, ndp_req) pa_ndp_reqs;
 
 static int
 pandp_compare(struct ndp_req *a, struct ndp_req *b)
@@ -76,8 +76,25 @@ pandp_compare(struct ndp_req *a, struct ndp_req *b)
 	return (addr_cmp(&a->pa, &b->pa));
 }
 
-SPLAY_PROTOTYPE(pandptree, ndp_req, next_pa, pandp_compare);
-SPLAY_GENERATE(pandptree, ndp_req, next_pa, pandp_compare);
+SPLAY_PROTOTYPE(ndpTree, ndp_req, next_pa, pandp_compare);
+SPLAY_GENERATE(ndpTree, ndp_req, next_pa, pandp_compare);
+
+
+struct ndp_req *
+ndp_find(struct addr *addr)
+{
+	struct ndp_req tmp, *res = NULL;
+
+	if (addr->addr_type == ADDR_TYPE_IP6) {
+		tmp.pa = *addr;
+		res = SPLAY_FIND(ndpTree, &pa_ndp_reqs, &tmp);
+	} else {
+		errx(1, "%s: lookup for unsupported address type", __func__);
+	}
+
+	return (res);
+}
+
 
 void
 ndp_init(void)
@@ -104,7 +121,7 @@ ndp_new(struct interface *inter,
 
 	if (pa != NULL) {
 		req->pa = *pa;
-		SPLAY_INSERT(pandptree, &pa_ndp_reqs, req);
+		SPLAY_INSERT(ndpTree, &pa_ndp_reqs, req);
 	}
 
 	// TODO ipv6: Do we want another MAC -> thing tree here? Need to think about this. Maybe refactor the hardware mapping out.
@@ -123,11 +140,60 @@ ndp_new(struct interface *inter,
 	return (req);
 }
 
+void ndp_send_advertisement(eth_t *eth,
+    struct addr linkLayerSource, struct addr linkLayerDestination,
+    struct addr ipLayerSource, struct addr ipLayerDestination,
+    struct addr advertisementLinkTarget, struct addr advertisementIpTarget)
+{
+
+	printf("Ndp advertisement details {\nipLayerSource: %s\nipLayerDestination: %s \nadvertisementLinkTarget: %s\nadvertisementIpTarget: %s\n}\n", addr_ntoa(&ipLayerSource), addr_ntoa(&ipLayerDestination), addr_ntoa(&advertisementLinkTarget), addr_ntoa(&advertisementIpTarget));
+	uint packetLength = ETH_HDR_LEN + IP6_HDR_LEN + ICMPV6_HDR_LEN + sizeof(struct icmpv6_msg_nd);
+	u_char pkt[packetLength];
+
+	eth_pack_hdr(pkt, linkLayerDestination.addr_eth, linkLayerSource.addr_eth, ETH_TYPE_IPV6);
+	ip6_pack_hdr(pkt + ETH_HDR_LEN, 0, 0, 32, IP_PROTO_ICMPV6, IP6_HLIM_MAX, ipLayerSource.__addr_u.__ip6, ipLayerDestination.__addr_u.__ip6);
+	icmpv6_pack_hdr_na_mac(pkt + ETH_HDR_LEN + IP6_HDR_LEN, advertisementIpTarget.__addr_u.__ip6, advertisementLinkTarget.__addr_u.__eth);
+
+	ip6_checksum(pkt + ETH_HDR_LEN, packetLength - ETH_HDR_LEN);
+
+	syslog(LOG_INFO, "ndp reply %s is-at %s", addr_ntoa(&advertisementIpTarget), addr_ntoa(&advertisementLinkTarget));
+
+	if (eth_send(eth, pkt, sizeof(pkt)) != sizeof(pkt))
+		syslog(LOG_ERR, "couldn't send packet: %m");
+}
+
 void
 ndp_recv_cb(struct tuple *summary, const struct icmpv6_msg_nd *query)
 {
+	struct template *tmpl;
+	struct addr *linkLayerSource;
 	struct addr queryIP;
+	struct ndp_req *req;
 	addr_pack(&queryIP, ADDR_TYPE_IP6, IP6_ADDR_BITS, &query->icmpv6_target ,IP6_ADDR_LEN);
 	printf("Got a request for IP %s\n", addr_ntoa(&queryIP));
 
+	tmpl = template_find(addr_ntoa(&queryIP));
+	req = ndp_find(&queryIP);
+
+	// Ignore it if isn't a template IP
+	if (req == NULL || tmpl == NULL)
+	{
+		return;
+	}
+
+	if (tmpl->ethernet_addr == NULL)
+		linkLayerSource = &summary->inter->if_ent.intf_link_addr;
+	else
+		linkLayerSource = tmpl->ethernet_addr;
+
+	printf("Creating reply now\n");
+
+	ndp_send_advertisement(summary->inter->if_eth,
+			*linkLayerSource, summary->linkLayer_src,
+			queryIP, summary->address_src,
+			*linkLayerSource, queryIP);
+
+
 }
+
+

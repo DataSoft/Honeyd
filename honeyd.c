@@ -2886,22 +2886,21 @@ honeyd_dispatch(struct template *tmpl, struct ip_hdr *ip, u_short iplen)
 }
 
 void
-honeyd_dispatch_ipv6(struct template *tmpl, struct ip6_hdr *ip, u_short iplen)
+honeyd_dispatch_ipv6(struct tuple *summary, struct template *tmpl, struct ip6_hdr *ip, u_short iplen)
 {
-	struct tuple iphdr;
-	addr_pack(&iphdr.address_dst, ADDR_TYPE_IP6, IP6_ADDR_BITS, &ip->ip6_dst ,IP6_ADDR_LEN);
-	addr_pack(&iphdr.address_src, ADDR_TYPE_IP6, IP6_ADDR_BITS, &ip->ip6_src ,IP6_ADDR_LEN);
+	addr_pack(&summary->address_dst, ADDR_TYPE_IP6, IP6_ADDR_BITS, &ip->ip6_dst ,IP6_ADDR_LEN);
+	addr_pack(&summary->address_src, ADDR_TYPE_IP6, IP6_ADDR_BITS, &ip->ip6_src ,IP6_ADDR_LEN);
 
 	switch(ip->ip6_nxt) {
 	case IP_PROTO_TCP:
-		tcp_recv_cb(tmpl, (u_char *)ip + IP6_HDR_LEN, &iphdr, iplen - IP6_HDR_LEN);
+		tcp_recv_cb(tmpl, (u_char *)ip + IP6_HDR_LEN, summary, iplen - IP6_HDR_LEN);
 		break;
 	case IP_PROTO_UDP:
 		// TODO ipv6
 		//udp_recv_cb(tmpl, (u_char *)ip, iplen);
 		break;
 	case IP_PROTO_ICMPV6:
-		icmpv6_recv_cb(tmpl, (u_char*)ip + IP6_HDR_LEN, &iphdr, iplen - IP6_HDR_LEN);
+		icmpv6_recv_cb(tmpl, (u_char*)ip + IP6_HDR_LEN, summary, iplen - IP6_HDR_LEN);
 		break;
 	default:
 		// TODO ipv6
@@ -3328,7 +3327,13 @@ honeyd_recv_cb(u_char *ag, const struct pcap_pkthdr *pkthdr, const u_char *pkt)
 
 		addr_pack(&addr, ADDR_TYPE_IP6, IP6_ADDR_BITS, &ip6->ip6_dst ,IP6_ADDR_LEN);
 		struct template *t = template_find_best(addr_ntoa(&addr), NULL, 0);
-		honeyd_dispatch_ipv6(t, ip6, iplen);
+
+		struct tuple summary;
+		addr_pack(&summary.linkLayer_src, ADDR_TYPE_ETH, ETH_ADDR_BITS, &eth->eth_src,ETH_ADDR_LEN);
+		addr_pack(&summary.linkLayer_dst, ADDR_TYPE_ETH, ETH_ADDR_BITS, &eth->eth_dst,ETH_ADDR_LEN);
+		summary.inter = inter;
+
+		honeyd_dispatch_ipv6(&summary, t, ip6, iplen);
 
 		return;
 	}

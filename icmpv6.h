@@ -63,6 +63,10 @@ struct icmpv6_hdr {
 
 #define	ICMPV6_INFOTYPE(type) (((type) & 0x80) != 0)
 
+#define ICMPV6_NAFLAGS_ROUTER 0x4
+#define ICMPV6_NAFLAGS_SOLICITED 0x2
+#define ICMPV6_NAFLAGS_OVERRIDE 0x1
+
 /*
  * Echo message data
  */
@@ -117,6 +121,17 @@ union icmpv6_msg {
 	nd_pack_p->icmpv6_option_type = 1;				\
 	nd_pack_p->icmpv6_option_length = 1;				\
 	memmove(&nd_pack_p->icmpv6_mac, &(srcmac), ETH_ADDR_LEN);	\
+} while (0)
+
+#define icmpv6_pack_hdr_na_mac(hdr, targetip, targetmac) do {		\
+	struct icmpv6_msg_nd *nd_pack_p = (struct icmpv6_msg_nd *)	\
+		((uint8_t *)(hdr) + ICMPV6_HDR_LEN);			\
+	icmpv6_pack_hdr(hdr, ICMPV6_NEIGHBOR_ADVERTISEMENT, 0);		\
+	nd_pack_p->icmpv6_flags = 0 | ICMPV6_NAFLAGS_SOLICITED | ICMPV6_NAFLAGS_OVERRIDE; \
+	memmove(&nd_pack_p->icmpv6_target, &(targetip), IP6_ADDR_LEN);	\
+	nd_pack_p->icmpv6_option_type = 2;				\
+	nd_pack_p->icmpv6_option_length = 1;				\
+	memmove(&nd_pack_p->icmpv6_mac, &(targetmac), ETH_ADDR_LEN);	\
 } while (0)
 
 #endif /* DNET_ICMPV6_H */

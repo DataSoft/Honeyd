@@ -5,7 +5,6 @@
 #ifndef TUPLE_H_
 #define TUPLE_H_
 
-
 /*
  * For subsystems, we need to be able to schedule a callback that hands
  * the subsytem a file descriptor to the new connection.  However, Honeyd
@@ -30,9 +29,19 @@ struct tuple {
 	SPLAY_ENTRY(tuple) node;
 	TAILQ_ENTRY(tuple) next;
 
+	// IP layer src/dst packet come from
 	struct addr address_src;
 	struct addr address_dst;
 
+	// Link layer src/dst packet came from
+	struct addr linkLayer_src;
+	struct addr linkLayer_dst;
+
+	// Interface packet came from
+	struct interface *inter;
+
+	// Used for TCP/UDP and ICMP
+	// TODO: Using this for ICMP is hackish. Make it a union for type/code.
 	uint16_t sport;
 	uint16_t dport;
 
