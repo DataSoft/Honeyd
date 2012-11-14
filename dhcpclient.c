@@ -128,7 +128,10 @@ queue_dhcp_discover(struct template *tmpl)
 	//Initialize the queue if this is the first operation
 	if(dhcp_queue == NULL)
 	{
-		dhcp_queue = (Queue*) malloc(sizeof dhcp_queue);
+		dhcp_queue = (Queue*) malloc(sizeof(Queue));
+		dhcp_queue->m_count = 0;
+		dhcp_queue->m_front = NULL;
+		dhcp_queue->m_rear = NULL;
 	}
 
 	QueueNode* nextQueueNode;
