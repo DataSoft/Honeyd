@@ -315,10 +315,6 @@ arp_request(struct interface *inter,
 	arp_discover(req, &bcast);
 }
 
-/*
- * This requires better input checking;
- * need to check both src and dst adress.
- */
 
 void
 arp_recv_cb(u_char *u, const struct pcap_pkthdr *pkthdr, const u_char *pkt)
@@ -341,6 +337,32 @@ arp_recv_cb(u_char *u, const struct pcap_pkthdr *pkthdr, const u_char *pkt)
 	    ethip->ar_sha, ETH_ADDR_LEN);
 	addr_pack(&src.arp_pa, ADDR_TYPE_IP, IP_ADDR_BITS,
 	    ethip->ar_spa, IP_ADDR_LEN);
+
+
+	/* Check that protocol type is IP */
+	if (ntohs(arp->ar_pro) != ARP_PRO_IP)
+		return;
+
+	/* Check that hardware address format is correct */
+	if (ntohs(arp->ar_hrd) != ARP_HRD_ETH && ntohs(arp->ar_hrd) != ARP_HRD_IEEE802)
+		return;
+
+	/* Check that hardware address length is valid for MAC */
+	if (arp->ar_hln != ETH_ADDR_LEN)
+		return;
+
+	/* Check that protocol address length is valid for IPv4 */
+	if (arp->ar_pln != IP_ADDR_LEN)
+		return;
+
+	/* Make sure the sender wasn't the broadcast address */
+	if (src.arp_pa.addr_ip == IP_ADDR_BROADCAST)
+		return;
+
+	/* Make sure the sender wasn't the loopback address */
+	if (src.arp_pa.addr_ip == IP_ADDR_LOOPBACK)
+		return;
+
 	    
 	switch (ntohs(arp->ar_op)) {
 		
