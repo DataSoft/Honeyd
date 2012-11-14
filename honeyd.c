@@ -929,6 +929,12 @@ honeyd_delay_packet(struct template *tmpl, struct ip_hdr *ip, u_int iplen,
 		honeyd_delay_callback(-1, EV_TIMEOUT, delay);
 }
 
+void
+honeyd_ip6_send(u_char *pkt, u_int iplen)
+{
+
+}
+
 /*
  * This function allows us to deliver packets to virtual hosts as well
  * as to external hosts.  If virtual routing topologies are enabled,
@@ -1595,20 +1601,26 @@ tcp_send(struct tcp_con *con, uint8_t flags, u_char *payload, u_int len)
 	else
 		spoof = no_spoof;
 
-	/* Src and Dst are reversed both for ip and tcp */
-	ip_pack_hdr(pkt, 0, iplen, id,
-	    dontfragment ? IP_DF : 0, ttl,
-	    IP_PROTO_TCP, con->con_ipdst, con->con_ipsrc);
+	if (con->conhdr.address_dst.addr_type == ADDR_TYPE_IP) {
+		/* Src and Dst are reversed both for ip and tcp */
+		ip_pack_hdr(pkt, 0, iplen, id,
+		    dontfragment ? IP_DF : 0, ttl,
+		    IP_PROTO_TCP, con->con_ipdst, con->con_ipsrc);
 
-	memcpy(pkt + IP_HDR_LEN + (tcp->th_off << 2), payload, len);
+		memcpy(pkt + IP_HDR_LEN + (tcp->th_off << 2), payload, len);
 
-	hooks_dispatch(IP_PROTO_TCP, HD_OUTGOING, &con->conhdr,
-	    pkt, iplen);
+		hooks_dispatch(IP_PROTO_TCP, HD_OUTGOING, &con->conhdr,
+		    pkt, iplen);
 
-	// TODO ipv6?
-	honeyd_ip_send(pkt, iplen, spoof);
+		// TODO ipv6?
+		honeyd_ip_send(pkt, iplen, spoof);
 
-	return (len);
+		return (len);
+	} else if (con->conhdr.address_dst.addr_type == ADDR_TYPE_IP6) {
+
+	} else {
+		syslog(LOG_ERR, "ERROR! Unknown destination address type");
+	}
 }
 
 void
