@@ -542,26 +542,26 @@ honeyd_exit(int status)
 /* Encapsulate a packet into Ethernet */
 
 void
-honeyd_ether_cb(struct arp_req *req, int success, void *arg)
+honeyd_ether_cb(struct arp_req *req, int success, void *arg, uint8_t frameDataLength)
 {
-
 	if((req == NULL) || (arg == NULL))
 	{
 		syslog(LOG_WARNING, "%s: invalid packet to encapsulate",  __func__);
 		return;
 	}
 
+	u_char *frameData = arg;
+
 	u_char pkt[HONEYD_MTU + 40]; /* XXX - Enough? */
 	struct interface *inter = req->inter;
-	struct ip_hdr *ip = arg;
-	u_int len, iplen = ntohs(ip->ip_len);
+	u_int len;
 
 	eth_pack_hdr(pkt,
 	    req->ha.addr_eth,				/* destination */
 	    req->src_ha.addr_eth,			/* source */
 	    ETH_TYPE_IP);
 	
-	len = ETH_HDR_LEN + iplen;
+	len = ETH_HDR_LEN + frameDataLength;
 	if (sizeof(pkt) < len) {
 		syslog(LOG_WARNING, "%s: IP packet is larger than buffer: %d",
 		    __func__, len);
@@ -570,7 +570,7 @@ honeyd_ether_cb(struct arp_req *req, int success, void *arg)
 
 	if(inter != NULL)
 	{
-		memcpy(pkt + ETH_HDR_LEN, ip, iplen);
+		memcpy(pkt + ETH_HDR_LEN, frameData, frameDataLength);
 		if (eth_send(inter->if_eth, pkt, len) != len)
 		{
 			syslog(LOG_ERR, "%s: couldn't send packet size %d: %m",
@@ -578,12 +578,57 @@ honeyd_ether_cb(struct arp_req *req, int success, void *arg)
 		}
 		else
 		{
-			count_increment(stats_network.output_bytes, iplen);
+			count_increment(stats_network.output_bytes, frameDataLength);
 		}
 	}
 
  out:
-	pool_free(pool_pkt, ip);
+	pool_free(pool_pkt, frameData);
+}
+
+void
+honeyd_ether_cb_ip6(struct ndp_req *req, int success, void *arg, uint8_t frameDataLength)
+{
+	if((req == NULL) || (arg == NULL))
+	{
+		syslog(LOG_WARNING, "%s: invalid packet to encapsulate",  __func__);
+		return;
+	}
+
+	u_char *frameData = arg;
+
+	u_char pkt[HONEYD_MTU + 40]; /* XXX - Enough? */
+	struct interface *inter = req->inter;
+	u_int len;
+
+	eth_pack_hdr(pkt,
+	    req->ha.addr_eth,				/* destination */
+	    req->src_ha.addr_eth,			/* source */
+	    ETH_TYPE_IP);
+
+	len = ETH_HDR_LEN + frameDataLength;
+	if (sizeof(pkt) < len) {
+		syslog(LOG_WARNING, "%s: IP packet is larger than buffer: %d",
+		    __func__, len);
+		goto out;
+	}
+
+	if(inter != NULL)
+	{
+		memcpy(pkt + ETH_HDR_LEN, frameData, frameDataLength);
+		if (eth_send(inter->if_eth, pkt, len) != len)
+		{
+			syslog(LOG_ERR, "%s: couldn't send packet size %d: %m",
+				__func__, len);
+		}
+		else
+		{
+			count_increment(stats_network.output_bytes, frameDataLength);
+		}
+	}
+
+ out:
+	pool_free(pool_pkt, frameData);
 }
 
 /*
@@ -613,7 +658,7 @@ honeyd_deliver_ethernet(struct interface *inter,
 			 * honeypot without causing any harm.
 			 */
 			req->src_ha = *src_ha;
-			honeyd_ether_cb(req, 1, ip);
+			honeyd_ether_cb(req, 1, ip, ip->ip_len);
 		} else {
 			/*
 			 * Fall through in case that this packet needs
@@ -622,7 +667,6 @@ honeyd_deliver_ethernet(struct interface *inter,
 			pool_free(pool_pkt, ip);
 		}
 	} else if (src_pa->addr_type == ADDR_TYPE_IP6) {
-		// TODO ipv6 Do the neighbor solicitation here, send to the ether
 		struct ip6_hdr *ip6 = (struct ip6_hdr*)ip6;
 		struct ndp_req *req;
 
@@ -630,7 +674,8 @@ honeyd_deliver_ethernet(struct interface *inter,
 
 		if ((req = ndp_find(dst_pa)) == NULL)
 		{
-			ndp_request(inter, src_pa, src_ha, dst_pa, honeyd_ether_cb,ip6);
+			// TODO ipv6: Make a honeyd_ether_cb for ipv6
+			ndp_request(inter, src_pa, src_ha, dst_pa, honeyd_ether_cb_ip6,ip6);
 		} else if (req->cnt == -1) {
 			/*
 			 * The source MAC of the original requestor does not help
@@ -638,6 +683,7 @@ honeyd_deliver_ethernet(struct interface *inter,
 			 * honeypot without causing any harm.
 			 */
 			req->src_ha = *src_ha;
+			// TODO ipv6: Make a honeyd_ether_cb for ipv6
 			//honeyd_ether_cb(req, 1, ip);
 		} else {
 			/*
@@ -1559,6 +1605,7 @@ tcp_send(struct tcp_con *con, uint8_t flags, u_char *payload, u_int len)
 	hooks_dispatch(IP_PROTO_TCP, HD_OUTGOING, &con->conhdr,
 	    pkt, iplen);
 
+	// TODO ipv6?
 	honeyd_ip_send(pkt, iplen, spoof);
 
 	return (len);
@@ -2047,13 +2094,14 @@ icmpv6_recv_cb(struct template *tmpl, u_char *pkt, struct tuple *summary, u_shor
 	switch (icmpv6->icmpv6_type) {
 
 	case ICMPV6_NEIGHBOR_SOLICITATION:
+	case ICMPV6_NEIGHBOR_ADVERTISEMENT:
 	{
 		if (pktlen < ICMPV6_HDR_LEN + sizeof(struct icmpv6_msg_nd))
 			return;
 
 		struct icmpv6_msg_nd *ndp_msg = (struct icmpv6_msg_nd*)(pkt + ICMPV6_HDR_LEN);
 
-		ndp_recv_cb(summary, ndp_msg);
+		ndp_recv_cb(icmpv6->icmpv6_type, summary, ndp_msg);
 		break;
 	}
 

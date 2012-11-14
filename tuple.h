@@ -38,7 +38,7 @@ struct tuple {
 	struct addr linkLayer_dst;
 
 	// Interface packet came from
-	struct interface *inter;
+	const struct interface *inter;
 
 	// Used for TCP/UDP and ICMP
 	// TODO: Using this for ICMP is hackish. Make it a union for type/code.

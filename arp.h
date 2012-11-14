@@ -53,7 +53,7 @@ struct arp_req {
 	struct addr		src_ha;
 
 	void *arg;
-	void (*cb)(struct arp_req *, int, void *);
+	void (*cb)(struct arp_req *, int, void *, int);
 	
 	int flags;
 	struct template	       *owner;	/* template this req refers to */
@@ -72,7 +72,7 @@ void arp_free(struct arp_req *);
 
 void arp_request(struct interface *,
     struct addr *src_pa, struct addr *src_ha,
-    struct addr *dst, void (*)(struct arp_req *, int, void *), void *);
+    struct addr *dst, void (*)(struct arp_req *, int, void *, int), void *);
 struct arp_req *arp_find(struct addr *);
 
 /* Set if we need to listen to arp traffic */

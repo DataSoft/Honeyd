@@ -215,8 +215,10 @@ arp_discover(struct arp_req *req, struct addr *ha)
 
 		/* XXX - use reversemap on networks to find router ip */
 		evtimer_add(&req->discover, &tv);
-	} else
-		(*req->cb)(req, 0, req->arg);
+	} else {
+		struct ip_hdr *ip = req->arg;
+		(*req->cb)(req, 1, req->arg, ip->ip_len);
+	}
 	req->cnt++;
 }
 
@@ -292,7 +294,7 @@ arp_new(struct interface *inter,
 void
 arp_request(struct interface *inter,
     struct addr *src_pa, struct addr *src_ha,
-    struct addr *addr, void (*cb)(struct arp_req *, int, void *), void *arg)
+    struct addr *addr, void (*cb)(struct arp_req *, int, void *, int), void *arg)
 {
 	struct arp_req *req;
 	struct addr bcast;
@@ -431,7 +433,8 @@ arp_recv_cb(u_char *u, const struct pcap_pkthdr *pkthdr, const u_char *pkt)
 				req->flags |= ARP_EXTERNAL;
 				req->cnt = -1;
 				assert(req->cb != NULL);
-				(*req->cb)(req, 1, req->arg);
+				struct ip_hdr *ip = req->arg;
+				(*req->cb)(req, 1, req->arg, ip->ip_len);
 				evtimer_del(&req->discover);
 
 				syslog(LOG_DEBUG, "%s: %s at %s", __func__,
