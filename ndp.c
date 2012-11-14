@@ -67,9 +67,12 @@
 
 #include "debug.h"
 
+#define NDP_MAX_ACTIVE 600
+
 /* For the physical (IP) address */
 static SPLAY_HEAD(ndpTree, ndp_req) pa_ndp_reqs;
 
+/* Just for ordering the SPLAY tree */
 static int
 pandp_compare(struct ndp_req *a, struct ndp_req *b)
 {
@@ -140,23 +143,63 @@ ndp_new(struct interface *inter,
 	return (req);
 }
 
-void ndp_send_advertisement(eth_t *eth,
+/* Request resulution ofi pv6 address into a MAC via a neighbor solicitation */
+void
+ndp_request(struct interface *inter,
+    struct addr *src_pa, struct addr *src_ha,
+    struct addr *addr, void (*cb)(struct ndp_req *, int, void *), void *arg)
+{
+	struct ndp_req *req;
+	struct addr bcast;
+	struct timeval tv;
+
+	if ((req = ndp_new(inter, src_pa, src_ha, addr, NULL)) == NULL) {
+		syslog(LOG_ERR, "calloc: %m");
+		return;
+	}
+
+	req->cb = cb;
+	req->arg = arg;
+
+
+	// TODO ipv6 !!!!
+
+	// Need to trace figure out what to do with this stuff
+	timerclear(&tv);
+	tv.tv_sec = NDP_MAX_ACTIVE;
+	evtimer_add(&req->active, &tv);
+
+	addr_pack(&bcast, ADDR_TYPE_ETH, ETH_ADDR_BITS,
+	    ETH_ADDR_BROADCAST, ETH_ADDR_LEN);
+	arp_discover(req, &bcast);
+
+	// TODO ipv6 !!!!
+}
+
+void ndp_send(eth_t *eth, uint icmpv6MessageType,
     struct addr linkLayerSource, struct addr linkLayerDestination,
     struct addr ipLayerSource, struct addr ipLayerDestination,
-    struct addr advertisementLinkTarget, struct addr advertisementIpTarget)
+    struct addr linkLayerTarget, struct addr ipLayerTarget)
 {
 
-	printf("Ndp advertisement details {\nipLayerSource: %s\nipLayerDestination: %s \nadvertisementLinkTarget: %s\nadvertisementIpTarget: %s\n}\n", addr_ntoa(&ipLayerSource), addr_ntoa(&ipLayerDestination), addr_ntoa(&advertisementLinkTarget), addr_ntoa(&advertisementIpTarget));
 	uint packetLength = ETH_HDR_LEN + IP6_HDR_LEN + ICMPV6_HDR_LEN + sizeof(struct icmpv6_msg_nd);
 	u_char pkt[packetLength];
 
 	eth_pack_hdr(pkt, linkLayerDestination.addr_eth, linkLayerSource.addr_eth, ETH_TYPE_IPV6);
-	ip6_pack_hdr(pkt + ETH_HDR_LEN, 0, 0, 32, IP_PROTO_ICMPV6, IP6_HLIM_MAX, ipLayerSource.addr_ip6, ipLayerDestination.addr_ip6);
-	icmpv6_pack_hdr_na_mac(pkt + ETH_HDR_LEN + IP6_HDR_LEN, advertisementIpTarget.addr_ip6, advertisementLinkTarget.addr_eth);
+	ip6_pack_hdr(pkt + ETH_HDR_LEN, 0, 0, ICMPV6_ND_PAYLOAD_LEN, IP_PROTO_ICMPV6, IP6_HLIM_MAX, ipLayerSource.addr_ip6, ipLayerDestination.addr_ip6);
+
+	if (icmpv6MessageType == ICMPV6_NEIGHBOR_ADVERTISEMENT) {
+		icmpv6_pack_hdr_na_mac(pkt + ETH_HDR_LEN + IP6_HDR_LEN, ipLayerTarget.addr_ip6, linkLayerTarget.addr_eth);
+	} else if (icmpv6MessageType == ICMPV6_NEIGHBOR_SOLICITATION) {
+		icmpv6_pack_hdr_ns_mac(pkt + ETH_HDR_LEN + IP6_HDR_LEN, ipLayerTarget.addr_ip6, linkLayerTarget.addr_eth);
+	} else {
+		syslog(LOG_ERR, "ndp_send called with unknown neighbor solicitation message type %d", icmpv6MessageType);
+		return;
+	}
 
 	ip6_checksum(pkt + ETH_HDR_LEN, packetLength - ETH_HDR_LEN);
 
-	syslog(LOG_INFO, "ndp reply %s is-at %s", addr_ntoa(&advertisementIpTarget), addr_ntoa(&advertisementLinkTarget));
+	syslog(LOG_INFO, "ndp reply %s is-at %s", addr_ntoa(&ipLayerTarget), addr_ntoa(&linkLayerTarget));
 
 	if (eth_send(eth, pkt, sizeof(pkt)) != sizeof(pkt))
 		syslog(LOG_ERR, "couldn't send packet: %m");
@@ -186,9 +229,7 @@ ndp_recv_cb(struct tuple *summary, const struct icmpv6_msg_nd *query)
 	else
 		linkLayerSource = tmpl->ethernet_addr;
 
-	printf("Creating reply now\n");
-
-	ndp_send_advertisement(summary->inter->if_eth,
+	ndp_send(summary->inter->if_eth, ICMPV6_NEIGHBOR_ADVERTISEMENT,
 			*linkLayerSource, summary->linkLayer_src,
 			queryIP, summary->address_src,
 			*linkLayerSource, queryIP);

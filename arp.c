@@ -91,6 +91,7 @@
 #include "arp.h"
 #include "debug.h"
 
+/* Time in seconds before expiration of ARP entries */
 #define ARP_MAX_ACTIVE		600
 
 /* Exported */

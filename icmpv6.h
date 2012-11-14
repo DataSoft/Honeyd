@@ -17,6 +17,8 @@
 
 #define ICMPV6_HDR_LEN	4	/* base ICMPv6 header length */
 
+#define ICMPV6_ND_PAYLOAD_LEN 32 /* length of icmpv6 neighbor discovery/advertisement with target MAC option */
+
 #ifndef __GNUC__
 #ifndef __attribute__
 # define __attribute__(x)

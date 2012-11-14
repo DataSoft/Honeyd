@@ -594,29 +594,58 @@ honeyd_ether_cb(struct arp_req *req, int success, void *arg)
 void
 honeyd_deliver_ethernet(struct interface *inter,
     struct addr *src_pa, struct addr *src_ha,
-    struct addr *dst_pa, struct ip_hdr *ip, u_int iplen)
+    struct addr *dst_pa, u_char *frameData, u_int frameLength)
 {
-	struct arp_req *req;
+	if (src_pa->addr_type == ADDR_TYPE_IP)
+	{
+		struct ip_hdr *ip = (struct ip_hdr*)frameData;
+		struct arp_req *req;
 
-	ip_checksum(ip, iplen);
+		ip_checksum(ip, frameLength);
 
-	/* Ethernet delivery if possible */
-	if ((req = arp_find(dst_pa)) == NULL) {
-		arp_request(inter, src_pa, src_ha, dst_pa, honeyd_ether_cb,ip);
-	} else if (req->cnt == -1) {
-		/*
-		 * The source MAC of the original requestor does not help
-		 * us here, but we can overwrite it with the MAC of this
-		 * honeypot without causing any harm.
-		 */
-		req->src_ha = *src_ha;
-		honeyd_ether_cb(req, 1, ip);
-	} else {
-		/* 
-		 * Fall through in case that this packet needs
-		 * to be dropped.
-		 */
-		pool_free(pool_pkt, ip);
+		/* Ethernet delivery if possible */
+		if ((req = arp_find(dst_pa)) == NULL) {
+			arp_request(inter, src_pa, src_ha, dst_pa, honeyd_ether_cb,ip);
+		} else if (req->cnt == -1) {
+			/*
+			 * The source MAC of the original requestor does not help
+			 * us here, but we can overwrite it with the MAC of this
+			 * honeypot without causing any harm.
+			 */
+			req->src_ha = *src_ha;
+			honeyd_ether_cb(req, 1, ip);
+		} else {
+			/*
+			 * Fall through in case that this packet needs
+			 * to be dropped.
+			 */
+			pool_free(pool_pkt, ip);
+		}
+	} else if (src_pa->addr_type == ADDR_TYPE_IP6) {
+		// TODO ipv6 Do the neighbor solicitation here, send to the ether
+		struct ip6_hdr *ip6 = (struct ip6_hdr*)ip6;
+		struct ndp_req *req;
+
+		ip6_checksum(ip6, frameLength);
+
+		if ((req = ndp_find(dst_pa)) == NULL)
+		{
+			ndp_request(inter, src_pa, src_ha, dst_pa, honeyd_ether_cb,ip6);
+		} else if (req->cnt == -1) {
+			/*
+			 * The source MAC of the original requestor does not help
+			 * us here, but we can overwrite it with the MAC of this
+			 * honeypot without causing any harm.
+			 */
+			req->src_ha = *src_ha;
+			//honeyd_ether_cb(req, 1, ip);
+		} else {
+			/*
+			 * Fall through in case that this packet needs
+			 * to be dropped.
+			 */
+			pool_free(pool_pkt, ip6);
+		}
 	}
 }
 
@@ -721,7 +750,7 @@ honeyd_delay_cb(int fd, short which, void *arg)
 			/* This function computes the IP checksum for us */
 			honeyd_deliver_ethernet(tmpl->inter,
 			    &src, tmpl->ethernet_addr,
-			    &dst, ip, iplen);
+			    &dst, (u_char*)ip, iplen);
 		} else {
 			honeyd_send_normally(ip, iplen);
 		}
@@ -761,7 +790,7 @@ honeyd_delay_cb(int fd, short which, void *arg)
 		/* This function computes the IP checksum for us */
 		honeyd_deliver_ethernet(inter,
 		    &router->addr, &inter->if_ent.intf_link_addr,
-		    &addr, ip, iplen);
+		    &addr, (u_char*)ip, iplen);
 	} else {
 		struct addr addr;
 		uint16_t ipoff;

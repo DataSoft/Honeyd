@@ -40,6 +40,7 @@ struct ndp_req {
 
 	struct interface	*inter;
 
+	// TODO: Document this
 	int			cnt;
 
 	struct event		active;
@@ -67,10 +68,16 @@ struct ndp_req *ndp_new(struct interface *inter,
     struct addr *pa, struct addr *ha);
 
 
-void ndp_send_advertisement(eth_t *eth,
+void ndp_send(eth_t *eth, uint icmpv6MessageType,
     struct addr linkLayerSource, struct addr linkLayerDestination,
     struct addr ipLayerSource, struct addr ipLayerDestination,
     struct addr advertisementLinkTarget, struct addr advertisementIpTarget);
+
+void ndp_request(struct interface *,
+    struct addr *src_pa, struct addr *src_ha,
+    struct addr *dst, void (*)(struct ndp_req *, int, void *), void *);
+
+struct ndp_req *ndp_find(struct addr *);
 
 struct ndp_req * ndp_find(struct addr *addr);
 void ndp_recv_cb(struct tuple *summary, const struct icmpv6_msg_nd *query);
