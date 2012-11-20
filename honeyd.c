@@ -2490,6 +2490,7 @@ udp_recv_cb(struct template *tmpl, u_char *pkt, u_short pktlen)
 			goto closed;
 		}
 
+		con->tmpl = template_ref(tmpl);
 		generic_connect(tmpl, &con->conhdr, &con->cmd, con);
 	}
 
