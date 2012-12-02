@@ -705,41 +705,7 @@ if test "$HAVEMETHOD" = "no"; then
     dnl Make sure we use libld if necessary -- CPK
     LIBS="$LIBDL $LIBS"
 
-    dnl ugly, ugly hack		     
-    LIBCGUESS=`echo /lib/libc.so.*`
-    LIBCGUESS64=`echo /lib/x86_64-linux-gnu/libc.so.*`
-    LIBCGUESS386=`echo /lib/i386-linux-gnu/libc.so.*`
-
-    USRLIBCGUESS=`echo /usr/lib/libc.so.*`
-    USRLIBCGUESS64=`echo /usr/lib/x86_64-linux-gnu/libc.so.*`
-    USRLIBCGUESS386=`echo /usr/lib/i386-linux-gnu/libc.so.*`
-    
-    if test "$USRLIBCGUESS" = "/usr/lib/libc.so.*"; then
-       USRLIBCGUESS=""
-    fi
-    
-    if test "$LIBCGUESS" = "/lib/libc.so.*"; then
-       LIBCGUESS=""
-    fi
-    
-    if test "$LIBCGUESS386" = "/lib/i386-linux-gnu/libc.so.*"; then
-       LIBCGUESS386=""
-    fi
-    
-    if test "$USRLIBCGUESS386" = "/usr/lib/i386-linux-gnu/libc.so.*"; then
-       USRLIBCGUESS386=""
-    fi
-    
-    if test "$USRLIBCGUESS64" = "/usr/lib/x86_64-linux-gnu/libc.so.*"; then
-       USRLIBCGUESS64=""
-    fi
-    
-    if test "$LIBCGUESS64" = "/lib/x86_64-linux-gnu/libc.so.*"; then
-       LIBCGUESS64=""
-    fi
-    
-    
-    for TESTLIB in libc.so `echo $USRLIBCGUESS` `echo $LIBCGUESS` `echo $LIBCGUESS386` `echo $USRLIBCGUESS386` `echo $USRLIBCGUESS64` `echo $LIBCGUESS64`
+    for TESTLIB in libc.so libc.so.6
     do
         AC_MSG_CHECKING(if we can access libc with $TESTLIB)
         AC_TRY_RUN(
