@@ -270,7 +270,7 @@ template_create(const char *name)
 	tmpl->name = strdup(name);
 
 	/* UDP ports are closed by default */
-	tmpl->udp.status = PORT_RESET;
+	tmpl->udp.status = PORT_CLOSED;
 
 	SPLAY_INIT(&tmpl->ports);
 	SPLAY_INSERT(templtree, &templates, tmpl);
@@ -972,11 +972,11 @@ template_print(struct evbuffer *buffer, struct template *tmpl)
 		case PORT_PROXY:
 			type = "proxy";
 			break;
-		case PORT_BLOCK:
-			type = "block";
+		case PORT_FILTERED:
+			type = "filtered";
 			break;
-		case PORT_RESET:
-			type = "reset";
+		case PORT_CLOSED:
+			type = "closed";
 			break;
 		case PORT_SUBSYSTEM:
 			type = "subsystem";
@@ -1141,7 +1141,7 @@ template_packet_test(void)
 
 	/* Create configuration */
 	MAKE_CONFIG("create template");
-	MAKE_CONFIG("add template tcp port 23 reset");
+	MAKE_CONFIG("add template tcp port 23 closed");
 
 	addr_pton("10.0.0.0", &addr);
 

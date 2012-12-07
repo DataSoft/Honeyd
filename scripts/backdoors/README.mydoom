@@ -39,8 +39,8 @@
       set mydoom personality "Microsoft Windows XP Professional"
       # on honeyd-0.7, use the line below instead:
       #set mydoom personality "Windows XP Pro"
-      set mydoom default tcp action reset
-      set mydoom default udp action reset
+      set mydoom default tcp action closed
+      set mydoom default udp action closed
       set mydoom default icmp action open
       set mydoom uid 32767 gid 32767
       add mydoom tcp port  1080 "/full/path/mydoom.pl -l /full/path/mydoom"

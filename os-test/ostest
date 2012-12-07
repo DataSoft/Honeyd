@@ -85,9 +85,9 @@ while read LINE ; do
 
 		CONFIG="
 create default
-set default default tcp action block
-set default default udp action block
-set default default icmp action block
+set default default tcp action filtered
+set default default udp action filtered
+set default default icmp action closed
 
 create test\n
 set test personality \"$LINE\"\n
@@ -96,9 +96,9 @@ set test maxfds 35\n
 add test tcp port 8080 open\n
 add test udp port 5353 open\n
 set test ethernet \"dell\"\n
-set test default tcp action reset\n
-set test default udp action reset\n
-set test default icmp action reset\n\n
+set test default tcp action closed\n
+set test default udp action closed\n
+set test default icmp action closed\n\n
 bind \"$VMIP\" test\n"
 
 		configFile=$(pwd)

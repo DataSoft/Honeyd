@@ -189,7 +189,7 @@ route	= "route" "entry" ipaddr |
 		["bandwidth" number["Mbps"|"Kbps"] \\
 		["drop" "between" number "ms" "-" number "ms" ]
 proto	= "tcp" | "udp" | "icmp"
-action	= ["tarpit"] ("block" | "open" | "reset" | cmd-string | \\
+action	= ["tarpit"] ("filtered" | "open" | "closed" | cmd-string | \\
   "internal" cmd-string \\
   "proxy" ipaddr":"port )
 condition = "source os =" cmd-string |
@@ -573,7 +573,7 @@ set template personality "OpenBSD 2.6-2.7"
 add template tcp port 80 "sh scripts/web.sh"
 add template tcp port 22 "sh scripts/test.sh $ipsrc $dport"
 add template udp port 53 proxy yournameserver:53
-set template default tcp action reset
+set template default tcp action closed
 set template uid 32767 gid 32767
 
 bind 10.11.69.2 template

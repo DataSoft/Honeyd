@@ -35,8 +35,8 @@ Installation instructions:
    ###
    create kuang2
    set kuang2 personality "Microsoft Windows XP Professional"
-   set kuang2 default tcp action reset
-   set kuang2 default udp action reset
+   set kuang2 default tcp action closed
+   set kuang2 default udp action closed
    set kuang2 default icmp action open
    set kuang2 uid 32767 gid 32767
    add kuang2 tcp port 17300 "/full/path/kuang2.pl -f /full/path/kuang2.conf"

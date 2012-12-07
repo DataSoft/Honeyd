@@ -1162,7 +1162,7 @@ honeyd_block(struct template *tmpl, int proto, int number)
 	else
 		action = &port->action;
 
-	return (action->status == PORT_BLOCK);
+	return (action->status == PORT_FILTERED);
 }
 
 void
@@ -2124,9 +2124,9 @@ tcp_recv_cb(struct template *tmpl, u_char *pkt, u_short pktlen)
 
 	if (action != NULL) {
 		switch (action->status) {
-		case PORT_RESET:
+		case PORT_CLOSED:
 			goto dropwithreset;
-		case PORT_BLOCK:
+		case PORT_FILTERED:
 			goto drop;
 		default:
 			break;
@@ -2571,7 +2571,7 @@ icmp_recv_cb(struct template *tmpl, u_char *pkt, u_short pktlen)
 	honeyd_log_probe(honeyd_logfp, IP_PROTO_ICMP, &icmphdr, pktlen, 0, NULL);
 
 	/* We can block ICMP, too */
-	if (tmpl && tmpl->icmp.status == PORT_BLOCK)
+	if (tmpl && (tmpl->icmp.status == PORT_FILTERED || tmpl->icmp.status == PORT_CLOSED))
 		return;
 
 	if (tmpl != NULL && tmpl->person != NULL)
@@ -2636,7 +2636,7 @@ icmp_recv_cb(struct template *tmpl, u_char *pkt, u_short pktlen)
 
 			if(((icmp->icmp_code == 9) && (ip->ip_tos == 0)) || ((icmp->icmp_code == 0) && (ip->ip_tos == 4)))
 			{
-				//If we don't have an icmp personality, just quit (no response, aka block)
+				//If we don't have an icmp personality, just quit (no response, aka filtered/closed)
 				if(nmap_print == NULL)
 				{
 					return;

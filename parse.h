@@ -1,10 +1,8 @@
+/* A Bison parser, made by GNU Bison 2.5.  */
 
-/* A Bison parser, made by GNU Bison 2.4.1.  */
-
-/* Skeleton interface for Bison's Yacc-like parsers in C
+/* Bison interface for Yacc-like parsers in C
    
-      Copyright (C) 1984, 1989, 1990, 2000, 2001, 2002, 2003, 2004, 2005, 2006
-   Free Software Foundation, Inc.
+      Copyright (C) 1984, 1989-1990, 2000-2011 Free Software Foundation, Inc.
    
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -45,9 +43,9 @@
      BIND = 261,
      CLONE = 262,
      DOT = 263,
-     BLOCK = 264,
+     FILTERED = 264,
      OPEN = 265,
-     RESET = 266,
+     CLOSED = 266,
      DEFAULT = 267,
      SET = 268,
      ACTION = 269,
@@ -123,9 +121,9 @@
 #define BIND 261
 #define CLONE 262
 #define DOT 263
-#define BLOCK 264
+#define FILTERED 264
 #define OPEN 265
-#define RESET 266
+#define CLOSED 266
 #define DEFAULT 267
 #define SET 268
 #define ACTION 269
@@ -200,8 +198,8 @@
 typedef union YYSTYPE
 {
 
-/* Line 1676 of yacc.c  */
-#line 141 "parse.y"
+/* Line 2068 of yacc.c  */
+#line 139 "parse.y"
 
 	char *string;
 	int number;
@@ -219,8 +217,8 @@ typedef union YYSTYPE
 
 
 
-/* Line 1676 of yacc.c  */
-#line 224 "parse.h"
+/* Line 2068 of yacc.c  */
+#line 222 "parse.h"
 } YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */

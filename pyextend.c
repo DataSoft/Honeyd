@@ -270,12 +270,12 @@ pyextend_humanreadable_action(struct action *action, char *buffer, size_t len)
 	}
 
 	switch (action->status) {
-	case PORT_BLOCK:
-		snprintf(buffer, len, "block");
+	case PORT_FILTERED:
+		snprintf(buffer, len, "filtered");
 		break;
 
-	case PORT_RESET:
-		snprintf(buffer, len, "reset");
+	case PORT_CLOSED:
+		snprintf(buffer, len, "closed");
 		break;
 
 	case PORT_OPEN:
