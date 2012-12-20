@@ -16212,7 +16212,7 @@ ethernetcode_index(struct ethertree *etherroot, struct ethernetcode *code)
 
 	return (0);
 }
-
+/*
 void
 ethernetcode_init(void)
 {
@@ -16225,8 +16225,79 @@ ethernetcode_init(void)
 
 		++code;
 	}
-}
+}*/
+void ethernetcode_init(void){//16080 lines counting the 5 comments at the top
+	char s[300];//string that contains the current line being read
+	char waste[300];
+	char c;
+	struct ethernetcode codes[16075];
+	struct ethernetcode *code = &codes[0];
+	int counter = 0;
+	uint32_t prefix;
+	FILE *in_file  = fopen("/usr/share/nova/sharedFiles/nmap-mac-prefixes", "r"); // read only
 
+	if (!in_file)//file pointer is null
+	             {
+	                printf("File can't be found\n");
+	                exit(-1);
+	             }
+	do
+	{
+		waste[counter] = fscanf(in_file,"%s",waste);//skips through first 5 garbage lines
+
+	}while(counter < 5);
+
+
+		SPLAY_INIT(&etherroot);
+	//while there is another line, continue reading
+	while (fscanf(in_file, "%s", & s ) == 1)
+	             {
+					char routerID[300];
+					char routerCompany[300];
+					routerID[0] = '0';
+					routerID[1] = 'x';
+					//should read in the router numbers/characters
+					int i;
+					for(i = 0; i < 300; i++)
+							{
+								c = s[i];
+								if(c != ' ')
+								{
+									routerID[i+2] = c;
+								}
+								else
+									break;
+							}
+					int companyStart = 0;
+					int j;
+					for(j = 0; j < 300; j++)
+							{
+								c = s[j];
+
+								if(c == ' ')
+								{
+									companyStart = 1;
+								}
+
+								if(companyStart == 1)
+								{
+									routerCompany[j-6] = c;//we start adding the company name here
+								}
+								if(s[j] == '\0' || s[j] == '\n')
+								{
+									break;//quit loop because we reached the end of the string/current line
+								}
+
+							}
+					prefix = atoi(routerID);
+					code->prefix = prefix;//convert this string to an integer
+					code->vendor = routerCompany;//convert this to
+					ethernetcode_index(&etherroot, code);
+					++code;//move on to the next struct
+
+	             }
+	fclose(in_file);
+}
 /*
  * Returns the code that matches the best, 0 on error.
  */
