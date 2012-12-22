@@ -113,19 +113,19 @@
 void honeyd_tcp_timeout(int, short, void *);
 void honeyd_udp_timeout(int, short, void *);
 void honeyd_delay_cb(int, short, void *);
-enum forward honeyd_route_packet(struct ip_hdr *, u_int, struct addr *,
-		struct addr *, int *);
+enum forward honeyd_route_packet(struct ip_hdr *, u_int, struct addr *, 
+    struct addr *, int *);
 
 void tcp_retrans_timeout(int, short, void *);
 void icmp_error_send(struct template *, struct addr *, uint8_t, uint8_t,
-		struct ip_hdr *, struct spoof);
+    struct ip_hdr *, struct spoof);
 
 struct tree tcpcons;
 struct conlru tcplru;
 struct tree udpcons;
 struct conlru udplru;
 
-struct spoof no_spoof; /* spoof settings for default packet processing */
+struct spoof no_spoof;	/* spoof settings for default packet processing */
 
 struct config config = {
 	NULL,
@@ -135,52 +135,53 @@ struct config config = {
 	PATH_HONEYDDATA "/pf.os"
 };
 
-struct stats_network stats_network = { 0, /* input bytes */
-0 /* output bytes */
+struct stats_network stats_network = {
+	0,	/* input bytes */
+	0	/* output bytes */
 };
 
 SPLAY_PROTOTYPE(tree, tuple, node, conhdr_compare);
 SPLAY_GENERATE(tree, tuple, node, conhdr_compare);
 
-struct rrdtool_drv *honeyd_rrd_drv;
-struct rrdtool_db *honeyd_traffic_db;
-struct event honeyd_rrd_ev;
-FILE *honeyd_servicefp;
-struct timeval honeyd_uptime;
-static FILE *honeyd_logfp;
-static ip_t *honeyd_ip;
-struct pool *pool_pkt;
-struct pool *pool_delay;
-rand_t *honeyd_rand;
-int honeyd_sig;
-int honeyd_nconnects;
-int honeyd_nchildren;
-int honeyd_ttl = HONEYD_DFL_TTL;
-struct tcp_con honeyd_tmp;
-int honeyd_show_include_dir;
-int honeyd_show_data_dir;
-int honeyd_show_version;
-int honeyd_show_usage;
-int honeyd_debug;
-uid_t honeyd_uid = 32767;
-gid_t honeyd_gid = 32767;
+struct rrdtool_drv	*honeyd_rrd_drv;
+struct rrdtool_db	*honeyd_traffic_db;
+struct event		 honeyd_rrd_ev;
+FILE			*honeyd_servicefp;
+struct timeval		 honeyd_uptime;
+static FILE		*honeyd_logfp;
+static ip_t		*honeyd_ip;
+struct pool		*pool_pkt;
+struct pool		*pool_delay;
+rand_t			*honeyd_rand;
+int			 honeyd_sig;
+int			 honeyd_nconnects;
+int			 honeyd_nchildren;
+int			 honeyd_ttl = HONEYD_DFL_TTL;
+struct tcp_con		 honeyd_tmp;
+int                      honeyd_show_include_dir;
+int                      honeyd_show_data_dir;
+int                      honeyd_show_version;
+int                      honeyd_show_usage;
+int			 honeyd_debug;
+uid_t			 honeyd_uid = 32767;
+gid_t			 honeyd_gid = 32767;
 char *templateDump = NULL;
-int honeyd_needsroot; /* Need different IDs */
-int honeyd_disable_webserver = 0;
-int honeyd_ignore_parse_errors = 0;
-int honeyd_verify_config = 0;
-int honeyd_webserver_fix_permissions = 0;
-char *honeyd_webserver_address = "127.0.0.1";
-int honeyd_webserver_port = 80;
-char *honeyd_webserver_root = PATH_HONEYDDATA
-"/webserver/htdocs";
-char *honeyd_rrdtool_path = PATH_RRDTOOL;
+int			 honeyd_needsroot;	/* Need different IDs */
+int			 honeyd_disable_webserver = 0;
+int			 honeyd_ignore_parse_errors = 0;
+int			 honeyd_verify_config = 0;
+int			 honeyd_webserver_fix_permissions = 0;
+char			*honeyd_webserver_address = "127.0.0.1";
+int			 honeyd_webserver_port = 80;
+char			*honeyd_webserver_root = PATH_HONEYDDATA \
+						"/webserver/htdocs";
+char			*honeyd_rrdtool_path = PATH_RRDTOOL;
 
 /* can be used by unittests to do bad stuff */
 void (*honeyd_delay_callback)(int, short, void *) = honeyd_delay_cb;
 
-static char *logfile = NULL; /* Log file names */
-static char *servicelog = NULL;
+static char		*logfile = NULL;	/* Log file names */
+static char		*servicelog = NULL;
 
 /*
  * TODO: There is a patch on the Google Code page, Issue 12, that purports to be a performance
@@ -202,57 +203,62 @@ static char *servicelog = NULL;
  * 		 provide, but I'm not familiar enough with honeyd to be comfortable with putting it in myself.
  */
 
-static struct option honeyd_long_opts[] = { { "include-dir", 0,
-		&honeyd_show_include_dir, 1 },
-		{ "data-dir", 0, &honeyd_show_data_dir, 1 }, { "version", 0,
-				&honeyd_show_version, 1 }, { "help", 0, &honeyd_show_usage, 1 },
-		{ "webserver-address", required_argument, NULL, 'A' }, {
-				"webserver-port", required_argument, NULL, 'W' }, {
-				"webserver-root", required_argument, NULL, 'X' }, {
-				"rrdtool-path", required_argument, NULL, 'Y' }, {
-				"disable-webserver", 0, &honeyd_disable_webserver, 1 }, {
-				"verify-config", 0, &honeyd_verify_config, 1 }, {
-				"ignore-parse-errors", 0, &honeyd_ignore_parse_errors, 1 }, {
-				"fix-webserver-permissions", 0,
-				&honeyd_webserver_fix_permissions, 1 }, { 0, 0, 0, 0 } };
+static struct option honeyd_long_opts[] = {
+	{"include-dir", 0, &honeyd_show_include_dir, 1},
+	{"data-dir",    0, &honeyd_show_data_dir, 1},
+	{"version",     0, &honeyd_show_version, 1},
+	{"help",        0, &honeyd_show_usage, 1},
+	{"webserver-address", required_argument, NULL, 'A'},
+	{"webserver-port", required_argument, NULL, 'W'},
+	{"webserver-root", required_argument, NULL, 'X'},
+	{"rrdtool-path", required_argument, NULL, 'Y'},
+	{"disable-webserver", 0, &honeyd_disable_webserver, 1},
+	{"verify-config", 0, &honeyd_verify_config, 1},
+	{"ignore-parse-errors", 0, &honeyd_ignore_parse_errors, 1},
+	{"fix-webserver-permissions", 0, &honeyd_webserver_fix_permissions, 1},
+	{0, 0, 0, 0}
+};
 
-void usage(void) {
+void
+usage(void)
+{
 	fprintf(stderr,
-			"Usage: honeyd [OPTIONS] [net ...]\n\n"
-					"where options include:\n"
-					"  -d                     Do not daemonize, be verbose.\n"
-					"  -P                     Enable polling mode.\n"
-					"  -l logfile             Log packets and connections to logfile.\n"
-					"  -s logfile             Logs service status output to logfile.\n"
-					"  -t ipFile              Dumps currently used DHCP IP addresses to ipFile\n"
-					"  -i interface           Listen on interface.\n"
-					"  -p file                Read nmap-style fingerprints from file.\n"
-					"  -x file                Read xprobe-style fingerprints from file.\n"
-					"  -a assocfile           Read nmap-xprobe associations from file.\n"
-					"  -0 osfingerprints      Read pf-style OS fingerprints from file.\n"
-					"  -u uid		  Set the uid Honeyd should run as.\n"
-					"  -g gid		  Set the gid Honeyd should run as.\n"
-					"  -f configfile          Read configuration from file.\n"
-					"  -c host:port:name:pass Reports starts to collector.\n"
-					"  --webserver-address=address Address on which webserver listens.\n"
-					"  --webserver-port=port  Port on which webserver listens.\n"
-					"  --webserver-root=path  Root of document tree.\n"
-					"  --fix-webserver-permissions Change ownership and permissions.\n"
-					"  --rrdtool-path=path    Path to rrdtool.\n"
-					"  --disable-webserver    Disables internal webserver\n"
-					"  --verify-config        Verify configuration file then exit.\n"
-					"  -V, --version          Print program version and exit.\n"
-					"  -h, --help             Print this message and exit.\n"
-					"\n"
-					"For plugin development:\n"
-					"  --include-dir          Prints out header files directory and exits.\n"
-					"  --data-dir             Prints out data/plug-in directory and exits.\n");
-
+	    "Usage: honeyd [OPTIONS] [net ...]\n\n"
+	    "where options include:\n"
+	    "  -d                     Do not daemonize, be verbose.\n"
+	    "  -P                     Enable polling mode.\n"
+	    "  -l logfile             Log packets and connections to logfile.\n"
+	    "  -s logfile             Logs service status output to logfile.\n"
+        "  -t ipFile              Dumps currently used DHCP IP addresses to ipFile\n"
+	    "  -i interface           Listen on interface.\n"
+	    "  -p file                Read nmap-style fingerprints from file.\n"
+	    "  -x file                Read xprobe-style fingerprints from file.\n"
+	    "  -a assocfile           Read nmap-xprobe associations from file.\n"
+	    "  -0 osfingerprints      Read pf-style OS fingerprints from file.\n"
+	    "  -u uid		  Set the uid Honeyd should run as.\n"
+	    "  -g gid		  Set the gid Honeyd should run as.\n"
+	    "  -f configfile          Read configuration from file.\n"
+	    "  -c host:port:name:pass Reports starts to collector.\n"
+	    "  --webserver-address=address Address on which webserver listens.\n"
+	    "  --webserver-port=port  Port on which webserver listens.\n"
+	    "  --webserver-root=path  Root of document tree.\n"
+	    "  --fix-webserver-permissions Change ownership and permissions.\n"
+	    "  --rrdtool-path=path    Path to rrdtool.\n"
+	    "  --disable-webserver    Disables internal webserver\n"
+	    "  --verify-config        Verify configuration file then exit.\n"
+	    "  -V, --version          Print program version and exit.\n"
+	    "  -h, --help             Print this message and exit.\n"
+	    "\n"
+	    "For plugin development:\n"
+	    "  --include-dir          Prints out header files directory and exits.\n"
+	    "  --data-dir             Prints out data/plug-in directory and exits.\n");
+	
 	exit(1);
 }
 
 /* XXX ches debug */
-void print_spoof(char *msg, struct spoof s) {
+void
+print_spoof(char *msg, struct spoof s) {
 	char buf2[100], buf3[100];
 
 	if (s.new_src.addr_type == ADDR_TYPE_NONE)
@@ -266,8 +272,10 @@ void print_spoof(char *msg, struct spoof s) {
 		addr_ntop(&s.new_dst, buf3, sizeof(buf3));
 }
 
-void honeyd_settcp(struct tcp_con *con, struct ip_hdr *ip, struct tcp_hdr *tcp,
-		int local) {
+void
+honeyd_settcp(struct tcp_con *con, struct ip_hdr *ip, struct tcp_hdr *tcp,
+    int local)
+{
 	struct tuple *hdr = &con->conhdr;
 
 	memset(hdr, 0, sizeof(struct tuple));
@@ -282,8 +290,10 @@ void honeyd_settcp(struct tcp_con *con, struct ip_hdr *ip, struct tcp_hdr *tcp,
 	con->cmd.perrfd = -1;
 }
 
-void honeyd_setudp(struct udp_con *con, struct ip_hdr *ip, struct udp_hdr *udp,
-		int local) {
+void
+honeyd_setudp(struct udp_con *con, struct ip_hdr *ip, struct udp_hdr *udp,
+    int local)
+{
 	struct tuple *hdr = &con->conhdr;
 
 	memset(hdr, 0, sizeof(struct tuple));
@@ -301,7 +311,8 @@ void honeyd_setudp(struct udp_con *con, struct ip_hdr *ip, struct udp_hdr *udp,
 }
 
 struct tuple *
-tuple_find(struct tree *root, struct tuple *key) {
+tuple_find(struct tree *root, struct tuple *key)
+{
 	return SPLAY_FIND(tree, root, key);
 }
 
@@ -309,8 +320,9 @@ tuple_find(struct tree *root, struct tuple *key) {
  * Iterate over all connection objects.
  */
 
-int tuple_iterate(struct conlru *head, int (*f)(struct tuple *, void *),
-		void *arg) {
+int
+tuple_iterate(struct conlru *head, int (*f)(struct tuple *, void *), void *arg)
+{
 	struct tuple *conhdr;
 
 	TAILQ_FOREACH(conhdr, head, next) {
@@ -321,16 +333,18 @@ int tuple_iterate(struct conlru *head, int (*f)(struct tuple *, void *),
 	return (0);
 }
 
-static void syslog_init(int argc, char *argv[]) {
+static void
+syslog_init(int argc, char *argv[])
+{
 	int options, i;
 	char buf[MAXPATHLEN];
 
 #ifdef LOG_PERROR
 	options = LOG_PERROR|LOG_PID|LOG_CONS;
 #else
-	options = LOG_PID | LOG_CONS;
+	options = LOG_PID|LOG_CONS;
 #endif
-	openlog("honeyd", options, LOG_DAEMON);
+	openlog("honeyd", options, LOG_DAEMON);	
 
 	/* Create a string containing all the command line
 	 * arguments and pass it to syslog:
@@ -351,15 +365,17 @@ static void syslog_init(int argc, char *argv[]) {
  * Update traffic statistics for honeyd.
  */
 
-void honeyd_rrd_cb(int fd, short what, void *arg) {
+void
+honeyd_rrd_cb(int fd, short what, void *arg)
+{
 	static int count;
 	char line[1024];
 	struct event *ev = arg;
 	struct timeval tv;
 
 	snprintf(line, sizeof(line), "%f:%f",
-			(double) count_get_minute(stats_network.input_bytes) / 60.0,
-			(double) count_get_minute(stats_network.output_bytes) / 60.0);
+	    (double)count_get_minute(stats_network.input_bytes)/60.0, 
+	    (double)count_get_minute(stats_network.output_bytes)/60.0);
 
 	rrdtool_db_update(honeyd_traffic_db, NULL, line);
 
@@ -376,42 +392,46 @@ void honeyd_rrd_cb(int fd, short what, void *arg) {
 		timerclear(&tv);
 		tv.tv_sec = -7200;
 
-		snprintf(filename, sizeof(filename), "%s/graphs/traffic_hourly.gif",
-				honeyd_webserver_root);
+		snprintf(filename, sizeof(filename),
+		    "%s/graphs/traffic_hourly.gif", honeyd_webserver_root);
 
 		rrdtool_graph(honeyd_traffic_db, filename, &tv, NULL,
-				"DEF:inoctets=/tmp/honeyd_traffic.rrd:input:AVERAGE "
-						"DEF:outoctets=/tmp/honeyd_traffic.rrd:output:AVERAGE "
-						"AREA:inoctets#00FF00:\"In traffic\" "
-						"LINE1:outoctets#0000FF:\"Out traffic\"");
+		    "DEF:inoctets=/tmp/honeyd_traffic.rrd:input:AVERAGE "
+		    "DEF:outoctets=/tmp/honeyd_traffic.rrd:output:AVERAGE "
+		    "AREA:inoctets#00FF00:\"In traffic\" "
+		    "LINE1:outoctets#0000FF:\"Out traffic\"");
 
 		/* Daily graph */
 		timerclear(&tv);
 		tv.tv_sec = -86400;
 
-		snprintf(filename, sizeof(filename), "%s/graphs/traffic_daily.gif",
-				honeyd_webserver_root);
+		snprintf(filename, sizeof(filename),
+		    "%s/graphs/traffic_daily.gif", honeyd_webserver_root);
 
 		rrdtool_graph(honeyd_traffic_db, filename, &tv, NULL,
-				"DEF:inoctets=/tmp/honeyd_traffic.rrd:input:AVERAGE "
-						"DEF:outoctets=/tmp/honeyd_traffic.rrd:output:AVERAGE "
-						"AREA:inoctets#00FF00:\"In traffic\" "
-						"LINE1:outoctets#0000FF:\"Out traffic\"");
+		    "DEF:inoctets=/tmp/honeyd_traffic.rrd:input:AVERAGE "
+		    "DEF:outoctets=/tmp/honeyd_traffic.rrd:output:AVERAGE "
+		    "AREA:inoctets#00FF00:\"In traffic\" "
+		    "LINE1:outoctets#0000FF:\"Out traffic\"");
 	}
 }
 
-void honeyd_rrd_start(const char *rrdtool_path) {
+void
+honeyd_rrd_start(const char *rrdtool_path)
+{
 	/* Initialize our traffic stats for rrdtool */
 	char *honeyd_traffic_filename = "/tmp/honeyd_traffic.rrd";
 	if ((honeyd_rrd_drv = rrdtool_init(rrdtool_path)) == NULL)
 		errx(1, "%s: cannot start rrdtool", __func__);
-	if ((honeyd_traffic_db = rrdtool_db_start(honeyd_rrd_drv,
-			honeyd_traffic_filename, 60)) == NULL)
-		errx(1, "%s: cannot create rrd db: %s", __func__,
-				honeyd_traffic_filename);
+	if ((honeyd_traffic_db = rrdtool_db_start(honeyd_rrd_drv, 
+		 honeyd_traffic_filename, 60)) == NULL)
+		errx(1, "%s: cannot create rrd db: %s",
+		    __func__, honeyd_traffic_filename);
 
-	rrdtool_db_datasource(honeyd_traffic_db, "input", "GAUGE", 600);
-	rrdtool_db_datasource(honeyd_traffic_db, "output", "GAUGE", 600);
+	rrdtool_db_datasource(honeyd_traffic_db,
+	    "input", "GAUGE", 600);
+	rrdtool_db_datasource(honeyd_traffic_db,
+	    "output", "GAUGE", 600);
 
 	rrdtool_db_commit(honeyd_traffic_db);
 
@@ -424,7 +444,9 @@ void honeyd_rrd_start(const char *rrdtool_path) {
  * Initializes data structures pertaining to the daemon
  */
 
-void honeyd_init(void) {
+void
+honeyd_init(void)
+{
 	struct rlimit rl;
 	struct passwd *pwd;
 
@@ -432,11 +454,11 @@ void honeyd_init(void) {
 	gettimeofday(&honeyd_uptime, NULL);
 
 	/* Find the correct ids for nobody, if the uid was not set in the
-	 * command line */
-	if (honeyd_uid == 32767 && (pwd = getpwnam("nobody")) != NULL) {
+         * command line */
+	if ( honeyd_uid == 32767 && (pwd = getpwnam("nobody")) != NULL) {
 		honeyd_uid = pwd->pw_uid;
 	}
-	if (honeyd_gid == 32767 && (pwd = getpwnam("nobody")) != NULL) {
+	if ( honeyd_gid == 32767 && (pwd = getpwnam("nobody")) != NULL) {
 		honeyd_gid = pwd->pw_gid;
 	}
 
@@ -461,11 +483,11 @@ void honeyd_init(void) {
 	}
 #ifdef RLIMIT_NPROC
 	if (getrlimit(RLIMIT_NPROC, &rl) == -1)
-	err(1, "getrlimit: NPROC");
+		err(1, "getrlimit: NPROC");
 	rl.rlim_max = rl.rlim_max/2;
 	rl.rlim_cur = rl.rlim_max;
 	if (setrlimit(RLIMIT_NPROC, &rl) == -1)
-	err(1, "setrlimit: NPROC");
+		err(1, "setrlimit: NPROC");
 #endif
 
 	stats_network.input_bytes = count_new();
@@ -477,15 +499,17 @@ static int
 honeyd_is_webserver_enabled(void)
 {
 	if (honeyd_webserver_port <= 0)
-	return 0;
+		return 0;
 	if (honeyd_disable_webserver)
-	return 0;
+		return 0;
 
 	return (1);
 }
 #endif
 
-void honeyd_exit(int status) {
+void
+honeyd_exit(int status)
+{
 	honeyd_logend(honeyd_logfp);
 	honeyd_logend(honeyd_servicefp);
 
@@ -500,7 +524,7 @@ void honeyd_exit(int status) {
 
 #ifdef HAVE_PYTHON
 	if (honeyd_is_webserver_enabled())
-	pyextend_webserver_exit();
+		pyextend_webserver_exit();
 	pyextend_exit();
 #endif
 	exit(status);
@@ -508,10 +532,13 @@ void honeyd_exit(int status) {
 
 /* Encapsulate a packet into Ethernet */
 
-void honeyd_ether_cb(struct arp_req *req, int success, void *arg) {
+void
+honeyd_ether_cb(struct arp_req *req, int success, void *arg)
+{
 
-	if ((req == NULL) || (arg == NULL)) {
-		syslog(LOG_WARNING, "%s: invalid packet to encapsulate", __func__);
+	if((req == NULL) || (arg == NULL))
+	{
+		syslog(LOG_WARNING, "%s: invalid packet to encapsulate",  __func__);
 		return;
 	}
 
@@ -520,28 +547,34 @@ void honeyd_ether_cb(struct arp_req *req, int success, void *arg) {
 	struct ip_hdr *ip = arg;
 	u_int len, iplen = ntohs(ip->ip_len);
 
-	eth_pack_hdr(pkt, req->ha.addr_eth, /* destination */
-	req->src_ha.addr_eth, /* source */
-	ETH_TYPE_IP);
-
+	eth_pack_hdr(pkt,
+	    req->ha.addr_eth,				/* destination */
+	    req->src_ha.addr_eth,			/* source */
+	    ETH_TYPE_IP);
+	
 	len = ETH_HDR_LEN + iplen;
 	if (sizeof(pkt) < len) {
-		syslog(LOG_WARNING, "%s: IP packet is larger than buffer: %d", __func__,
-				len);
+		syslog(LOG_WARNING, "%s: IP packet is larger than buffer: %d",
+		    __func__, len);
 		goto out;
 	}
 
-	if (inter != NULL) {
+	if(inter != NULL)
+	{
 		memcpy(pkt + ETH_HDR_LEN, ip, iplen);
-		if (eth_send(inter->if_eth, pkt, len) != len) {
-			syslog(LOG_ERR, "%s: couldn't send packet size %d: %m", __func__,
-					len);
-		} else {
+		if (eth_send(inter->if_eth, pkt, len) != len)
+		{
+			syslog(LOG_ERR, "%s: couldn't send packet size %d: %m",
+				__func__, len);
+		}
+		else
+		{
 			count_increment(stats_network.output_bytes, iplen);
 		}
 	}
 
-	out: pool_free(pool_pkt, ip);
+ out:
+	pool_free(pool_pkt, ip);
 }
 
 /*
@@ -549,16 +582,18 @@ void honeyd_ether_cb(struct arp_req *req, int success, void *arg) {
  * Generates ARP request if necessary.
  */
 
-void honeyd_deliver_ethernet(struct interface *inter, struct addr *src_pa,
-		struct addr *src_ha, struct addr *dst_pa, struct ip_hdr *ip,
-		u_int iplen) {
+void
+honeyd_deliver_ethernet(struct interface *inter,
+    struct addr *src_pa, struct addr *src_ha,
+    struct addr *dst_pa, struct ip_hdr *ip, u_int iplen)
+{
 	struct arp_req *req;
 
 	ip_checksum(ip, iplen);
 
 	/* Ethernet delivery if possible */
 	if ((req = arp_find(dst_pa)) == NULL) {
-		arp_request(inter, src_pa, src_ha, dst_pa, honeyd_ether_cb, ip);
+		arp_request(inter, src_pa, src_ha, dst_pa, honeyd_ether_cb,ip);
 	} else if (req->cnt == -1) {
 		/*
 		 * The source MAC of the original requestor does not help
@@ -583,7 +618,8 @@ void honeyd_deliver_ethernet(struct interface *inter, struct addr *src_pa,
  */
 
 struct ip_hdr *
-honeyd_delay_own_memory(struct delay *delay, struct ip_hdr *ip, u_int iplen) {
+honeyd_delay_own_memory(struct delay *delay, struct ip_hdr *ip, u_int iplen)
+{
 	/* If we are not supposed to free the buffer then we do not own it */
 	if (!(delay->flags & DELAY_FREEPKT)) {
 		void *tmp = pool_alloc(pool_pkt);
@@ -598,7 +634,7 @@ honeyd_delay_own_memory(struct delay *delay, struct ip_hdr *ip, u_int iplen) {
 		 */
 		delay->flags &= ~DELAY_FREEPKT;
 	}
-
+		
 	return (ip);
 }
 
@@ -621,7 +657,9 @@ honeyd_delay_own_memory(struct delay *delay, struct ip_hdr *ip, u_int iplen) {
  * It needs to unreference the passed template value.
  */
 
-static __inline void honeyd_send_normally(struct ip_hdr *ip, u_int iplen) {
+static __inline void
+honeyd_send_normally(struct ip_hdr *ip, u_int iplen)
+{
 	ip_checksum(ip, iplen);
 
 	if (ip_send(honeyd_ip, ip, iplen) != iplen) {
@@ -634,7 +672,9 @@ static __inline void honeyd_send_normally(struct ip_hdr *ip, u_int iplen) {
 	}
 }
 
-void honeyd_delay_cb(int fd, short which, void *arg) {
+void
+honeyd_delay_cb(int fd, short which, void *arg)
+{
 	struct delay *delay = arg;
 	struct ip_hdr *ip = delay->ip;
 	struct template *tmpl = delay->tmpl;
@@ -644,41 +684,43 @@ void honeyd_delay_cb(int fd, short which, void *arg) {
 		/* Fix up TTL */
 		ip->ip_ttl++;
 		ip_checksum(ip, ip->ip_hl << 2);
-		icmp_error_send(tmpl, &delay->src, ICMP_TIMEXCEED,
-				ICMP_TIMEXCEED_INTRANS, ip, delay->spoof);
+		icmp_error_send(tmpl, &delay->src,
+		    ICMP_TIMEXCEED, ICMP_TIMEXCEED_INTRANS, ip, delay->spoof);
 	} else if (delay->flags & DELAY_UNREACH) {
 		/* Fix up TTL */
 		ip->ip_ttl++;
 		ip_checksum(ip, ip->ip_hl << 2);
-		icmp_error_send(tmpl, &delay->src, ICMP_UNREACH, ICMP_UNREACH_NET, ip,
-				delay->spoof);
+		icmp_error_send(tmpl, &delay->src,
+		    ICMP_UNREACH, ICMP_UNREACH_NET, ip, delay->spoof);
 	} else if (delay->flags & DELAY_EXTERNAL) {
 		struct addr dst;
-		addr_pack(&dst, ADDR_TYPE_IP, IP_ADDR_BITS, &ip->ip_dst, IP_ADDR_LEN);
+		addr_pack(&dst, ADDR_TYPE_IP, IP_ADDR_BITS,
+		    &ip->ip_dst, IP_ADDR_LEN);
 
 		struct interface* inter = interface_find_responsible(&dst);
 		/* This is the source template */
-		if (tmpl != NULL && tmpl->ethernet_addr != NULL && tmpl->inter != NULL
-				&& inter == tmpl->inter) {
+		if (tmpl != NULL && tmpl->ethernet_addr != NULL && tmpl->inter != NULL &&
+		    inter == tmpl->inter) {
 			struct addr src;
-
+		
 			/* To do ARP, we need to know all this information */
-			addr_pack(&src, ADDR_TYPE_IP, IP_ADDR_BITS, &ip->ip_src,
-					IP_ADDR_LEN);
+			addr_pack(&src, ADDR_TYPE_IP, IP_ADDR_BITS,
+			    &ip->ip_src, IP_ADDR_LEN);
 
 			ip = honeyd_delay_own_memory(delay, ip, iplen);
 
 			/* This function computes the IP checksum for us */
-			honeyd_deliver_ethernet(tmpl->inter, &src, tmpl->ethernet_addr,
-					&dst, ip, iplen);
+			honeyd_deliver_ethernet(tmpl->inter,
+			    &src, tmpl->ethernet_addr,
+			    &dst, ip, iplen);
 		} else {
 			honeyd_send_normally(ip, iplen);
 		}
 	} else if (delay->flags & DELAY_TUNNEL) {
 		ip_checksum(ip, iplen);
 
-		if (gre_encapsulate(honeyd_ip, &delay->src, &delay->dst, ip, iplen)
-				== -1)
+		if (gre_encapsulate(honeyd_ip, &delay->src, &delay->dst,
+			ip, iplen) == -1)
 			syslog(LOG_ERR, "couldn't GRE encapsulate packet: %m");
 		else
 			count_increment(stats_network.output_bytes, iplen);
@@ -693,7 +735,8 @@ void honeyd_delay_cb(int fd, short which, void *arg) {
 		 * virtual routing topology, we need to find the
 		 * corresponding router.
 		 */
-		addr_pack(&addr, ADDR_TYPE_IP, IP_ADDR_BITS, &ip->ip_dst, IP_ADDR_LEN);
+		addr_pack(&addr, ADDR_TYPE_IP, IP_ADDR_BITS,
+		    &ip->ip_dst, IP_ADDR_LEN);
 		router = network_lookup(reverse, &addr);
 		if (router == NULL)
 			errx(1, "%s: bad configuration", __func__);
@@ -703,19 +746,21 @@ void honeyd_delay_cb(int fd, short which, void *arg) {
 		 * might have to copy the packet into an allocated
 		 * buffer.
 		 */
-
+		
 		ip = honeyd_delay_own_memory(delay, ip, iplen);
 
 		/* This function computes the IP checksum for us */
-		honeyd_deliver_ethernet(inter, &router->addr,
-				&inter->if_ent.intf_link_addr, &addr, ip, iplen);
+		honeyd_deliver_ethernet(inter,
+		    &router->addr, &inter->if_ent.intf_link_addr,
+		    &addr, ip, iplen);
 	} else {
 		struct addr addr;
 		uint16_t ipoff;
 
 		template_free(tmpl);
 
-		addr_pack(&addr, ADDR_TYPE_IP, IP_ADDR_BITS, &ip->ip_dst, IP_ADDR_LEN);
+		addr_pack(&addr, ADDR_TYPE_IP, IP_ADDR_BITS,
+		    &ip->ip_dst, IP_ADDR_LEN);
 
 		/* Internal delivery */
 		tmpl = template_find_best(addr_ntoa(&addr), ip, iplen);
@@ -746,9 +791,11 @@ void honeyd_delay_cb(int fd, short which, void *arg) {
  * Host is used for the router that might generate a XCEED message.
  */
 
-void honeyd_delay_packet(struct template *tmpl, struct ip_hdr *ip, u_int iplen,
-		const struct addr *src, const struct addr *dst, int ms, int flags,
-		struct spoof spoof) {
+void
+honeyd_delay_packet(struct template *tmpl, struct ip_hdr *ip, u_int iplen,
+    const struct addr *src, const struct addr *dst, int ms, int flags,
+    struct spoof spoof)
+{
 	struct delay *delay, tmp_delay;
 	struct timeval tv;
 
@@ -777,7 +824,7 @@ void honeyd_delay_packet(struct template *tmpl, struct ip_hdr *ip, u_int iplen,
 		memset(&tmp_delay, 0, sizeof(tmp_delay));
 		delay = &tmp_delay;
 	}
-	delay->ip = ip;
+ 	delay->ip = ip;
 	delay->iplen = iplen;
 
 	if (src != NULL)
@@ -805,14 +852,16 @@ void honeyd_delay_packet(struct template *tmpl, struct ip_hdr *ip, u_int iplen,
  * taken into consideration.
  */
 
-void honeyd_ip_send(u_char *pkt, u_int iplen, struct spoof spoof) {
+void
+honeyd_ip_send(u_char *pkt, u_int iplen, struct spoof spoof)
+{
 	struct template *tmpl = NULL;
-	struct ip_hdr *ip = (struct ip_hdr *) pkt;
+	struct ip_hdr *ip = (struct ip_hdr *)pkt;
 	enum forward res = FW_EXTERNAL;
 	int delay = 0, flags = 0;
 	struct addr addr, src;
 
-	print_spoof("honeyd_ip_send", spoof);
+print_spoof("honeyd_ip_send", spoof);
 
 	if (iplen > HONEYD_MTU) {
 		u_short off = ntohs(ip->ip_off);
@@ -840,7 +889,7 @@ void honeyd_ip_send(u_char *pkt, u_int iplen, struct spoof spoof) {
 		router = network_lookup(reverse, &src);
 		if (router == NULL) {
 			syslog(LOG_NOTICE, "No reverse routing map for %s",
-					addr_ntoa(&src));
+			    addr_ntoa(&src));
 			goto drop;
 		}
 
@@ -853,7 +902,8 @@ void honeyd_ip_send(u_char *pkt, u_int iplen, struct spoof spoof) {
 
 		if (spoof.new_src.addr_type != ADDR_TYPE_NONE)
 			ip->ip_src = spoof.new_src.addr_ip;
-		res = honeyd_route_packet(ip, iplen, &router->addr, &addr, &delay);
+		res = honeyd_route_packet(ip, iplen, &router->addr, &addr,
+		    &delay);
 		if (res == FW_DROP)
 			goto drop;
 	}
@@ -862,7 +912,7 @@ void honeyd_ip_send(u_char *pkt, u_int iplen, struct spoof spoof) {
 	flags |= DELAY_FREEPKT;
 	if (res == FW_EXTERNAL)
 		flags |= DELAY_EXTERNAL;
-
+	
 	if (spoof.new_src.addr_type != ADDR_TYPE_NONE)
 		ip->ip_src = spoof.new_src.addr_ip;
 	if (spoof.new_dst.addr_type != ADDR_TYPE_NONE)
@@ -872,19 +922,21 @@ void honeyd_ip_send(u_char *pkt, u_int iplen, struct spoof spoof) {
 	honeyd_delay_packet(tmpl, ip, iplen, NULL, NULL, delay, flags, spoof);
 	return;
 
-	drop:
+ drop:
 	/* Deallocate the packet */
 	pool_free(pool_pkt, pkt);
 }
 
-static void connection_insert(struct tree *tree, struct conlru *head,
-		struct tuple *hdr) {
+static void
+connection_insert(struct tree *tree, struct conlru *head, struct tuple *hdr)
+{
 	SPLAY_INSERT(tree, tree, hdr);
 	TAILQ_INSERT_HEAD(head, hdr, next);
 }
 
-static void connection_remove(struct tree *tree, struct conlru *head,
-		struct tuple *hdr) {
+static void
+connection_remove(struct tree *tree, struct conlru *head, struct tuple *hdr)
+{
 	SPLAY_REMOVE(tree, tree, hdr);
 	TAILQ_REMOVE(head, hdr, next);
 
@@ -893,7 +945,9 @@ static void connection_remove(struct tree *tree, struct conlru *head,
 
 /* Called when a connection received data and has not been idle */
 
-static void connection_update(struct conlru *head, struct tuple *hdr) {
+static void
+connection_update(struct conlru *head, struct tuple *hdr)
+{
 	TAILQ_REMOVE(head, hdr, next);
 	TAILQ_INSERT_HEAD(head, hdr, next);
 
@@ -901,7 +955,8 @@ static void connection_update(struct conlru *head, struct tuple *hdr) {
 }
 
 struct tcp_con *
-tcp_new(struct ip_hdr *ip, struct tcp_hdr *tcp, int local) {
+tcp_new(struct ip_hdr *ip, struct tcp_hdr *tcp, int local)
+{
 	struct tcp_con *con;
 
 	if (honeyd_nconnects >= HONEYD_MAX_CONNECTS) {
@@ -909,7 +964,7 @@ tcp_new(struct ip_hdr *ip, struct tcp_hdr *tcp, int local) {
 		 * We seem to be in an overload situation - remove the
 		 * oldest connection available.
 		 */
-		con = (struct tcp_con *) TAILQ_LAST(&tcplru, conlru);
+		con = (struct tcp_con *)TAILQ_LAST(&tcplru, conlru);
 		tcp_free(con);
 	}
 
@@ -929,7 +984,9 @@ tcp_new(struct ip_hdr *ip, struct tcp_hdr *tcp, int local) {
 	return (con);
 }
 
-void tcp_free(struct tcp_con *con) {
+void
+tcp_free(struct tcp_con *con)
+{
 	struct port *port = con->port;
 	struct port_encapsulate *pending = con->conhdr.pending;
 
@@ -941,7 +998,8 @@ void tcp_free(struct tcp_con *con) {
 
 	connection_remove(&tcpcons, &tcplru, &con->conhdr);
 
-	hooks_dispatch(IP_PROTO_TCP, HD_INCOMING_STREAM, &con->conhdr, NULL, 0);
+	hooks_dispatch(IP_PROTO_TCP, HD_INCOMING_STREAM, &con->conhdr,
+	    NULL, 0);
 	honeyd_log_flowend(honeyd_logfp, IP_PROTO_TCP, &con->conhdr);
 
 	evtimer_del(&con->retrans_timeout);
@@ -959,7 +1017,9 @@ void tcp_free(struct tcp_con *con) {
 	free(con);
 }
 
-void tcp_retrans_timeout(int fd, short event, void *arg) {
+void
+tcp_retrans_timeout(int fd, short event, void *arg)
+{
 	struct tcp_con *con = arg;
 
 	/* Restart transmitting from the last acknowledged segment */
@@ -977,15 +1037,15 @@ void tcp_retrans_timeout(int fd, short event, void *arg) {
 		con->snd_una--;
 		tcp_send(con, TH_SYN, NULL, 0);
 		con->snd_una++;
-
+		
 		generic_timeout(&con->retrans_timeout, con->retrans_time);
 		break;
 
 	case TCP_STATE_SYN_RECEIVED:
 		con->snd_una--;
-		tcp_send(con, TH_SYN | TH_ACK, NULL, 0);
+		tcp_send(con, TH_SYN|TH_ACK, NULL, 0);
 		con->snd_una++;
-
+		
 		generic_timeout(&con->retrans_timeout, con->retrans_time);
 		break;
 
@@ -997,12 +1057,13 @@ void tcp_retrans_timeout(int fd, short event, void *arg) {
 }
 
 struct udp_con *
-udp_new(struct ip_hdr *ip, struct udp_hdr *udp, int local) {
+udp_new(struct ip_hdr *ip, struct udp_hdr *udp, int local)
+{
 	struct udp_con *con;
 
 	if ((con = calloc(1, sizeof(struct udp_con))) == NULL) {
-		syslog(LOG_WARNING, "calloc: %m");
-		return (NULL);
+			syslog(LOG_WARNING, "calloc: %m");
+			return (NULL);
 	}
 
 	honeyd_setudp(con, ip, udp, local);
@@ -1016,7 +1077,9 @@ udp_new(struct ip_hdr *ip, struct udp_hdr *udp, int local) {
 	return (con);
 }
 
-void udp_free(struct udp_con *con) {
+void
+udp_free(struct udp_con *con)
+{
 	struct conbuffer *buf;
 	struct port *port = con->port;
 	struct port_encapsulate *pending = con->conhdr.pending;
@@ -1029,7 +1092,8 @@ void udp_free(struct udp_con *con) {
 
 	connection_remove(&udpcons, &udplru, &con->conhdr);
 
-	hooks_dispatch(IP_PROTO_TCP, HD_INCOMING_STREAM, &con->conhdr, NULL, 0);
+	hooks_dispatch(IP_PROTO_TCP, HD_INCOMING_STREAM, &con->conhdr,
+	    NULL, 0);
 	honeyd_log_flowend(honeyd_logfp, IP_PROTO_UDP, &con->conhdr);
 
 	while ((buf = TAILQ_FIRST(&con->incoming)) != NULL) {
@@ -1046,25 +1110,31 @@ void udp_free(struct udp_con *con) {
 	free(con);
 }
 
-void honeyd_tcp_timeout(int fd, short event, void *arg) {
+void
+honeyd_tcp_timeout(int fd, short event, void *arg)
+{
 	struct tcp_con *con = arg;
 
 	syslog(LOG_DEBUG, "Expiring TCP %s (%p) in state %d",
-			honeyd_contoa(&con->conhdr), con, con->state);
+	    honeyd_contoa(&con->conhdr), con, con->state);
 
 	tcp_free(con);
 }
 
-void honeyd_udp_timeout(int fd, short event, void *arg) {
+void
+honeyd_udp_timeout(int fd, short event, void *arg)
+{
 	struct udp_con *con = arg;
 
-	syslog(LOG_DEBUG, "Expiring UDP %s (%p)", honeyd_contoa(&con->conhdr), con);
+	syslog(LOG_DEBUG, "Expiring UDP %s (%p)",
+	    honeyd_contoa(&con->conhdr), con);
 
 	udp_free(con);
 }
 
 struct action *
-honeyd_protocol(struct template *tmpl, int proto) {
+honeyd_protocol(struct template *tmpl, int proto)
+{
 	switch (proto) {
 	case IP_PROTO_TCP:
 		return (&tmpl->tcp);
@@ -1077,7 +1147,9 @@ honeyd_protocol(struct template *tmpl, int proto) {
 	}
 }
 
-int honeyd_block(struct template *tmpl, int proto, int number) {
+int
+honeyd_block(struct template *tmpl, int proto, int number)
+{
 	struct port *port;
 	struct action *action;
 
@@ -1093,7 +1165,9 @@ int honeyd_block(struct template *tmpl, int proto, int number) {
 	return (action->status == PORT_FILTERED);
 }
 
-void honeyd_varexpand(struct tcp_con *con, char *line, u_int linesize) {
+void
+honeyd_varexpand(struct tcp_con *con, char *line, u_int linesize)
+{
 	char asc[32], *p;
 	struct addr src, dst;
 
@@ -1102,20 +1176,20 @@ void honeyd_varexpand(struct tcp_con *con, char *line, u_int linesize) {
 
 	/* Do some simple replacements */
 	p = addr_ntoa(&src);
-	while (strrpl(line, linesize, "$ipsrc", p) != NULL)
-		;
+        while (strrpl(line, linesize, "$ipsrc", p) != NULL)
+                ;
 	p = addr_ntoa(&dst);
-	while (strrpl(line, linesize, "$ipdst", p) != NULL)
-		;
+        while (strrpl(line, linesize, "$ipdst", p) != NULL)
+                ;
 	p = honeyd_logdate();
-	while (strrpl(line, linesize, "$date", p) != NULL)
-		;
+        while (strrpl(line, linesize, "$date", p) != NULL)
+                ;
 	snprintf(asc, sizeof(asc), "%d", con->con_sport);
-	while (strrpl(line, linesize, "$sport", asc) != NULL)
-		;
+        while (strrpl(line, linesize, "$sport", asc) != NULL)
+                ;
 	snprintf(asc, sizeof(asc), "%d", con->con_dport);
-	while (strrpl(line, linesize, "$dport", asc) != NULL)
-		;
+        while (strrpl(line, linesize, "$dport", asc) != NULL)
+                ;
 }
 
 /*
@@ -1124,10 +1198,11 @@ void honeyd_varexpand(struct tcp_con *con, char *line, u_int linesize) {
  */
 
 struct action *
-honeyd_port(struct template *tmpl, int proto, u_short number) {
+honeyd_port(struct template *tmpl, int proto, u_short number)
+{
 	struct port *port;
 	struct action *action;
-
+	
 	if (tmpl == NULL)
 		return (NULL);
 
@@ -1145,8 +1220,10 @@ honeyd_port(struct template *tmpl, int proto, u_short number) {
  * generate correct address information.
  */
 
-int proxy_connect(struct tuple *hdr, struct command *cmd, struct addrinfo *ai,
-		char *line, void *arg) {
+int
+proxy_connect(struct tuple *hdr, struct command *cmd, struct addrinfo *ai,
+    char *line, void *arg)
+{
 	int res;
 
 	/* Check if the address has been resolved for us already */
@@ -1170,7 +1247,9 @@ int proxy_connect(struct tuple *hdr, struct command *cmd, struct addrinfo *ai,
 
 /* Cleans up receive and send buffers if cmd does not start */
 
-void tcp_connectfail(struct tcp_con *con) {
+void
+tcp_connectfail(struct tcp_con *con)
+{
 	if (con->payload) {
 		free(con->payload);
 		con->payload = NULL;
@@ -1183,7 +1262,9 @@ void tcp_connectfail(struct tcp_con *con) {
 
 /* Sets up buffers for a fully connected TCP connection */
 
-int tcp_setupconnect(struct tcp_con *con) {
+int
+tcp_setupconnect(struct tcp_con *con)
+{
 	struct tuple *hdr = &con->conhdr;
 
 	/* Allocate buffers */
@@ -1200,13 +1281,16 @@ int tcp_setupconnect(struct tcp_con *con) {
 
 	return (0);
 
-	err: tcp_connectfail(con);
+ err:
+	tcp_connectfail(con);
 
 	return (-1);
 }
 
-void generic_connect(struct template *tmpl, struct tuple *hdr,
-		struct command *cmd, void *con) {
+void
+generic_connect(struct template *tmpl, struct tuple *hdr,
+    struct command *cmd, void *con)
+{
 	char line[512], command[512];
 	char *argv[32], *p, *p2;
 	struct action *action = NULL;
@@ -1218,7 +1302,7 @@ void generic_connect(struct template *tmpl, struct tuple *hdr,
 		proto = IP_PROTO_TCP;
 	else
 		proto = IP_PROTO_UDP;
-
+	
 	if (tmpl == NULL)
 		goto out;
 
@@ -1244,8 +1328,8 @@ void generic_connect(struct template *tmpl, struct tuple *hdr,
 	} else if (action->status == PORT_PYTHON) {
 #ifdef HAVE_PYTHON		
 		if (pyextend_connection_start(hdr, cmd, con,
-						action->action_extend) == -1)
-		goto out;
+			action->action_extend) == -1)
+			goto out;
 		return;
 #endif
 	}
@@ -1277,7 +1361,7 @@ void generic_connect(struct template *tmpl, struct tuple *hdr,
 
 	/* Create arguments */
 	p2 = line;
-	for (i = 0; i < sizeof(argv) / sizeof(char *) - 1; i++) {
+	for (i = 0; i < sizeof(argv)/sizeof(char *) - 1; i++) {
 		if ((p = strsep(&p2, " ")) == NULL)
 			break;
 		if (strlen(p) == 0) {
@@ -1296,22 +1380,28 @@ void generic_connect(struct template *tmpl, struct tuple *hdr,
 	}
 
 	syslog(LOG_DEBUG, "Connection established: %s %s <-> %s",
-			proto == IP_PROTO_TCP ? "tcp" : "udp", honeyd_contoa(hdr), command);
+	    proto == IP_PROTO_TCP ? "tcp" : "udp",
+	    honeyd_contoa(hdr), command);
 	return;
 
-	err: if (proto == IP_PROTO_TCP)
+ err:
+	if (proto == IP_PROTO_TCP)
 		tcp_connectfail(con);
-	out: syslog(LOG_DEBUG, "Connection established: %s %s",
-			proto == IP_PROTO_TCP ? "tcp" : "udp", honeyd_contoa(hdr));
+ out:
+	syslog(LOG_DEBUG, "Connection established: %s %s",
+	    proto == IP_PROTO_TCP ? "tcp" : "udp",
+	    honeyd_contoa(hdr));
 }
 
-int tcp_send(struct tcp_con *con, uint8_t flags, u_char *payload, u_int len) {
+int
+tcp_send(struct tcp_con *con, uint8_t flags, u_char *payload, u_int len)
+{
 	u_char *pkt;
 	struct tcp_hdr *tcp;
 	u_int iplen;
 	int window = 16000;
 	int dontfragment = 0;
-	struct tcp_options options = { 0, NULL };
+	struct tcp_options options = {0, NULL};
 	uint16_t id = rand_uint16(honeyd_rand);
 	struct spoof spoof;
 	struct template *tmpl = con->tmpl;
@@ -1324,17 +1414,20 @@ int tcp_send(struct tcp_con *con, uint8_t flags, u_char *payload, u_int len) {
 	 * snd_una maybe 0 on RST segments.
 	 * Copies TCP options data into input options struct
 	 */
-	if (tcp_personality(con, &flags, &window, &dontfragment, &id, &options)
-			== -1) {
+	if (tcp_personality(con, &flags, &window, &dontfragment, &id, &options) == -1)
+	{
 		/* 
 		 * If we do not match a personality and sent a reset
 		 * segment then we do not want to include options.
 		 */
-		if (flags & TH_RST) {
+		if (flags & TH_RST)
+		{
 			options.count = 0;
 			options.options = NULL;
 			window = con->window;
-		} else if (flags & TH_SYN) {
+		}
+		else if (flags & TH_SYN)
+		{
 			options.count = 1;
 			options.options = malloc(sizeof(struct tcp_option));
 			options.options->opt_type = 'M';
@@ -1353,59 +1446,60 @@ int tcp_send(struct tcp_con *con, uint8_t flags, u_char *payload, u_int len) {
 		con->window = window;
 
 	/* Simple window tracking
-	 if (window && con->rlen)
-	 {
-	 window -= con->rlen;
-	 if (window < 0)
-	 window = 0;
-	 }*/
+	if (window && con->rlen)
+	{
+		window -= con->rlen;
+		if (window < 0)
+			window = 0;
+	}*/
 
 	pkt = pool_alloc(pool_pkt);
 	int ttl = honeyd_ttl;
 
-	tcp = (struct tcp_hdr *) (pkt + IP_HDR_LEN);
+	tcp = (struct tcp_hdr *)(pkt + IP_HDR_LEN);
 
-	tcp_pack_hdr(tcp, con->con_dport, con->con_sport, con->snd_una,
-			con->rcv_next, flags, window, 0);
+	tcp_pack_hdr(tcp,
+	    con->con_dport, con->con_sport,
+	    con->snd_una, con->rcv_next, flags, window, 0);
 
-	if ((tmpl != NULL) && (tmpl->person != NULL)) {
+	if((tmpl != NULL) && (tmpl->person != NULL))
+	{
 		struct personate * pers;
-		if ((pers = tcp_personality_test(con, con->tmpl->person, flags))
-				!= NULL) {
-			switch (pers->q) {
-			case NONE:
-				break;
-			case RESERVED:
-				tcp->th_x2 = 1;
-				break;
-			case URGENT:
-				tcp->th_urp = rand_uint16(honeyd_rand);
-				break;
-			case BOTH:
-				tcp->th_x2 = 1;
-				tcp->th_urp = rand_uint16(honeyd_rand);
-				break;
+		if((pers = tcp_personality_test(con, con->tmpl->person, flags)) != NULL)
+		{
+			switch(pers->q)
+			{
+				case NONE:
+					break;
+				case RESERVED:
+					tcp->th_x2 = 1;
+					break;
+				case URGENT:
+					tcp->th_urp = rand_uint16(honeyd_rand);
+					break;
+				case BOTH:
+					tcp->th_x2 = 1;
+					tcp->th_urp = rand_uint16(honeyd_rand);
+					break;
 			}
-			if ((pers->ttl == pers->ttl_guess)
-					&& (pers->ttl_max != pers->ttl_min)) {
-				pers->ttl = pers->ttl_min
-						+ rand_uint32(honeyd_rand)
-								% (pers->ttl_max - pers->ttl_min);
-				pers->ttl_guess = pers->ttl + 1;
+			if((pers->ttl == pers->ttl_guess) && (pers->ttl_max != pers->ttl_min))
+			{
+				pers->ttl = pers->ttl_min + rand_uint32(honeyd_rand)%(pers->ttl_max - pers->ttl_min);
+				pers->ttl_guess = pers->ttl+1;
 			}
 			ttl = pers->ttl;
 		}
 	}
 
 	/* ET - options is non-NULL if a personality was found.  If a
-	 * personality was found, it means that this packet is a response
-	 * to an NMAP TCP test (not a Sequence number test, a weird flags test).
-	 * Therefore if options is not empty, you have to add the options to
-	 * the response otherwise the reply packet will not have the complete
-	 * personality.  Of the seven NMAP TCP tests, only a couple may
-	 * return a packet with the SYN flag.  I needed to remove the
-	 * requirement of the SYN flag so that the other NMAP TCP tests would
-	 * have the personality TCP options. */
+         * personality was found, it means that this packet is a response
+         * to an NMAP TCP test (not a Sequence number test, a weird flags test).
+ 	 * Therefore if options is not empty, you have to add the options to
+         * the response otherwise the reply packet will not have the complete
+         * personality.  Of the seven NMAP TCP tests, only a couple may
+         * return a packet with the SYN flag.  I needed to remove the
+         * requirement of the SYN flag so that the other NMAP TCP tests would
+         * have the personality TCP options. */
 
 	if (options.count != 0)
 		tcp_personality_options(con, tcp, &options);
@@ -1418,19 +1512,23 @@ int tcp_send(struct tcp_con *con, uint8_t flags, u_char *payload, u_int len) {
 		spoof = no_spoof;
 
 	/* Src and Dst are reversed both for ip and tcp */
-	ip_pack_hdr(pkt, 0, iplen, id, dontfragment ? IP_DF : 0, ttl, IP_PROTO_TCP,
-			con->con_ipdst, con->con_ipsrc);
+	ip_pack_hdr(pkt, 0, iplen, id,
+	    dontfragment ? IP_DF : 0, ttl,
+	    IP_PROTO_TCP, con->con_ipdst, con->con_ipsrc);
 
 	memcpy(pkt + IP_HDR_LEN + (tcp->th_off << 2), payload, len);
 
-	hooks_dispatch(IP_PROTO_TCP, HD_OUTGOING, &con->conhdr, pkt, iplen);
+	hooks_dispatch(IP_PROTO_TCP, HD_OUTGOING, &con->conhdr,
+	    pkt, iplen);
 
 	honeyd_ip_send(pkt, iplen, spoof);
 
 	return (len);
 }
 
-void tcp_senddata(struct tcp_con *con, uint8_t flags) {
+void
+tcp_senddata(struct tcp_con *con, uint8_t flags)
+{
 	int space, sent;
 	int needretrans = 0;
 
@@ -1456,7 +1554,8 @@ void tcp_senddata(struct tcp_con *con, uint8_t flags) {
 		 * If we do not ack new data, and have nothing to send,
 		 * and do not need to send a FIN, stop sending.
 		 */
-		if (space == 0 && con->last_acked == con->rcv_next && !(flags & TH_FIN))
+		if (space == 0 && con->last_acked == con->rcv_next &&
+		    !(flags & TH_FIN))
 			break;
 
 		con->snd_una += con->poff;
@@ -1488,7 +1587,9 @@ void tcp_senddata(struct tcp_con *con, uint8_t flags) {
 	}
 }
 
-void tcp_sendfin(struct tcp_con *con) {
+void
+tcp_sendfin(struct tcp_con *con)
+{
 	con->sentfin = 1;
 	tcp_senddata(con, TH_ACK);
 	switch (con->state) {
@@ -1501,9 +1602,11 @@ void tcp_sendfin(struct tcp_con *con) {
 	}
 }
 
-void icmp_send(struct template *tmpl, u_char *pkt, uint8_t tos, u_int iplen,
-		uint16_t df, uint8_t ttl, int proto, ip_addr_t src, ip_addr_t dst,
-		struct spoof spoof) {
+void
+icmp_send(struct template *tmpl,
+    u_char *pkt, uint8_t tos, u_int iplen, uint16_t df, uint8_t ttl,
+    int proto, ip_addr_t src, ip_addr_t dst, struct spoof spoof)
+{
 	struct ip_hdr ip;
 	uint16_t ipid;
 
@@ -1517,14 +1620,16 @@ void icmp_send(struct template *tmpl, u_char *pkt, uint8_t tos, u_int iplen,
 		ip_personality(tmpl, &ipid, ICMP);
 	else
 		ipid = rand_uint16(honeyd_rand);
-	ip_pack_hdr(pkt, tos, iplen, ipid, df ? IP_DF : 0, ttl, IP_PROTO_ICMP, src,
-			dst);
+	ip_pack_hdr(pkt, tos, iplen, ipid, df ? IP_DF: 0, ttl,
+	    IP_PROTO_ICMP, src, dst);
 
 	honeyd_ip_send(pkt, iplen, spoof);
 }
 
-void icmp_error_send(struct template *tmpl, struct addr *addr, uint8_t type,
-		uint8_t code, struct ip_hdr *rip, struct spoof spoof) {
+void
+icmp_error_send(struct template *tmpl, struct addr *addr,
+    uint8_t type, uint8_t code, struct ip_hdr *rip, struct spoof spoof)
+{
 	u_char *pkt;
 	u_int iplen;
 	u_int voidword = 0;
@@ -1544,16 +1649,17 @@ void icmp_error_send(struct template *tmpl, struct addr *addr, uint8_t type,
 
 	pkt = pool_alloc(pool_pkt);
 
-	if (tmpl != NULL && tmpl->person != NULL) {
-		if (type == ICMP_UNREACH && code == ICMP_UNREACH_PORT
-				&& tmpl->person->udptest.un) {
+	if (tmpl != NULL && tmpl->person != NULL)
+	{
+		if(type == ICMP_UNREACH && code == ICMP_UNREACH_PORT && tmpl->person->udptest.un)
+		{
 			voidword = tmpl->person->udptest.un;
 		}
 	}
 
 	icmp_pack_hdr_quote(pkt + IP_HDR_LEN, type, code, voidword, rip, quotelen);
-	icmp_send(tmpl, pkt, tos, iplen, df ? IP_DF : 0, ttl, IP_PROTO_ICMP,
-			addr->addr_ip, rip->ip_src, spoof);
+	icmp_send(tmpl, pkt, tos, iplen, df ? IP_DF: 0, ttl,
+	    IP_PROTO_ICMP, addr->addr_ip, rip->ip_src, spoof);
 }
 
 /*
@@ -1574,8 +1680,8 @@ void icmp_error_send(struct template *tmpl, struct addr *addr, uint8_t type,
  * and what parameters need to set to what value depend on the
  * OS we need to emulate.
  * e.g.
- if (!icmp_personality(addr, rip, &ICMP_STRUCT)
- return;
+	if (!icmp_personality(addr, rip, &ICMP_STRUCT)
+		return;
  *
  * param rip The raw ip packet in IP header form
  * param code ICMP Header REPLY echo code, OS dependent, 0 or !0
@@ -1588,15 +1694,16 @@ void icmp_error_send(struct template *tmpl, struct addr *addr, uint8_t type,
  * param len Length of the payload to return
  */
 
-void icmp_echo_reply(struct template *tmpl, struct ip_hdr *rip, uint8_t code,
-		uint8_t tos, uint16_t offset, uint8_t ttl, u_char *payload, u_int len,
-		struct spoof spoof) {
+void
+icmp_echo_reply(struct template *tmpl,
+    struct ip_hdr *rip, uint8_t code, uint8_t tos,
+    uint16_t offset, uint8_t ttl, u_char *payload, u_int len, struct spoof spoof)
+{
 	u_char *pkt;
 	u_int iplen;
 	struct icmp_msg_echo *icmp_echo;
-
-	icmp_echo = (struct icmp_msg_echo *) ((u_char *) rip + (rip->ip_hl << 2)
-			+ ICMP_HDR_LEN);
+       
+	icmp_echo = (struct icmp_msg_echo *) ((u_char *)rip + (rip->ip_hl << 2) + ICMP_HDR_LEN);
 
 	iplen = IP_HDR_LEN + ICMP_HDR_LEN + 4 + len;
 
@@ -1605,12 +1712,12 @@ void icmp_echo_reply(struct template *tmpl, struct ip_hdr *rip, uint8_t code,
 	else
 		pkt = pool_alloc_size(pool_pkt, iplen);
 
-	icmp_pack_hdr_echo(pkt + IP_HDR_LEN, ICMP_ECHOREPLY, code,
-			ntohs(icmp_echo->icmp_id), ntohs(icmp_echo->icmp_seq), payload,
-			len);
+	icmp_pack_hdr_echo(pkt + IP_HDR_LEN, ICMP_ECHOREPLY,
+		code, ntohs(icmp_echo->icmp_id), ntohs(icmp_echo->icmp_seq),
+		payload, len);
 
-	icmp_send(tmpl, pkt, tos, iplen, offset, ttl, IP_PROTO_ICMP, rip->ip_dst,
-			rip->ip_src, spoof);
+	icmp_send(tmpl, pkt, tos, iplen, offset, ttl,
+	    IP_PROTO_ICMP, rip->ip_dst, rip->ip_src, spoof);
 }
 
 /*
@@ -1620,18 +1727,20 @@ void icmp_echo_reply(struct template *tmpl, struct ip_hdr *rip, uint8_t code,
  * and what parameters need to set to what value depend on the
  * OS we need to emulate.
  * e.g.
- if (!icmp_personality(addr, rip, &ICMP_STRUCT)
- return;
-
+	if (!icmp_personality(addr, rip, &ICMP_STRUCT)
+		return;
+		
  * ICMP_TIMESTAMP REPLY, 
  *
  * param rip The raw ip packet in IP header form
  * param icmp_rip icmp timestamp message, includes the
  * 	icmp header.
  * param ttl Time to live of the emulated OS (<65, <129, <256)
- */
-void icmp_timestamp_reply(struct template *tmpl, struct ip_hdr *rip,
-		struct icmp_msg_timestamp* icmp_rip, uint8_t ttl, struct spoof spoof) {
+ */ 
+void
+icmp_timestamp_reply(struct template *tmpl, struct ip_hdr *rip,
+    struct icmp_msg_timestamp* icmp_rip, uint8_t ttl, struct spoof spoof)
+{
 	u_char *pkt;
 	u_int iplen;
 	struct icmp_msg_timestamp icmp_time;
@@ -1645,10 +1754,12 @@ void icmp_timestamp_reply(struct template *tmpl, struct ip_hdr *rip,
 	now = time(NULL);
 	now_tm = localtime(&now);
 
-	milliseconds = (now_tm->tm_hour * 60 * 60 + now_tm->tm_min * 60
-			+ now_tm->tm_sec) * 1000;
+	milliseconds = (now_tm->tm_hour * 60 * 60 + 
+		now_tm->tm_min * 60 + 
+		now_tm->tm_sec) * 1000;
 
-	icmp_time.hdr.icmp_type = ICMP_TSTAMPREPLY, icmp_time.hdr.icmp_code = 0;
+	icmp_time.hdr.icmp_type = ICMP_TSTAMPREPLY,
+	icmp_time.hdr.icmp_code = 0;
 	icmp_time.icmp_id = icmp_rip->icmp_id;
 	icmp_time.icmp_seq = icmp_rip->icmp_seq;
 
@@ -1656,15 +1767,15 @@ void icmp_timestamp_reply(struct template *tmpl, struct ip_hdr *rip,
 	icmp_time.icmp_ts_orig = icmp_rip->icmp_ts_orig;
 	icmp_time.icmp_ts_rx = icmp_rip->icmp_ts_orig + milliseconds;
 	icmp_time.icmp_ts_tx = icmp_rip->icmp_ts_rx;
-
-	iplen = IP_HDR_LEN + ICMP_HDR_LEN + 16 + padding;
+		
+	iplen = IP_HDR_LEN + ICMP_HDR_LEN + 16 + padding; 
 	/* 6 bytes of 0 at the end, why? RedHat and Windows have 6 bytes of
 	 * padding to this type of message. I don't know yet why they do this.
 	 */
-
+	
 	memcpy(pkt + IP_HDR_LEN, &icmp_time, sizeof(icmp_time));
-	icmp_send(tmpl, pkt, rip->ip_tos, iplen, rip->ip_off, ttl, IP_PROTO_ICMP,
-			rip->ip_dst, rip->ip_src, spoof);
+	icmp_send(tmpl, pkt, rip->ip_tos, iplen, rip->ip_off, ttl,
+	    IP_PROTO_ICMP, rip->ip_dst, rip->ip_src, spoof);
 }
 
 /*
@@ -1676,36 +1787,37 @@ void icmp_timestamp_reply(struct template *tmpl, struct ip_hdr *rip,
  * and what parameters need to set to what value depend on the
  * OS we need to emulate.
  * e.g.
- if (!icmp_personality(addr, rip, &ICMP_STRUCT)
- return;
-
+	if (!icmp_personality(addr, rip, &ICMP_STRUCT)
+		return;
+	
  * param rip The raw ip packet in IP header form
  * param idseq id and seq of the icmp header, should be same
  * 	from the mask request icmp header.
  * param ttl time to live of OS simulated (<65, <129, or <255)
  * param mask mask of the emulated OS (i.e. 255.255.0.0)
- */
-void icmp_mask_reply(struct template *tmpl, struct ip_hdr *rip,
-		struct icmp_msg_idseq *idseq, uint8_t ttl, uint32_t addrmask,
-		struct spoof spoof) {
+ */ 
+void
+icmp_mask_reply(struct template *tmpl, struct ip_hdr *rip, 
+	struct icmp_msg_idseq *idseq, uint8_t ttl, uint32_t addrmask, struct spoof spoof)
+{
 	u_char *pkt;
 	u_int iplen;
 	struct icmp_mesg_mask mask;
-
+	
 	pkt = pool_alloc(pool_pkt);
 
-	iplen = IP_HDR_LEN + ICMP_HDR_LEN + 8;
+	iplen = IP_HDR_LEN + ICMP_HDR_LEN + 8; 
 
 	mask.hdr.icmp_type = ICMP_MASKREPLY;
 	mask.hdr.icmp_code = ICMP_CODE_NONE;
-
+	
 	mask.icmp_id = idseq->icmp_id;
 	mask.icmp_seq = idseq->icmp_seq;
 	mask.icmp_mask = htonl(addrmask);
-
+	
 	memcpy(pkt + IP_HDR_LEN, &mask, sizeof(mask));
-	icmp_send(tmpl, pkt, rip->ip_tos, iplen, rip->ip_off, ttl, IP_PROTO_ICMP,
-			rip->ip_dst, rip->ip_src, spoof);
+	icmp_send(tmpl, pkt, rip->ip_tos, iplen, rip->ip_off, ttl,
+	    IP_PROTO_ICMP, rip->ip_dst, rip->ip_src, spoof);
 }
 
 /*
@@ -1715,45 +1827,49 @@ void icmp_mask_reply(struct template *tmpl, struct ip_hdr *rip,
  * and what parameters need to set to what value depend on the
  * OS we need to emulate.
  * e.g.
- if (!icmp_personality(addr, rip, &ICMP_STRUCT)
- return;
-
+	if (!icmp_personality(addr, rip, &ICMP_STRUCT)
+		return;
+		
  * ICMP_INFO_REPLY
  *
  * param rip The raw ip packet in IP header form
  * param idseq id and seq of the icmp header, should be same
  * 	from the info request icmp header.
  * param ttl Time to live of the emulated OS (<65, <129, <256)
- */
-void icmp_info_reply(struct template *tmpl, struct ip_hdr *rip,
-		struct icmp_msg_idseq *idseq, uint8_t ttl, struct spoof spoof) {
+ */ 
+void
+icmp_info_reply(struct template *tmpl, struct ip_hdr *rip, 
+		struct icmp_msg_idseq *idseq, uint8_t ttl, struct spoof spoof)
+{
 	u_char *pkt;
 	u_int iplen;
 	struct icmp_msg_inforeply inforeply;
-
+	
 	pkt = pool_alloc(pool_pkt);
 
-	iplen = IP_HDR_LEN + ICMP_HDR_LEN + 4;
+	iplen = IP_HDR_LEN + ICMP_HDR_LEN + 4; 
 
 	inforeply.hdr.icmp_type = ICMP_INFOREPLY;
 	inforeply.hdr.icmp_code = ICMP_CODE_NONE;
-
+	
 	inforeply.idseq.icmp_id = idseq->icmp_id;
 	inforeply.idseq.icmp_seq = idseq->icmp_seq;
-
+	
 	memcpy(pkt + IP_HDR_LEN, &inforeply, sizeof(inforeply));
-	icmp_send(tmpl, pkt, rip->ip_tos, iplen, rip->ip_off, ttl, IP_PROTO_ICMP,
-			rip->ip_dst, rip->ip_src, spoof);
+	icmp_send(tmpl, pkt, rip->ip_tos, iplen, rip->ip_off, ttl,
+	    IP_PROTO_ICMP, rip->ip_dst, rip->ip_src, spoof);
 }
 
-void tcp_do_options(struct tcp_con *con, struct tcp_hdr *tcp, int isonsyn) {
+void
+tcp_do_options(struct tcp_con *con, struct tcp_hdr *tcp, int isonsyn)
+{
 	u_char *p, *end;
 
-	p = (u_char *) (tcp + 1);
-	end = (u_char *) tcp + (tcp->th_off << 2);
+	p = (u_char *)(tcp + 1);
+	end = (u_char *)tcp + (tcp->th_off << 2);
 
 	while (p < end) {
-		struct tcp_opt opt, *tmp = (struct tcp_opt *) p;
+		struct tcp_opt opt, *tmp = (struct tcp_opt *)p;
 
 		if (tmp->opt_type == TCP_OPT_NOP) {
 			p++;
@@ -1790,7 +1906,9 @@ void tcp_do_options(struct tcp_con *con, struct tcp_hdr *tcp, int isonsyn) {
 	}
 }
 
-void generic_timeout(struct event *ev, int seconds) {
+void
+generic_timeout(struct event *ev, int seconds)
+{
 	struct timeval tv;
 
 	timerclear(&tv);
@@ -1871,7 +1989,9 @@ void generic_timeout(struct event *ev, int seconds) {
 		} \
 } while (0)
 
-void tcp_recv_cb(struct template *tmpl, u_char *pkt, u_short pktlen) {
+void
+tcp_recv_cb(struct template *tmpl, u_char *pkt, u_short pktlen)
+{
 	char *comment = NULL;
 	struct ip_hdr *ip;
 	struct tcp_hdr *tcp;
@@ -1880,14 +2000,14 @@ void tcp_recv_cb(struct template *tmpl, u_char *pkt, u_short pktlen) {
 	uint32_t th_seq, th_ack;
 	uint32_t acked = 0;
 	uint16_t th_sum;
-	u_char * data;
+	u_char *data;
 	u_int dlen, doff;
 	uint8_t tiflags, flags;
 
-	ip = (struct ip_hdr *) pkt;
-	tcp = (struct tcp_hdr *) (pkt + (ip->ip_hl << 2));
-	data = (u_char *) (pkt + (ip->ip_hl * 4) + (tcp->th_off * 4));
-
+	ip = (struct ip_hdr *)pkt;
+	tcp = (struct tcp_hdr *)(pkt + (ip->ip_hl << 2));
+	data = (u_char *)(pkt + (ip->ip_hl*4) + (tcp->th_off*4));
+	
 	if (pktlen < (ip->ip_hl << 2) + TCP_HDR_LEN)
 		return;
 
@@ -1896,11 +2016,11 @@ void tcp_recv_cb(struct template *tmpl, u_char *pkt, u_short pktlen) {
 	 * that we can look at potential flags like local origination.
 	 */
 	honeyd_settcp(&honeyd_tmp, ip, tcp, 0);
-	con = (struct tcp_con *) SPLAY_FIND(tree, &tcpcons, &honeyd_tmp.conhdr);
+	con = (struct tcp_con *)SPLAY_FIND(tree, &tcpcons, &honeyd_tmp.conhdr);
 
-	hooks_dispatch(ip->ip_p, HD_INCOMING,
-			con != NULL ? &con->conhdr : &honeyd_tmp.conhdr, pkt, pktlen);
-
+	hooks_dispatch(ip->ip_p, HD_INCOMING, 
+	    con != NULL ? &con->conhdr : &honeyd_tmp.conhdr, pkt, pktlen);
+	
 	if (honeyd_block(tmpl, IP_PROTO_TCP, ntohs(tcp->th_dport)))
 		goto justlog;
 
@@ -1911,24 +2031,24 @@ void tcp_recv_cb(struct template *tmpl, u_char *pkt, u_short pktlen) {
 		goto justlog;
 
 	action = honeyd_port(tmpl, IP_PROTO_TCP, ntohs(tcp->th_dport));
-	honeyd_tmp.state =
-			action == NULL || PORT_ISOPEN(action) ?
-					TCP_STATE_LISTEN : TCP_STATE_CLOSED;
+	honeyd_tmp.state = action == NULL || PORT_ISOPEN(action) ? 
+	    TCP_STATE_LISTEN : TCP_STATE_CLOSED;
 
 	tiflags = tcp->th_flags;
 
 	if (con == NULL) {
 		if (honeyd_tmp.state != TCP_STATE_LISTEN)
 			goto kill;
-		if ((tiflags & TH_SYN) == 0)
+		if ((tiflags & TH_SYN) == 0) 
 			goto kill;
 
-		if (tiflags & ~TH_SYN & (TH_FIN | TH_RST | TH_PUSH | TH_ACK | TH_URG)) {
+		if (tiflags & ~TH_SYN &
+		    (TH_FIN|TH_RST|TH_PUSH|TH_ACK|TH_URG)) {
 			int win = 0, df = 0;
 			uint16_t id;
 
-			flags = TH_SYN | TH_ACK;
-			if (tiflags & (TH_FIN | TH_RST))
+			flags = TH_SYN|TH_ACK;
+			if (tiflags & (TH_FIN|TH_RST))
 				comment = " {Honeyd Scanner?}";
 
 			/* 
@@ -1936,14 +2056,14 @@ void tcp_recv_cb(struct template *tmpl, u_char *pkt, u_short pktlen) {
 			 * this.  So, check the personalities and see
 			 * what the flags say.
 			 */
-			if (tcp_personality(&honeyd_tmp, &flags, &win, &df, &id, NULL)
-					== -1) {
+			if (tcp_personality(&honeyd_tmp,
+				&flags, &win, &df, &id, NULL) == -1) {
 				/* 
 				 * These flags normally cause a termination,
 				 * so drop or reset the connection as we did
 				 * not match a fingerprint.
 				 */
-				if (tiflags & (TH_RST | TH_ACK))
+				if (tiflags & (TH_RST|TH_ACK))
 					goto kill;
 				tiflags &= ~TH_FIN;
 			}
@@ -1954,12 +2074,12 @@ void tcp_recv_cb(struct template *tmpl, u_char *pkt, u_short pktlen) {
 		}
 
 		syslog(LOG_DEBUG, "Connection request: tcp %s",
-				honeyd_contoa(&honeyd_tmp.conhdr));
+		    honeyd_contoa(&honeyd_tmp.conhdr));
 
 		/* Check if we should drop this SYN packet */
 		if (tmpl != NULL && tmpl->drop_synrate) {
 			uint16_t value;
-			value = rand_uint16(honeyd_rand) % (100 * 100);
+			value = rand_uint16(honeyd_rand) % (100*100);
 			if (value < tmpl->drop_synrate)
 				goto justlog;
 		}
@@ -1980,10 +2100,10 @@ void tcp_recv_cb(struct template *tmpl, u_char *pkt, u_short pktlen) {
 		con->rcv_next = ntohl(tcp->th_seq) + 1;
 		con->snd_una = ntohl(tcp->th_ack) + 1;
 		con->recv_window = ntohs(tcp->th_win);
-		con->nmap_opt = *(uint8_t*) (data - 1);
+		con->nmap_opt = *(uint8_t*)(data-1);
 
 		con->state = TCP_STATE_LISTEN;
-		tcp_send(con, TH_SYN | TH_ACK, NULL, 0);
+		tcp_send(con, TH_SYN|TH_ACK, NULL, 0);
 
 		con->snd_una++;
 		con->state = TCP_STATE_SYN_RECEIVED;
@@ -2018,172 +2138,182 @@ void tcp_recv_cb(struct template *tmpl, u_char *pkt, u_short pktlen) {
 
 	con->rcv_flags = tiflags;
 
-	switch (con->state) {
-	case TCP_STATE_SYN_SENT:
-		if (tiflags & TH_RST)
-			goto close;
-		if (!(tiflags & TH_SYN))
-			goto drop;
-		if (!(tiflags & TH_ACK))
-			goto drop;
+	switch (con->state)
+	{
+		case TCP_STATE_SYN_SENT:
+			if (tiflags & TH_RST)
+				goto close;
+			if (!(tiflags & TH_SYN))
+				goto drop;
+			if (!(tiflags & TH_ACK))
+				goto drop;
 
-		/* No simultaneous open allowed */
-		if (th_ack != con->snd_una - 1)
-			goto dropwithreset;
-
-		tcp_do_options(con, tcp, 0);
-
-		con->rcv_next = th_seq + 1;
-		tcp_send(con, TH_ACK, NULL, 0);
-
-		con->state = TCP_STATE_ESTABLISHED;
-		generic_connect(tmpl, &con->conhdr, &con->cmd, con);
-		break;
-
-	case TCP_STATE_SYN_RECEIVED:
-		if (tiflags & TH_ACK) {
-			if (tiflags & TH_SYN)
+			/* No simultaneous open allowed */
+			if (th_ack != con->snd_una - 1)
 				goto dropwithreset;
-			if (th_ack != (con->snd_una))
-				goto dropwithreset;
-		}
-		if (tiflags & TH_SYN) {
-			if (th_seq != con->rcv_next)
-				goto dropwithreset;
-			con->snd_una--;
-			tcp_send(con, TH_SYN | TH_ACK, NULL, 0);
-			con->snd_una++;
-			return;
-		}
 
-		if (tiflags & TH_RST)
-			goto close;
-		if (!(tiflags & TH_ACK))
-			goto drop;
+			tcp_do_options(con, tcp, 0);
 
-		tcp_do_options(con, tcp, 0);
+			con->rcv_next = th_seq + 1;
+			tcp_send(con, TH_ACK, NULL, 0);
 
-		/* Clear retransmit timeout */
-		con->retrans_time = 0;
-		evtimer_del(&con->retrans_timeout);
+			con->state = TCP_STATE_ESTABLISHED;
+			generic_connect(tmpl, &con->conhdr, &con->cmd, con);
+			break;
 
-		connection_update(&tcplru, &con->conhdr);
-
-		con->state = TCP_STATE_ESTABLISHED;
-		generic_connect(tmpl, &con->conhdr, &con->cmd, con);
-		break;
-
-	case TCP_STATE_ESTABLISHED:
-		TCP_CHECK_SEQ_OR_ACK;
-
-		TCP_RECV_SEND_DATA;
-
-		tcp_do_options(con, tcp, 0);
-
-		connection_update(&tcplru, &con->conhdr);
-
-		if (tiflags & TH_FIN && !(con->flags & TCP_TARPIT)) {
-			if (con->cmd_pfd > 0) {
-				if (con->rlen == 0) {
-					/*
-					 * If we already transmitted all data,
-					 * we can completely shutdown the write
-					 * part of the connection.
-					 */
-					shutdown(con->cmd_pfd, SHUT_WR);
-				} else {
-					/*
-					 * If we still have data to write to
-					 * our child process, we need to delay
-					 * the shutdown until later.
-					 */
-					con->cmd.fdgotfin = 1;
-				}
-			} else {
-				con->sentfin = 1;
+		case TCP_STATE_SYN_RECEIVED:
+			if (tiflags & TH_ACK) {
+				if (tiflags & TH_SYN)
+					goto dropwithreset;
+				if (th_ack != (con->snd_una))
+					goto dropwithreset;
 			}
-			con->state = TCP_STATE_CLOSE_WAIT;
-			dlen++;
-		}
+			if (tiflags & TH_SYN) {
+				if (th_seq != con->rcv_next)
+					goto dropwithreset;
+				con->snd_una--;
+				tcp_send(con, TH_SYN|TH_ACK, NULL,0);
+				con->snd_una++;
+				return;
+			}
 
-		con->rcv_next += dlen;
-		con->snd_una += acked;
-		if (con->sentfin) {
-			tcp_sendfin(con);
-		} else
-			tcp_senddata(con, TH_ACK);
-		break;
+			if (tiflags & TH_RST)
+				goto close;
+			if (!(tiflags & TH_ACK))
+				goto drop;
 
-	case TCP_STATE_CLOSE_WAIT:
-		TCP_CHECK_SEQ_OR_ACK;
+			tcp_do_options(con, tcp, 0);
 
-		TCP_RECV_SEND_DATA;
+			/* Clear retransmit timeout */
+			con->retrans_time = 0;
+			evtimer_del(&con->retrans_timeout);
 
-		tcp_do_options(con, tcp, 0);
-
-		connection_update(&tcplru, &con->conhdr);
-
-		if (dlen)
-			goto dropwithreset;
-		con->snd_una += acked;
-		tcp_senddata(con, TH_ACK);
-		if (con->sentfin)
-			con->state = TCP_STATE_CLOSING;
-
-		break;
-
-	case TCP_STATE_CLOSING:
-		TCP_CHECK_SEQ_OR_ACK;
-
-		TCP_RECV_SEND_DATA;
-
-		tcp_do_options(con, tcp, 0);
-
-		connection_update(&tcplru, &con->conhdr);
-
-		con->snd_una += acked;
-		if (con->finacked)
-			goto closed;
-		tcp_senddata(con, TH_ACK);
-		break;
-
-	case TCP_STATE_FIN_WAIT_1:
-		TCP_CHECK_SEQ_OR_ACK;
-
-		TCP_RECV_SEND_DATA;
-
-		tcp_do_options(con, tcp, 0);
-
-		if (tiflags & TH_FIN && !(con->flags & TCP_TARPIT)) {
-			con->state = TCP_STATE_CLOSING;
-			generic_timeout(&con->conhdr.timeout, HONEYD_CLOSE_WAIT);
-			dlen++;
-		} else {
 			connection_update(&tcplru, &con->conhdr);
-		}
 
-		con->rcv_next += dlen;
-		con->snd_una += acked;
-		tcp_senddata(con, TH_ACK);
-		break;
+			con->state = TCP_STATE_ESTABLISHED;
+			generic_connect(tmpl, &con->conhdr, &con->cmd, con);
+			break;
+
+		case TCP_STATE_ESTABLISHED:
+			TCP_CHECK_SEQ_OR_ACK;
+
+			TCP_RECV_SEND_DATA;
+
+			tcp_do_options(con, tcp, 0);
+
+			connection_update(&tcplru, &con->conhdr);
+
+			if (tiflags & TH_FIN && !(con->flags & TCP_TARPIT))
+			{
+				if (con->cmd_pfd > 0)
+				{
+					if (con->rlen == 0)
+					{
+						/*
+						 * If we already transmitted all data,
+						 * we can completely shutdown the write
+						 * part of the connection.
+						 */
+						shutdown(con->cmd_pfd, SHUT_WR);
+					}
+					else
+					{
+						/*
+						 * If we still have data to write to
+						 * our child process, we need to delay
+						 * the shutdown until later.
+						 */
+						con->cmd.fdgotfin = 1;
+					}
+				}
+				else
+				{
+					con->sentfin = 1;
+				}
+				con->state = TCP_STATE_CLOSE_WAIT;
+				dlen++;
+			}
+
+			con->rcv_next += dlen;
+			con->snd_una += acked;
+			if (con->sentfin) {
+				tcp_sendfin(con);
+			} else
+				tcp_senddata(con, TH_ACK);
+			break;
+
+		case TCP_STATE_CLOSE_WAIT:
+			TCP_CHECK_SEQ_OR_ACK;
+
+			TCP_RECV_SEND_DATA;
+
+			tcp_do_options(con, tcp, 0);
+
+			connection_update(&tcplru, &con->conhdr);
+
+			if (dlen)
+				goto dropwithreset;
+			con->snd_una += acked;
+			tcp_senddata(con, TH_ACK);
+			if (con->sentfin)
+				con->state = TCP_STATE_CLOSING;
+
+			break;
+
+		case TCP_STATE_CLOSING:
+			TCP_CHECK_SEQ_OR_ACK;
+
+			TCP_RECV_SEND_DATA;
+
+			tcp_do_options(con, tcp, 0);
+
+			connection_update(&tcplru, &con->conhdr);
+
+			con->snd_una += acked;
+			if (con->finacked)
+				goto closed;
+			tcp_senddata(con, TH_ACK);
+			break;
+
+		case TCP_STATE_FIN_WAIT_1:
+			TCP_CHECK_SEQ_OR_ACK;
+
+			TCP_RECV_SEND_DATA;
+
+			tcp_do_options(con, tcp, 0);
+
+			if (tiflags & TH_FIN && !(con->flags & TCP_TARPIT)) {
+				con->state = TCP_STATE_CLOSING;
+				generic_timeout(&con->conhdr.timeout,
+					HONEYD_CLOSE_WAIT);
+				dlen++;
+			} else {
+				connection_update(&tcplru, &con->conhdr);
+			}
+
+			con->rcv_next += dlen;
+			con->snd_una += acked;
+			tcp_senddata(con, TH_ACK);
+			break;
 	}
 
 	return;
 
-	kill: honeyd_log_probe(honeyd_logfp, IP_PROTO_TCP, &honeyd_tmp.conhdr,
-			pktlen, tcp->th_flags, comment);
+ kill:
+	honeyd_log_probe(honeyd_logfp, IP_PROTO_TCP, &honeyd_tmp.conhdr,
+	    pktlen, tcp->th_flags, comment);
 
 	/* Do not kill on reset */
 	if (tiflags & TH_RST)
 		return;
 
 	syslog(LOG_DEBUG, "Killing %s connection: tcp %s",
-			(tcp->th_flags & TH_SYN) ? "attempted" : "unknown",
-			honeyd_contoa(&honeyd_tmp.conhdr));
+	    (tcp->th_flags & TH_SYN) ? "attempted" : "unknown",
+	    honeyd_contoa(&honeyd_tmp.conhdr));
 
 	/* Fake connection element */
 	honeyd_tmp.rcv_next = ntohl(tcp->th_seq) + 1;
-	honeyd_tmp.snd_una = ntohl(tcp->th_ack) + 1;
+	honeyd_tmp.snd_una = ntohl(tcp->th_ack) +1;
 	honeyd_tmp.tmpl = tmpl;
 	honeyd_tmp.rcv_flags = tiflags;
 
@@ -2192,16 +2322,21 @@ void tcp_recv_cb(struct template *tmpl, u_char *pkt, u_short pktlen) {
 	 * going to be taken care off via the Nmap fingerprint,
 	 * otherwise, we are going to fill in reasonable defaults.
 	 */
-	if (tcp_personality_match(&honeyd_tmp, flags)) {
+	if (tcp_personality_match(&honeyd_tmp, flags))
+	{
 		honeyd_tmp.rcv_next = ntohl(tcp->th_seq) + 1;
-		honeyd_tmp.snd_una = ntohl(tcp->th_ack) + 1;
-	} else if (tiflags & TH_ACK) {
+		honeyd_tmp.snd_una = ntohl(tcp->th_ack)+1;
+	}
+	else if (tiflags & TH_ACK)
+	{
 		flags = TH_RST;
 		honeyd_tmp.rcv_next = 0;
-		honeyd_tmp.snd_una = ntohl(tcp->th_ack) + 1;
-	} else {
+		honeyd_tmp.snd_una = ntohl(tcp->th_ack)+1;
+	}
+	else
+	{
 		flags = TH_RST | TH_ACK;
-		honeyd_tmp.rcv_next = ntohl(tcp->th_seq) + 1;
+		honeyd_tmp.rcv_next = ntohl(tcp->th_seq)+1;
 		honeyd_tmp.snd_una = 0;
 	}
 
@@ -2214,30 +2349,38 @@ void tcp_recv_cb(struct template *tmpl, u_char *pkt, u_short pktlen) {
 	tcp_send(&honeyd_tmp, flags, NULL, 0);
 	return;
 
-	close: if (tiflags & TH_RST) {
+ close:
+	if (tiflags & TH_RST) {
 		syslog(LOG_DEBUG, "Connection dropped by reset: tcp %s",
-				honeyd_contoa(&con->conhdr));
+		    honeyd_contoa(&con->conhdr));
 	}
 	goto free;
 
-	dropwithreset: syslog(LOG_DEBUG, "Connection dropped with reset: tcp %s",
-			honeyd_contoa(&con->conhdr));
+ dropwithreset:
+	syslog(LOG_DEBUG, "Connection dropped with reset: tcp %s",
+	    honeyd_contoa(&con->conhdr));
 	if ((tiflags & TH_RST) == 0)
-		tcp_send(con, TH_RST | TH_ACK, NULL, 0);
-	free: tcp_free(con);
+		tcp_send(con, TH_RST|TH_ACK, NULL, 0);
+ free:
+	tcp_free(con);
 	return;
-	closed: syslog(LOG_DEBUG, "Connection closed: tcp %s",
-			honeyd_contoa(&con->conhdr));
+ closed:
+	syslog(LOG_DEBUG, "Connection closed: tcp %s",
+	    honeyd_contoa(&con->conhdr));
 	/* Forget about this connection */
 	tcp_free(con);
-	drop: return;
+ drop:
+	return;
 
-	justlog: honeyd_settcp(&honeyd_tmp, ip, tcp, 0);
-	honeyd_log_probe(honeyd_logfp, IP_PROTO_TCP, &honeyd_tmp.conhdr, pktlen,
-			tcp->th_flags, comment);
+ justlog:
+	honeyd_settcp(&honeyd_tmp, ip, tcp, 0);
+	honeyd_log_probe(honeyd_logfp, IP_PROTO_TCP,&honeyd_tmp.conhdr,
+	    pktlen, tcp->th_flags, comment);
 }
 
-int udp_send(struct udp_con *con, u_char *payload, u_int len) {
+int
+udp_send(struct udp_con *con, u_char *payload, u_int len)
+{
 	u_char *pkt;
 	struct udp_hdr *udp;
 	u_int iplen;
@@ -2253,26 +2396,27 @@ int udp_send(struct udp_con *con, u_char *payload, u_int len) {
 
 	pkt = pool_alloc(pool_pkt);
 
-	udp = (struct udp_hdr *) (pkt + IP_HDR_LEN);
+	udp = (struct udp_hdr *)(pkt + IP_HDR_LEN);
 	udp_pack_hdr(udp, con->con_dport, con->con_sport, UDP_HDR_LEN + len);
 
 	iplen = IP_HDR_LEN + UDP_HDR_LEN + len;
 
 	/* Src and Dst are reversed both for ip and tcp */
-	ip_pack_hdr(pkt, 0, iplen, id, dontfragment ? IP_DF : 0,
-			tmpl->person->udptest.ttl, IP_PROTO_UDP, con->con_ipdst,
-			con->con_ipsrc);
+	ip_pack_hdr(pkt, 0, iplen, id,
+	    dontfragment ? IP_DF : 0, tmpl->person->udptest.ttl,
+	    IP_PROTO_UDP, con->con_ipdst, con->con_ipsrc);
 
 	memcpy(pkt + IP_HDR_LEN + UDP_HDR_LEN, payload, len);
 
-	if (tmpl)
-		spoof = tmpl->spoof;
-	else
-		spoof = no_spoof;
+ 	if (tmpl)
+ 		spoof = tmpl->spoof;
+ 	else
+ 		spoof = no_spoof;
 
 	ip_checksum(pkt, iplen);
-
-	hooks_dispatch(IP_PROTO_UDP, HD_OUTGOING, &con->conhdr, pkt, iplen);
+	
+	hooks_dispatch(IP_PROTO_UDP, HD_OUTGOING, &con->conhdr,
+	    pkt, iplen);
 
 	honeyd_ip_send(pkt, iplen, spoof);
 
@@ -2281,20 +2425,22 @@ int udp_send(struct udp_con *con, u_char *payload, u_int len) {
 	return (len);
 }
 
-void udp_recv_cb(struct template *tmpl, u_char *pkt, u_short pktlen) {
+void
+udp_recv_cb(struct template *tmpl, u_char *pkt, u_short pktlen)
+{
 	struct ip_hdr *ip = NULL;
 	struct udp_hdr *udp;
 	struct udp_con *con, honeyd_udp;
 	struct addr addr;
 	struct spoof spoof;
-
+	
 	uint16_t uh_sum;
-	u_char * data;
+	u_char *data;
 	u_int dlen;
 	u_short portnum;
 
-	ip = (struct ip_hdr *) pkt;
-	udp = (struct udp_hdr *) (pkt + (ip->ip_hl << 2));
+	ip = (struct ip_hdr *)pkt;
+	udp = (struct udp_hdr *)(pkt + (ip->ip_hl << 2));
 
 	if (pktlen < (ip->ip_hl << 2) + UDP_HDR_LEN)
 		return;
@@ -2304,16 +2450,16 @@ void udp_recv_cb(struct template *tmpl, u_char *pkt, u_short pktlen) {
 	 * that we can look at potential flags like local origination.
 	 */
 	honeyd_setudp(&honeyd_udp, ip, udp, 0);
-	con = (struct udp_con *) SPLAY_FIND(tree, &udpcons, &honeyd_udp.conhdr);
+	con = (struct udp_con *)SPLAY_FIND(tree, &udpcons, &honeyd_udp.conhdr);
 
 	hooks_dispatch(ip->ip_p, HD_INCOMING,
-			con != NULL ? &con->conhdr : &honeyd_udp.conhdr, pkt, pktlen);
+	    con != NULL ? &con->conhdr : &honeyd_udp.conhdr, pkt, pktlen);
 
-	data = (u_char *) (pkt + (ip->ip_hl * 4) + UDP_HDR_LEN);
+	data = (u_char *)(pkt + (ip->ip_hl*4) + UDP_HDR_LEN);
 	dlen = ntohs(ip->ip_len) - (ip->ip_hl << 2) - UDP_HDR_LEN;
 	if (dlen != (ntohs(udp->uh_ulen) - UDP_HDR_LEN))
 		return;
-
+	
 	portnum = ntohs(udp->uh_dport);
 	if (honeyd_block(tmpl, IP_PROTO_UDP, portnum))
 		goto justlog;
@@ -2331,13 +2477,13 @@ void udp_recv_cb(struct template *tmpl, u_char *pkt, u_short pktlen) {
 		/* Send unreachable on closed port */
 		if (action == NULL || !PORT_ISOPEN(action)) {
 			syslog(LOG_DEBUG, "Connection to closed port: udp %s",
-					honeyd_contoa(&honeyd_udp.conhdr));
+			    honeyd_contoa(&honeyd_udp.conhdr));
 			goto closed;
 		}
 
 		/* Otherwise create a new udp connection */
 		syslog(LOG_DEBUG, "Connection: udp %s",
-				honeyd_contoa(&honeyd_udp.conhdr));
+		    honeyd_contoa(&honeyd_udp.conhdr));
 
 		/* Out of memory is dealt by having the port closed */
 		if ((con = udp_new(ip, udp, 0)) == NULL) {
@@ -2359,8 +2505,9 @@ void udp_recv_cb(struct template *tmpl, u_char *pkt, u_short pktlen) {
 	udp_add_readbuf(con, data, dlen);
 	return;
 
-	closed: honeyd_log_probe(honeyd_logfp, IP_PROTO_UDP, &honeyd_udp.conhdr,
-			pktlen, 0, NULL);
+ closed:
+	honeyd_log_probe(honeyd_logfp, IP_PROTO_UDP, &honeyd_udp.conhdr,
+	    pktlen, 0, NULL);
 
 	addr_pack(&addr, ADDR_TYPE_IP, IP_ADDR_BITS, &ip->ip_dst, IP_ADDR_LEN);
 
@@ -2372,17 +2519,20 @@ void udp_recv_cb(struct template *tmpl, u_char *pkt, u_short pktlen) {
 	else
 		spoof = no_spoof;
 	// compute_spoof(&spoof, tmpl, &tmpl->spoof, ip->ip_src, ip->ip_dst);
-	print_spoof("udp_recv_cb after", spoof);
+print_spoof("udp_recv_cb after", spoof);
 
-	icmp_error_send(tmpl, &addr, ICMP_UNREACH, ICMP_UNREACH_PORT, ip, spoof);
+	icmp_error_send(tmpl, &addr, ICMP_UNREACH, ICMP_UNREACH_PORT, ip, spoof); 
 	return;
 
-	justlog: honeyd_setudp(&honeyd_udp, ip, udp, 0);
-	honeyd_log_probe(honeyd_logfp, IP_PROTO_UDP, &honeyd_udp.conhdr, pktlen, 0,
-			NULL);
+ justlog:
+	honeyd_setudp(&honeyd_udp, ip, udp, 0);
+	honeyd_log_probe(honeyd_logfp, IP_PROTO_UDP, &honeyd_udp.conhdr,
+	    pktlen, 0, NULL);
 }
 
-void icmp_recv_cb(struct template *tmpl, u_char *pkt, u_short pktlen) {
+void
+icmp_recv_cb(struct template *tmpl, u_char *pkt, u_short pktlen)
+{
 	struct ip_hdr *ip = NULL;
 	struct icmp_hdr *icmp;
 	struct icmp_msg_quote *icmp_quote;
@@ -2393,7 +2543,7 @@ void icmp_recv_cb(struct template *tmpl, u_char *pkt, u_short pktlen) {
 	struct icmp_msg_echo *icmp_echo;
 	struct icmp_msg_timestamp *icmp_tstamp;
 	struct icmp_msg_idseq *icmp_idseq;
-	struct xp_fingerprint *xp_print = NULL; /* JVR */
+	struct xp_fingerprint *xp_print = NULL;  /* JVR */
 	struct personate_ie *nmap_print = NULL;
 	struct tuple icmphdr;
 	struct addr src, dst;
@@ -2405,12 +2555,12 @@ void icmp_recv_cb(struct template *tmpl, u_char *pkt, u_short pktlen) {
 	uint16_t cksum;
 	int dlen;
 
-	ip = (struct ip_hdr *) pkt;
+	ip = (struct ip_hdr *)pkt;
 
 	if (pktlen < (ip->ip_hl << 2) + ICMP_HDR_LEN)
 		return;
 
-	icmp = (struct icmp_hdr *) (pkt + (ip->ip_hl << 2));
+	icmp = (struct icmp_hdr *)(pkt + (ip->ip_hl << 2));
 
 	icmphdr.local = 0;
 	icmphdr.ip_src = ip->ip_src;
@@ -2421,9 +2571,7 @@ void icmp_recv_cb(struct template *tmpl, u_char *pkt, u_short pktlen) {
 	honeyd_log_probe(honeyd_logfp, IP_PROTO_ICMP, &icmphdr, pktlen, 0, NULL);
 
 	/* We can block ICMP, too */
-	if (tmpl
-			&& (tmpl->icmp.status == PORT_FILTERED
-					|| tmpl->icmp.status == PORT_CLOSED))
+	if (tmpl && (tmpl->icmp.status == PORT_FILTERED || tmpl->icmp.status == PORT_CLOSED))
 		return;
 
 	if (tmpl != NULL && tmpl->person != NULL)
@@ -2432,10 +2580,11 @@ void icmp_recv_cb(struct template *tmpl, u_char *pkt, u_short pktlen) {
 		nmap_print = &tmpl->person->ie_test;
 
 	/* Without xprobe or nmap fingerprint, we understand only ECHO and UNREACH */
-	if ((xp_print == NULL) && (nmap_print == NULL)) {
-		if ((icmp->icmp_type != ICMP_ECHO)
-				&& !((icmp->icmp_type == ICMP_UNREACH)
-						&& (icmp->icmp_code == ICMP_UNREACH_PORT))) {
+	if ((xp_print == NULL) && (nmap_print == NULL))
+	{
+		if ((icmp->icmp_type != ICMP_ECHO) && !
+				((icmp->icmp_type == ICMP_UNREACH) && (icmp->icmp_code == ICMP_UNREACH_PORT)))
+		{
 			return;
 		}
 	}
@@ -2475,204 +2624,223 @@ void icmp_recv_cb(struct template *tmpl, u_char *pkt, u_short pktlen) {
 	else
 		snprintf(asrc, sizeof(asrc), "%s", osrc);
 
-	switch (icmp->icmp_type) {
-	case ICMP_ECHO: {
-		icmp_echo = (struct icmp_msg_echo *) (icmp + 1);
-		dat = (u_char *) (icmp_echo + 1);
+	switch (icmp->icmp_type)
+	{
+		case ICMP_ECHO:
+		{
+			icmp_echo = (struct icmp_msg_echo *)(icmp + 1);
+			dat = (u_char *)(icmp_echo + 1);
 
-		syslog(LOG_DEBUG, "Sending ICMP Echo Reply: %s -> %s", adst, asrc);
+			syslog(LOG_DEBUG, "Sending ICMP Echo Reply: %s -> %s",
+				adst, asrc);
 
-		if (((icmp->icmp_code == 9) && (ip->ip_tos == 0))
-				|| ((icmp->icmp_code == 0) && (ip->ip_tos == 4))) {
-			//If we don't have an icmp personality, just quit (no response, aka filtered/closed)
-			if (nmap_print == NULL) {
-				return;
+			if(((icmp->icmp_code == 9) && (ip->ip_tos == 0)) || ((icmp->icmp_code == 0) && (ip->ip_tos == 4)))
+			{
+				//If we don't have an icmp personality, just quit (no response, aka filtered/closed)
+				if(nmap_print == NULL)
+				{
+					return;
+				}
+
+				if(nmap_print->response)
+				{
+					uint8_t code = 0;
+					switch(nmap_print->replyCode)
+					{
+						case 'Z':
+						{
+							code = 0;
+							break;
+						}
+						case 'S':
+						{
+							code = icmp->icmp_code;
+							break;
+						}
+						//This case is just something thats not the others not sure what to use here
+							//but it doesn't occur currently in the nmap db
+						case 'O':
+						{
+							code = 7;
+							break;
+						}
+						case 'N':
+						{
+							code = nmap_print->replyVal;
+							break;
+						}
+					}
+					uint16_t offset = 0;
+					//for case N, df bit = 0, so do nothing
+					switch(nmap_print->dfi_test)
+					{
+						//echos DF of probe
+						case 'S':
+							//16384 is an empty offset field with the DF bit set to 1
+							//Create empty offset field with the DF bit of the probe.
+							offset = (ntohs(ip->ip_off) & 16384);
+							break;
+
+						//DF bit is set in this case;
+						case 'Y':
+							offset = 16384;
+							break;
+
+						//DF Bit is toggled
+						case 'O':
+							//49151 is the inverse of an empty offset field with the DF bit set to 1
+							// we mask all but the DF bit to 1, the inverse is an empty offset field
+							// with the DF bit toggled.
+							offset = ~(ntohs(ip->ip_off) | 49151);
+							break;
+					}
+					if((nmap_print->ttl == nmap_print->ttl_guess) && (nmap_print->ttl_max != nmap_print->ttl_min))
+					{
+						extern rand_t *honeyd_rand;
+						nmap_print->ttl = nmap_print->ttl_min + rand_uint32(honeyd_rand)%(nmap_print->ttl_max - nmap_print->ttl_min);
+						nmap_print->ttl_guess = nmap_print->ttl+1;
+					}
+					//In this first probe the TOS is zero so we just set it to 0 as well
+					icmp_echo_reply(tmpl, ip, code, 0, offset, nmap_print->ttl, dat, dlen, spoof);
+				}
+				break;
 			}
 
-			if (nmap_print->response) {
-				uint8_t code = 0;
-				switch (nmap_print->replyCode) {
-				case 'Z': {
-					code = 0;
-					break;
-				}
-				case 'S': {
-					code = icmp->icmp_code;
-					break;
-				}
-					//This case is just something thats not the others not sure what to use here
-					//but it doesn't occur currently in the nmap db
-				case 'O': {
-					code = 7;
-					break;
-				}
-				case 'N': {
-					code = nmap_print->replyVal;
-					break;
-				}
-				}
-				uint16_t offset = 0;
-				//for case N, df bit = 0, so do nothing
-				switch (nmap_print->dfi_test) {
-				//echos DF of probe
-				case 'S':
-					//16384 is an empty offset field with the DF bit set to 1
-					//Create empty offset field with the DF bit of the probe.
-					offset = (ntohs(ip->ip_off) & 16384);
-					break;
-
-					//DF bit is set in this case;
-				case 'Y':
-					offset = 16384;
-					break;
-
-					//DF Bit is toggled
-				case 'O':
-					//49151 is the inverse of an empty offset field with the DF bit set to 1
-					// we mask all but the DF bit to 1, the inverse is an empty offset field
-					// with the DF bit toggled.
-					offset = ~(ntohs(ip->ip_off) | 49151);
-					break;
-				}
-				if ((nmap_print->ttl == nmap_print->ttl_guess)
-						&& (nmap_print->ttl_max != nmap_print->ttl_min)) {
-					extern rand_t *honeyd_rand;
-					nmap_print->ttl =
-							nmap_print->ttl_min
-									+ rand_uint32(honeyd_rand)
-											% (nmap_print->ttl_max
-													- nmap_print->ttl_min);
-					nmap_print->ttl_guess = nmap_print->ttl + 1;
-				}
-				//In this first probe the TOS is zero so we just set it to 0 as well
-				icmp_echo_reply(tmpl, ip, code, 0, offset, nmap_print->ttl, dat,
-						dlen, spoof);
-			}
-			break;
-		}
-
-		if (xp_print) {
-			/* ym: Use our own icmp echo reply function */
-			icmp_echo_reply(tmpl, ip, xp_print->flags.icmp_echo_code,
+			if (xp_print)
+			{
+				/* ym: Use our own icmp echo reply function */
+				icmp_echo_reply(tmpl, ip, xp_print->flags.icmp_echo_code,
 					xp_print->flags.icmp_echo_tos_bits ? ip->ip_tos : 0,
 					xp_print->flags.icmp_echo_df_bit ? IP_DF : 0,
-					xp_print->ttl_vals.icmp_echo_reply_ttl.ttl_val, dat, dlen,
-					spoof);
-		} else {
-			icmp_echo_reply(tmpl, ip, ICMP_CODE_NONE, 0, 0, honeyd_ttl, dat,
-					dlen, spoof);
-		}
-		break;
-	}
-	case ICMP_UNREACH: {
-		/* Only port unreachable at the moment */
-		icmp_quote = (struct icmp_msg_quote *) (icmp + 1);
-		rip = (struct ip_hdr *) (&icmp_quote->icmp_ip);
-
-		if (rip->ip_p != IP_PROTO_UDP)
+					xp_print->ttl_vals.icmp_echo_reply_ttl.ttl_val,
+					dat, dlen, spoof);
+			}
+			else
+			{
+				icmp_echo_reply(tmpl, ip, ICMP_CODE_NONE, 0, 0, honeyd_ttl, dat, dlen, spoof);
+			}
 			break;
+		}
+		case ICMP_UNREACH:
+		{
+			/* Only port unreachable at the moment */
+			icmp_quote = (struct icmp_msg_quote *)(icmp + 1);
+			rip = (struct ip_hdr *)(&icmp_quote->icmp_ip);
 
-		udp = (struct udp_hdr *) ((u_char *) rip + (ip->ip_hl << 2));
-		tmpip.ip_src = rip->ip_dst;
-		tmpip.ip_dst = rip->ip_src;
-		tmpudp.uh_sport = udp->uh_dport;
-		tmpudp.uh_dport = udp->uh_sport;
-		honeyd_setudp(&honeyd_udp, &tmpip, &tmpudp, 0);
+			if (rip->ip_p != IP_PROTO_UDP)
+				break;
 
-		/* Find matching state */
-		con = (struct udp_con *) SPLAY_FIND(tree, &udpcons,
+			udp = (struct udp_hdr *)((u_char *)rip + (ip->ip_hl<<2));
+			tmpip.ip_src = rip->ip_dst;
+			tmpip.ip_dst = rip->ip_src;
+			tmpudp.uh_sport = udp->uh_dport;
+			tmpudp.uh_dport = udp->uh_sport;
+			honeyd_setudp(&honeyd_udp, &tmpip, &tmpudp, 0);
+
+			/* Find matching state */
+			con = (struct udp_con *)SPLAY_FIND(tree, &udpcons,
 				&honeyd_udp.conhdr);
-		if (con == NULL)
+			if (con == NULL)
+				break;
+
+			con->softerrors++;
+			syslog(LOG_DEBUG,
+				"Received port unreachable: %s -> %s: errors %d",
+				asrc, adst, con->softerrors);
+			if (con->softerrors >= HONEYD_MAX_SOFTERRS)
+				udp_free(con);
+
 			break;
 
-		con->softerrors++;
-		syslog(LOG_DEBUG, "Received port unreachable: %s -> %s: errors %d",
-				asrc, adst, con->softerrors);
-		if (con->softerrors >= HONEYD_MAX_SOFTERRS)
-			udp_free(con);
-
-		break;
-
-	}
-		/* YM: Add ICMP Timestamp reply capability */
-	case ICMP_TSTAMP: {
-		/* Sometimes xp_print can be null here... probably shouldn't be, this is just a quick fix */
-		if (xp_print == NULL)
-			return;
-
-		/* Happens only if xp_print != NULL */
-		if (xp_print->flags.icmp_timestamp_reply) {
-			icmp_tstamp = (struct icmp_msg_timestamp *) ((u_char*) pkt
-					+ (ip->ip_hl << 2));
-
-			syslog(LOG_DEBUG, "Sending ICMP Timestamp Reply: %s -> %s", adst,
-					asrc);
-
-			icmp_timestamp_reply(tmpl, ip, icmp_tstamp,
-					xp_print->ttl_vals.icmp_timestamp_reply_ttl.ttl_val, spoof);
 		}
-		break;
-	}
+		/* YM: Add ICMP Timestamp reply capability */
+		case ICMP_TSTAMP:
+		{
+				/* Sometimes xp_print can be null here... probably shouldn't be, this is just a quick fix */
+				if (xp_print == NULL)
+					return;
+
+			/* Happens only if xp_print != NULL */
+				if (xp_print->flags.icmp_timestamp_reply)
+				{
+					icmp_tstamp = (struct icmp_msg_timestamp *)
+						((u_char*)pkt + (ip->ip_hl << 2));
+
+					syslog(LOG_DEBUG, "Sending ICMP Timestamp Reply: %s -> %s", adst, asrc);
+
+					icmp_timestamp_reply(tmpl, ip, icmp_tstamp,
+						xp_print->ttl_vals.icmp_timestamp_reply_ttl.ttl_val, spoof);
+				}
+				break;
+		}
 		/* YM: Added ICMP Address Mask reply capability */
-	case ICMP_MASK: {
-		/* Happens only if xp_print != NULL */
-		if (xp_print->flags.icmp_addrmask_reply) {
-			icmp_idseq = (struct icmp_msg_idseq *) (icmp + 1);
+		case ICMP_MASK:
+		{
+			/* Happens only if xp_print != NULL */
+				if (xp_print->flags.icmp_addrmask_reply) {
+				icmp_idseq = (struct icmp_msg_idseq *)(icmp + 1);
 
-			syslog(LOG_DEBUG, "Sending ICMP Address Mask Reply: %s -> %s", adst,
-					asrc);
+				syslog(LOG_DEBUG, "Sending ICMP Address Mask Reply: %s -> %s",
+					adst, asrc);
 
-			icmp_mask_reply(tmpl, ip, icmp_idseq,
+				icmp_mask_reply(tmpl, ip, icmp_idseq,
 					xp_print->ttl_vals.icmp_addrmask_reply_ttl.ttl_val,
 					HONEYD_ADDR_MASK, spoof);
-		}
-		break;
+			}
+			break;
 
-	}
+		}
 		/* YM: Added ICMP Information reply capability */
-	case ICMP_INFO: {
-		/* Happens only if xp_print != NULL */
-		if (xp_print->flags.icmp_info_reply) {
-			icmp_idseq = (struct icmp_msg_idseq *) (icmp + 1);
+		case ICMP_INFO:
+		{
+			/* Happens only if xp_print != NULL */
+				if (xp_print->flags.icmp_info_reply) {
+				icmp_idseq = (struct icmp_msg_idseq *)(icmp + 1);
 
-			syslog(LOG_DEBUG, "Sending ICMP Info Reply: %s -> %s", adst, asrc);
+				syslog(LOG_DEBUG, "Sending ICMP Info Reply: %s -> %s",
+					adst, asrc);
 
-			icmp_info_reply(tmpl, ip, icmp_idseq,
+				icmp_info_reply(tmpl, ip, icmp_idseq,
 					xp_print->ttl_vals.icmp_info_reply_ttl.ttl_val, spoof);
+			}
+			break;
 		}
-		break;
-	}
-	default: {
-		break;
-	}
+		default:
+		{
+			break;
+		}
 	}
 }
 
-void honeyd_dispatch(struct template *tmpl, struct ip_hdr *ip, u_short iplen) {
+void
+honeyd_dispatch(struct template *tmpl, struct ip_hdr *ip, u_short iplen)
+{
 	struct tuple iphdr;
 
 	iphdr.ip_src = ip->ip_src;
 	iphdr.ip_dst = ip->ip_dst;
 	iphdr.type = -1;
-
+	
 	/*
 	 * We define a hook here for packet interception -- plugins
 	 * can use it to do fun stuff with the packets.
 	 */
 
-	switch (ip->ip_p) {
+	switch(ip->ip_p) {
 	case IP_PROTO_TCP:
-		tcp_recv_cb(tmpl, (u_char *) ip, iplen);
+		tcp_recv_cb(tmpl, (u_char *)ip, iplen);
 		break;
 	case IP_PROTO_UDP:
-		udp_recv_cb(tmpl, (u_char *) ip, iplen);
+		udp_recv_cb(tmpl, (u_char *)ip, iplen);
 		break;
 	case IP_PROTO_ICMP:
-		hooks_dispatch(ip->ip_p, HD_INCOMING, &iphdr, (u_char *) ip, iplen);
-		icmp_recv_cb(tmpl, (u_char *) ip, iplen);
+		hooks_dispatch(ip->ip_p, HD_INCOMING, &iphdr,
+		    (u_char *)ip, iplen);
+		icmp_recv_cb(tmpl, (u_char *)ip, iplen);
 		break;
 	default:
-		hooks_dispatch(ip->ip_p, HD_INCOMING, &iphdr, (u_char *) ip, iplen);
+		hooks_dispatch(ip->ip_p, HD_INCOMING, &iphdr,
+		    (u_char *)ip, iplen);
 		honeyd_log_probe(honeyd_logfp, ip->ip_p, &iphdr, iplen, 0, NULL);
 		return;
 	}
@@ -2684,8 +2852,9 @@ void honeyd_dispatch(struct template *tmpl, struct ip_hdr *ip, u_short iplen) {
  * a delay time of low and high in ms.
  */
 
-static __inline int honeyd_router_drop(struct link_drop *drop,
-		struct timeval *tv) {
+static __inline int
+honeyd_router_drop(struct link_drop *drop, struct timeval *tv)
+{
 	int msec;
 	int low = drop->low;
 	int high = drop->high;
@@ -2716,8 +2885,10 @@ static __inline int honeyd_router_drop(struct link_drop *drop,
  *	FW_DROP - means that the packet has been handled by dropping, etc.
  */
 
-enum forward honeyd_route_packet(struct ip_hdr *ip, u_int iplen,
-		struct addr *gw, struct addr *addr, int *pdelay) {
+enum forward
+honeyd_route_packet(struct ip_hdr *ip, u_int iplen, 
+    struct addr *gw, struct addr *addr, int *pdelay)
+{
 	struct router *r, *lastrouter = NULL;
 	struct router_entry *rte = NULL;
 	struct link_entry *link = NULL;
@@ -2728,14 +2899,15 @@ enum forward honeyd_route_packet(struct ip_hdr *ip, u_int iplen,
 
 	host = *gw;
 	r = router_find(&host);
-
+	
 	while (addr_cmp(&host, addr) != 0 && --ip->ip_ttl) {
 		if ((rte = network_lookup(r->routes, addr)) == NULL) {
 			if (r->flags & ROUTER_ISENTRY) {
 				external = 1;
 				break;
 			}
-			noroute: syslog(LOG_DEBUG, "No route to %s", addr_ntoa(addr));
+		noroute:
+			syslog(LOG_DEBUG, "No route to %s", addr_ntoa(addr));
 			return (FW_DROP);
 		}
 
@@ -2750,7 +2922,7 @@ enum forward honeyd_route_packet(struct ip_hdr *ip, u_int iplen,
 
 		/* Get the attributes for this link */
 		link = rte->link;
-
+		
 		if (link->latency)
 			delay += link->latency;
 		else
@@ -2784,7 +2956,7 @@ enum forward honeyd_route_packet(struct ip_hdr *ip, u_int iplen,
 			delay += ms;
 		}
 		if (link->packetloss)
-			packetloss *= 1 - ((double) link->packetloss / 10000.0);
+			packetloss *= 1 - ((double)link->packetloss / 10000.0);
 
 		lastrouter = r;
 		r = rte->gw;
@@ -2792,7 +2964,8 @@ enum forward honeyd_route_packet(struct ip_hdr *ip, u_int iplen,
 
 		// Prevent underflows of ip_ttl
 		// TODO: throw error/warning. This shouldn't happen.
-		if (addr_cmp(&host, addr) != 0 && ip->ip_ttl == 0) {
+		if (addr_cmp(&host, addr) != 0 && ip->ip_ttl == 0)
+		{
 			ip->ip_ttl = 1;
 		}
 	}
@@ -2804,11 +2977,11 @@ enum forward honeyd_route_packet(struct ip_hdr *ip, u_int iplen,
 
 	/* Send ICMP_TIMEXCEED from router address */
 	if (!ip->ip_ttl) {
-		struct spoof spoof = no_spoof;
-		spoof.new_src = host;
-
-		syslog(LOG_DEBUG, "TTL exceeded for dst %s at gw %s", addr_ntoa(addr),
-				addr_ntoa(&host));
+ 		struct spoof spoof = no_spoof;
+ 		spoof.new_src = host;
+ 
+		syslog(LOG_DEBUG, "TTL exceeded for dst %s at gw %s",
+		    addr_ntoa(addr), addr_ntoa(&host));
 
 		/* 
 		 * We need to use the template of the host that will
@@ -2821,23 +2994,24 @@ enum forward honeyd_route_packet(struct ip_hdr *ip, u_int iplen,
 
 	/* Send ICMP_UNREACH from router address */
 	if (rte != NULL && rte->type == ROUTE_UNREACH) {
-		syslog(LOG_DEBUG, "dst %s unreachable at gw %s", addr_ntoa(addr),
-				addr_ntoa(&host));
+		syslog(LOG_DEBUG, "dst %s unreachable at gw %s",
+		    addr_ntoa(addr), addr_ntoa(&host));
 
 		/* 
 		 * We need to use the template of the host that will
 		 * send the ICMP error message.
 		 */
 		tmpl = template_find_best(addr_ntoa(&host), ip, iplen);
-		honeyd_delay_packet(tmpl, ip, iplen, &host, NULL, delay, DELAY_UNREACH,
-				no_spoof);
+		honeyd_delay_packet(tmpl, ip, iplen, &host, NULL, delay,
+		    DELAY_UNREACH, no_spoof);
 		return (FW_DROP);
 	}
 
 	/* We need to tunnel this packet */
 	if (rte != NULL && rte->type == ROUTE_TUNNEL) {
-		honeyd_delay_packet(NULL, ip, iplen, &rte->tunnel_src, &rte->tunnel_dst,
-				delay, DELAY_TUNNEL, no_spoof);
+		honeyd_delay_packet(NULL, ip, iplen,
+		    &rte->tunnel_src, &rte->tunnel_dst,
+		    delay, DELAY_TUNNEL, no_spoof);
 		return (FW_DROP);
 	}
 
@@ -2848,7 +3022,7 @@ enum forward honeyd_route_packet(struct ip_hdr *ip, u_int iplen,
 		tmpl = template_find_best(addr_ntoa(addr), ip, iplen);
 		if (tmpl != NULL && tmpl->drop_inrate) {
 			uint16_t value;
-			value = rand_uint16(honeyd_rand) % (100 * 100);
+			value = rand_uint16(honeyd_rand) % (100*100);
 			if (value < tmpl->drop_inrate)
 				return (FW_DROP);
 		}
@@ -2860,8 +3034,9 @@ enum forward honeyd_route_packet(struct ip_hdr *ip, u_int iplen,
 	return (external ? FW_EXTERNAL : FW_INTERNAL);
 }
 
-void honeyd_input(const struct interface *inter, struct ip_hdr *ip,
-		u_short iplen) {
+void
+honeyd_input(const struct interface *inter, struct ip_hdr *ip, u_short iplen)
+{
 	extern struct network *reverse;
 	struct template *tmpl = NULL;
 	struct router *gw;
@@ -2871,7 +3046,8 @@ void honeyd_input(const struct interface *inter, struct ip_hdr *ip,
 	int delay = 0, flags = 0;
 	struct addr src, addr;
 
-	if (inter->if_ent.intf_flags & INTF_FLAG_LOOPBACK) {
+	if (inter->if_ent.intf_flags & INTF_FLAG_LOOPBACK)
+	{
 		/* Override checksum on IP packet to prevent drops */
 		ip_checksum(ip, iplen);
 	}
@@ -2882,14 +3058,13 @@ void honeyd_input(const struct interface *inter, struct ip_hdr *ip,
 		tmpl = template_find_best(addr_ntoa(&addr), ip, iplen);
 		if (tmpl != NULL && tmpl->drop_inrate) {
 			uint16_t value;
-			value = rand_uint16(honeyd_rand) % (100 * 100);
+			value = rand_uint16(honeyd_rand) % (100*100);
 			if (value < tmpl->drop_inrate)
 				return;
 		}
 		if (tmpl != NULL && tmpl->flags & TEMPLATE_EXTERNAL)
 			flags |= DELAY_ETHERNET;
-		honeyd_delay_packet(tmpl, ip, iplen, NULL, NULL, delay, flags,
-				no_spoof);
+		honeyd_delay_packet(tmpl, ip, iplen, NULL, NULL, delay, flags, no_spoof);
 		return;
 	}
 
@@ -2899,7 +3074,8 @@ void honeyd_input(const struct interface *inter, struct ip_hdr *ip,
 
 		/* Decapsulate GRE packet if it is legitimate */
 		if ((rte = router_find_tunnel(&addr, &src)) == NULL) {
-			syslog(LOG_DEBUG, "Unknown GRE packet from %s", addr_ntoa(&src));
+			syslog(LOG_DEBUG, "Unknown GRE packet from %s",
+			    addr_ntoa(&src));
 			return;
 		}
 
@@ -2921,8 +3097,9 @@ void honeyd_input(const struct interface *inter, struct ip_hdr *ip,
 		addr_pack(&src, ADDR_TYPE_IP, IP_ADDR_BITS, &ip->ip_src, IP_ADDR_LEN);
 		/* Check that the source address is valid */
 		if (!addr_contained(&rte->net, &src)) {
-			syslog(LOG_INFO, "Bad address %s injected into tunnel %s",
-					addr_ntoa(&src), addr_ntoa(&rte->net));
+			syslog(LOG_INFO,
+			    "Bad address %s injected into tunnel %s",
+			    addr_ntoa(&src), addr_ntoa(&rte->net));
 			return;
 		}
 		addr_pack(&addr, ADDR_TYPE_IP, IP_ADDR_BITS, &ip->ip_dst, IP_ADDR_LEN);
@@ -2954,9 +3131,10 @@ void honeyd_input(const struct interface *inter, struct ip_hdr *ip,
 	 */
 
 	if (res == FW_EXTERNAL) {
-		if (inter != NULL
-				&& inter->if_ent.intf_link_addr.addr_type != ADDR_TYPE_ETH) {
-			syslog(LOG_DEBUG, "No route to %s", addr_ntoa(&addr));
+		if (inter != NULL && inter->if_ent.intf_link_addr.addr_type != 
+		    ADDR_TYPE_ETH) {
+			syslog(LOG_DEBUG, "No route to %s",
+			    addr_ntoa(&addr));
 			return;
 		} else
 			flags |= DELAY_EXTERNAL;
@@ -2971,30 +3149,32 @@ void honeyd_input(const struct interface *inter, struct ip_hdr *ip,
 }
 
 // This is the callback that will be called whenever an external packet is recieved via pcap
-void honeyd_recv_cb(u_char *ag, const struct pcap_pkthdr *pkthdr,
-		const u_char *pkt) {
-	const struct interface *inter = (const struct interface *) ag;
+void
+honeyd_recv_cb(u_char *ag, const struct pcap_pkthdr *pkthdr, const u_char *pkt)
+{
+	const struct interface *inter = (const struct interface *)ag;
 	struct ip_hdr *ip;
 	struct addr addr;
 	u_short iplen;
-	struct eth_hdr *eth = (struct eth_hdr *) pkt;
+	struct eth_hdr *eth = (struct eth_hdr *)pkt;
 	int is_etherpkt = 0;
 
 	count_increment(stats_network.input_bytes, pkthdr->caplen);
 
 	/* Check if we can receive arp traffic on this interface */
-	if ((router_used || need_arp)
-			&& inter->if_ent.intf_link_addr.addr_type == ADDR_TYPE_ETH) {
+	if ((router_used || need_arp) &&
+	    inter->if_ent.intf_link_addr.addr_type == ADDR_TYPE_ETH) {
 		struct arp_req *req;
 		struct addr eth_sha;
-
+		
 		/* Mark this packet as being delivered via ethernet */
 		is_etherpkt = 1;
 
 		/* Ignore our own packets */
-		addr_pack(&eth_sha, ADDR_TYPE_ETH, ETH_ADDR_BITS, &eth->eth_src,
-				ETH_ADDR_LEN);
-		if ((req = arp_find(&eth_sha)) != NULL && (req->flags & ARP_INTERNAL))
+		addr_pack(&eth_sha, ADDR_TYPE_ETH, ETH_ADDR_BITS,
+		    &eth->eth_src, ETH_ADDR_LEN);
+		if ((req = arp_find(&eth_sha)) != NULL &&
+		    (req->flags & ARP_INTERNAL))
 			return;
 
 		if (ntohs(eth->eth_type) == ETH_TYPE_ARP) {
@@ -3007,7 +3187,7 @@ void honeyd_recv_cb(u_char *ag, const struct pcap_pkthdr *pkthdr,
 	if (pkthdr->caplen < inter->if_dloff + IP_HDR_LEN)
 		return;
 
-	ip = (struct ip_hdr *) (pkt + inter->if_dloff);
+	ip = (struct ip_hdr *)(pkt + inter->if_dloff);
 
 	iplen = ntohs(ip->ip_len);
 	if (pkthdr->caplen - inter->if_dloff < iplen)
@@ -3029,7 +3209,7 @@ void honeyd_recv_cb(u_char *ag, const struct pcap_pkthdr *pkthdr,
 	if (is_etherpkt && ip->ip_p == IP_PROTO_UDP) {
 		struct udp_hdr *udp;
 
-		udp = (struct udp_hdr *) ((u_char *) ip + (ip->ip_hl << 2));
+		udp = (struct udp_hdr *)((u_char *)ip + (ip->ip_hl << 2));
 		if (iplen < (ip->ip_hl << 2) + UDP_HDR_LEN)
 			goto out;
 
@@ -3038,10 +3218,13 @@ void honeyd_recv_cb(u_char *ag, const struct pcap_pkthdr *pkthdr,
 			return;
 		}
 	}
-	out: honeyd_input(inter, ip, iplen);
+ out:
+	honeyd_input(inter, ip, iplen);
 }
 
-void honeyd_sigchld(int fd, short what, void *arg) {
+void
+honeyd_sigchld(int fd, short what, void *arg)
+{
 	pid_t pid;
 	while ((pid = waitpid(-1, NULL, WNOHANG)) > 0) {
 		/* Ignore the rrdtool driver for children accounting */
@@ -3051,13 +3234,16 @@ void honeyd_sigchld(int fd, short what, void *arg) {
 	}
 }
 
-void honeyd_signal(int fd, short what, void *arg) {
+void
+honeyd_signal(int fd, short what, void *arg)
+{
 	syslog(LOG_NOTICE, "exiting on signal %d", fd);
 
 	// Clear the IP list file if we're using it
-	if (templateDump != NULL) {
+	if (templateDump != NULL)
+	{
 		FILE *fp;
-		if ((fp = fopen(templateDump, "w+")) == NULL)
+		if ((fp = fopen(templateDump , "w+")) == NULL)
 			warn("Error opening the DHCP IP address dump file");
 		else
 			fclose(fp);
@@ -3066,7 +3252,9 @@ void honeyd_signal(int fd, short what, void *arg) {
 	honeyd_exit(0);
 }
 
-void honeyd_sighup(int fd, short what, void *arg) {
+void
+honeyd_sighup(int fd, short what, void *arg)
+{
 	syslog(LOG_NOTICE, "rereading configuration on signal %d", fd);
 
 	template_free_all(TEMPLATE_FREE_REGULAR);
@@ -3075,7 +3263,9 @@ void honeyd_sighup(int fd, short what, void *arg) {
 		config_read(config.config);
 }
 
-void honeyd_sigusr(int fd, short what, void *arg) {
+void
+honeyd_sigusr(int fd, short what, void *arg)
+{
 	syslog(LOG_NOTICE, "rotating log files on signal %d", fd);
 
 	honeyd_logend(honeyd_logfp);
@@ -3092,14 +3282,20 @@ struct _unittest {
 	void (*cb)(void);
 } unittests[] = {
 #ifdef HAVE_PYTHON
-		{	"pydataprocessing", pydataprocessing_test},
-		{	"pydatahoneyd", pydatahoneyd_test},
+	{ "pydataprocessing", pydataprocessing_test },
+	{ "pydatahoneyd", pydatahoneyd_test },
 #endif
-		{ "rrdtool", rrdtool_test }, { "ethernet", ethernet_test }, {
-				"interface", interface_test }, { "network", network_test }, {
-				"template", template_test }, { NULL, NULL } };
+	{ "rrdtool", rrdtool_test },
+	{ "ethernet", ethernet_test },
+	{ "interface", interface_test },
+	{ "network", network_test },
+	{ "template", template_test },
+	{ NULL, NULL}
+};
 
-void unittest(void) {
+void
+unittest(void)
+{
 	struct _unittest *ut;
 	fprintf(stderr, "Running unittests ...\n");
 	for (ut = unittests; ut->name != NULL; ut++) {
@@ -3111,7 +3307,9 @@ void unittest(void) {
 	exit(0);
 }
 
-int main(int argc, char *argv[]) {
+int
+main(int argc, char *argv[])
+{
 	extern int interface_dopoll;
 	struct event sigterm_ev, sigint_ev, sighup_ev, sigchld_ev, sigusr_ev;
 	char *dev[HONEYD_MAX_INTERFACES];
@@ -3125,20 +3323,20 @@ int main(int argc, char *argv[]) {
 	int i, c, orig_argc, ninterfaces = 0;
 	FILE *fp;
 
-	if (chdir(PATH_HONEYDDATA) == -1) {
-		printf("ERROR: Could not find path PATH_HONEYDDATA: %s\n",
-				PATH_HONEYDDATA);
+	if(chdir(PATH_HONEYDDATA) == -1)
+	{
+		printf("ERROR: Could not find path PATH_HONEYDDATA: %s\n", PATH_HONEYDDATA);
 		perror("");
 		exit(EXIT_FAILURE);
 	}
 
 	fprintf(stderr, "Honeyd V%s Copyright (c) 2002-2007 Niels Provos\n",
-			VERSION);
+	    VERSION);
 
 	orig_argc = argc;
 	orig_argv = argv;
 	while ((c = getopt_long(argc, argv, "VPTdc:i:p:x:a:u:g:f:t:l:s:0:R:h?",
-			honeyd_long_opts, NULL)) != -1) {
+				honeyd_long_opts, NULL)) != -1) {
 		char *ep;
 		switch (c) {
 		case 'Y':
@@ -3152,7 +3350,8 @@ int main(int argc, char *argv[]) {
 		case 'W':
 			honeyd_webserver_port = atoi(optarg);
 			if (honeyd_webserver_port == 0) {
-				fprintf(stderr, "Bad port number: %s\n", optarg);
+				fprintf(stderr, "Bad port number: %s\n",
+				    optarg);
 				usage();
 			}
 			break;
@@ -3187,11 +3386,13 @@ int main(int argc, char *argv[]) {
 				usage();
 
 			if (addr_pton(address, &stats_dst) == -1) {
-				fprintf(stderr, "Bad destination address %s\n", address);
+				fprintf(stderr, "Bad destination address %s\n",
+				    address);
 				usage();
 			}
 			if ((stats_port = atoi(strport)) == 0) {
-				fprintf(stderr, "Bad destination port %s\n", strport);
+				fprintf(stderr, "Bad destination port %s\n",
+				    strport);
 				usage();
 			}
 
@@ -3288,6 +3489,7 @@ int main(int argc, char *argv[]) {
 	if (setrand)
 		rand_set(honeyd_rand, &setrand, sizeof(setrand));
 
+
 	/* disables event methods that don't work for bpf */
 	interface_prevent_init();
 
@@ -3314,8 +3516,8 @@ int main(int argc, char *argv[]) {
 
 	if (stats_username != NULL) {
 		stats_init();
-		stats_init_collect(&stats_dst, stats_port, stats_username,
-				stats_password);
+		stats_init_collect(&stats_dst, stats_port,
+		    stats_username, stats_password);
 	}
 
 	personality_init();
@@ -3328,7 +3530,7 @@ int main(int argc, char *argv[]) {
 	if (xprobe_personality_parse(fp) == -1)
 		errx(1, "parsing xprobe personality file failed");
 	fclose(fp);
-
+	
 	/* Association between xprobe and nmap fingerprints */
 	if ((fp = fopen(config.assoc, "r")) == NULL)
 		err(1, "fopen(%s)", config.assoc);
@@ -3343,12 +3545,13 @@ int main(int argc, char *argv[]) {
 		errx(1, "parsing personality file failed");
 	fclose(fp);
 
+
 	/* PF OS fingerprints */
 	if (honeyd_osfp_init(config.osfp) == -1)
 		errx(1, "reading OS fingerprints failed");
 
 	honeyd_init();
-
+	
 	if (want_unittest)
 		unittest();
 
@@ -3364,7 +3567,7 @@ int main(int argc, char *argv[]) {
 
 	if (honeyd_verify_config) {
 		extern int interface_verify_config;
-
+		
 		/* Make sure that we do not open interfaces for real */
 		interface_verify_config = 1;
 	}
@@ -3383,7 +3586,7 @@ int main(int argc, char *argv[]) {
 
 	/* Start our web server */
 	if (!honeyd_verify_config && honeyd_is_webserver_enabled())
-	pyextend_webserver_init(
+		pyextend_webserver_init(
 			honeyd_webserver_address,
 			honeyd_webserver_port,
 			honeyd_webserver_root);
@@ -3405,20 +3608,20 @@ int main(int argc, char *argv[]) {
 
 	/* Attach the UI interface */
 	ui_init();
-
+	
 	/*
 	 * We must initialize the plugins after the config file
-	 * has been read, as the plugins may query config settings!
-	 */
-	plugins_init();
+         * has been read, as the plugins may query config settings!
+         */
+        plugins_init();
 
 	ip_fragment_init();
 
 #ifdef HAVE_PYTHON
 	/* Fix permissions of the webserver directories if requested */
 	if (honeyd_webserver_fix_permissions)
-	pyextend_webserver_fix_permissions(honeyd_webserver_root,
-			honeyd_uid, honeyd_gid);
+		pyextend_webserver_fix_permissions(honeyd_webserver_root,
+		    honeyd_uid, honeyd_gid);
 #endif
 
 	/* Create PID file, we might not be able to remove it */
@@ -3436,26 +3639,28 @@ int main(int argc, char *argv[]) {
 			err(1, "daemon");
 		}
 	}
-
+	
 	fprintf(fp, "%d\n", getpid());
 	fclose(fp);
-
+	
 	chmod(PIDFILE, 0644);
 
 	/* Drop privileges if we do not need them */
 	if (honeyd_needsroot <= 0) {
 		cmd_droppriv(honeyd_uid, honeyd_gid);
 
-		syslog(LOG_NOTICE, "Demoting process privileges to uid %u, gid %u",
-				honeyd_uid, honeyd_gid);
+		syslog(LOG_NOTICE,
+		    "Demoting process privileges to uid %u, gid %u",
+		    honeyd_uid, honeyd_gid);
 	} else {
 		syslog(LOG_WARNING, "Running with root privileges.");
 	}
 
 	// Clear/create the IP list file if we're using it
-	if (templateDump != NULL) {
-		FILE * fp;
-		if ((fp = fopen(templateDump, "w+")) == NULL)
+	if (templateDump != NULL)
+	{
+		FILE *fp;
+		if ((fp = fopen(templateDump , "w+")) == NULL)
 			warn("Error opening the DHCP IP address dump file");
 		else
 			fclose(fp);
@@ -3464,9 +3669,9 @@ int main(int argc, char *argv[]) {
 #ifdef HAVE_PYTHON
 	/* Verify that the webserver space is setup correctly */
 	if (honeyd_is_webserver_enabled())
-	pyextend_webserver_verify_setup(honeyd_webserver_root);
+		pyextend_webserver_verify_setup(honeyd_webserver_root);
 	else
-	syslog(LOG_INFO, "Internal webserver has been disabled.");
+		syslog(LOG_INFO, "Internal webserver has been disabled.");
 #endif
 
 	/* Setup signal handler */
@@ -3510,12 +3715,16 @@ int main(int argc, char *argv[]) {
  * going to use.
  */
 
-void honeyd_use_uid(uid_t uid) {
+void
+honeyd_use_uid(uid_t uid)
+{
 	if (!honeyd_needsroot && uid != honeyd_uid)
 		honeyd_needsroot = 1;
 }
 
-void honeyd_use_gid(gid_t gid) {
+void
+honeyd_use_gid(gid_t gid)
+{
 	if (!honeyd_needsroot && gid != honeyd_gid)
 		honeyd_needsroot = 1;
 }
