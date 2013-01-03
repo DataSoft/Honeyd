@@ -355,7 +355,11 @@ tcp_personality_test(const struct tcp_con *con, struct personality *person,
 					return (NULL);
 
 				//This might be one of the 6 Nmap SEQ packets, reply appropriately
+
 				//Apply WIN and OPS fields to the t_tests[0] test
+				test->options = person->seq_tests[0].options;
+				test->window = person->seq_tests[0].window;
+
 				switch( con->recv_window )
 				{
 					case 1:
