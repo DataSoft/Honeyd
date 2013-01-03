@@ -431,7 +431,7 @@ honeyd_rrd_start(const char *rrdtool_path)
 		 honeyd_traffic_filename, 60)) == NULL)
 	{
 		syslog(LOG_ERR, "%s: cannot create rrd db(database): %s", __func__, honeyd_traffic_filename);
-				exit(EXIT_FAILURE);
+		exit(EXIT_FAILURE);
 	}
 		//errx(1, "%s: cannot create rrd db: %s",
 		  //  __func__, honeyd_traffic_filename);

@@ -1397,7 +1397,7 @@ pyextend_webserver_verify_setup(const char *root_dir)
 			    p->mode & W_OK ? " write" : "",
 			    p->mode & R_OK ? " read" : "",
 			    filename);
-			exit(1);
+			exit(EXIT_FAILURE);
 		}
 	}
 }

@@ -108,7 +108,7 @@ main(int argc, char **argv)
 				exit(EXIT_FAILURE);
 			}
 				//err(1, "%s: failed to reopen stderr",
-				    __func__);
+				  //  __func__);
 			setvbuf(stderr, NULL, _IOLBF, 0);
 			break;
 		case 'v':

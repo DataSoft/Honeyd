@@ -848,5 +848,6 @@ droppriv(uid_t uid, gid_t gid)
 	return;
  error:
 	syslog(LOG_ERR, "%s: terminated", __func__);
-	errx(1, "%s: terminated", __func__);
+	exit(EXIT_FAILURE);
+	//errx(1, "%s: terminated", __func__);
 }
