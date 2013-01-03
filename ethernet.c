@@ -38,6 +38,7 @@
 #endif
 
 #include <sys/tree.h>
+#include <syslog.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -95,15 +96,27 @@ ethernetcode_index(struct ethertree *etherroot, struct ethernetcode *code)
 			/* Generate a new entry for this word */
 			entry = calloc(1, sizeof(struct etherindex));
 			if (entry == NULL)
-				err(1, "%s: calloc", __func__);
+			{
+				syslog(LOG_ERR, "%s: calloc, failed to allocate new entry for the current word", __func__);
+				exit(EXIT_FAILURE);
+			}
+				//err(1, "%s: calloc", __func__);
 
 			if ((entry->index_word = strdup(p)) == NULL)
-				err(1, "%s: strdup", __func__);
+			{
+				syslog(LOG_ERR, "%s: strdup", __func__);
+				exit(EXIT_FAILURE);
+			}
+				//err(1, "%s: strdup", __func__);
 
 			entry->list_mem = 32;
 			if ((entry->list = calloc(entry->list_mem,
 					sizeof(struct ethernetcode *))) == NULL)
-				err(1, "%s: calloc");
+			{
+				syslog(LOG_ERR, "%s: calloc",__func__);
+				exit(EXIT_FAILURE);
+			}
+				//err(1, "%s: calloc");
 
 			SPLAY_INSERT(ethertree, etherroot, entry);
 		}
@@ -116,7 +129,11 @@ ethernetcode_index(struct ethertree *etherroot, struct ethernetcode *code)
 			tmp = realloc(entry->list,
 					entry->list_mem * sizeof(struct ethernetcode *));
 			if (tmp == NULL)
-				err(1, "%s: realloc", __func__);
+			{
+				syslog(LOG_ERR, "%s: realloc", __func__);
+				exit(EXIT_FAILURE);
+			}
+				//err(1, "%s: realloc", __func__);
 			entry->list = tmp;
 		}
 
@@ -174,8 +191,10 @@ void ethernetcode_init(void){//16080 lines counting the 5 comments at the top
 		currentCode = codes;
 	}
 	else
+	{
 		printf("nmap-mac-prefixes file cannot be parsed.");
-
+		exit(EXIT_FAILURE);
+	}
 	rewind(in_file);//go back to the beginning of the file
 
 
@@ -209,7 +228,6 @@ void ethernetcode_init(void){//16080 lines counting the 5 comments at the top
 					break;
 				}
 		}
-		int companyStart = 0;
 		int j;
 		int companyNameStart = 0;
 		int firstSpaceFound = 0;

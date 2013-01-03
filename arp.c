@@ -241,7 +241,9 @@ arp_find(struct addr *addr)
 		tmp.ha = *addr;
 		res = SPLAY_FIND(haarptree, &ha_arp_reqs, &tmp);
 	} else {
-		errx(1, "%s: lookup for unsupported address type", __func__);
+		syslog(LOG_ERR, "%s: lookup for unsupported address type", __func__);
+		exit(EXIT_FAILURE);
+		//errx(1, "%s: lookup for unsupported address type", __func__);
 	}
 
 	return (res);

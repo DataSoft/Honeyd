@@ -328,7 +328,11 @@ ui_new(int fd, short what, void *arg)
 	client->outbuf = evbuffer_new();
 
 	if (client->inbuf == NULL || client->outbuf == NULL)
-		err(1, "%s: evbuffer_new");
+	{
+		syslog(LOG_ERR, "%s: evbuffer_new");
+		exit(EXIT_FAILURE);
+	}
+		//err(1, "%s: evbuffer_new");
 
 	syslog(LOG_NOTICE, "%s: New ui connection on fd %d", __func__, newfd);
 
@@ -354,8 +358,10 @@ ui_init(void)
         if (lstat(ui_file, &st) == 0) {
                 if ((st.st_mode & S_IFMT) == S_IFREG) {
                         errno = EEXIST;
-                        err(1, "%s: could not create FIFO: %s",
-			    __func__, ui_file);
+                        syslog(LOG_ERR, "%s: could not create FIFO: %s", __func__, ui_file);
+                        		exit(EXIT_FAILURE);
+                        //err(1, "%s: could not create FIFO: %s",
+			    //__func__, ui_file);
                 }
 	}
 
@@ -364,10 +370,18 @@ ui_init(void)
 
         ui_socket = socket(AF_UNIX, SOCK_STREAM, 0);
         if (ui_socket == -1)
-                err(1, "%s: socket", __func__);
+        {
+        	syslog(LOG_ERR, "%s: socket", __func__);
+        	exit(EXIT_FAILURE);
+        }
+            //    err(1, "%s: socket", __func__);
         if (setsockopt(ui_socket, SOL_SOCKET, SO_REUSEADDR,
                        &ui_socket, sizeof (ui_socket)) == -1)
-                err(1, "%s: setsockopt", __func__);
+        {
+        	syslog(LOG_ERR, "%s: setsockopt", __func__);
+        	exit(EXIT_FAILURE);
+        }
+                //err(1, "%s: setsockopt", __func__);
 
         memset(&ifsun, 0, sizeof (ifsun));
         ifsun.sun_family = AF_UNIX;
@@ -376,10 +390,18 @@ ui_init(void)
         ifsun.sun_len = strlen(ifsun.sun_path);
 #endif /* HAVE_SUN_LEN */
         if (bind(ui_socket, (struct sockaddr *)&ifsun, sizeof (ifsun)) == -1)
-                err(1, "%s: bind", __func__);
+        {
+        	syslog(LOG_ERR, "%s: bind", __func__);
+        	exit(EXIT_FAILURE);
+        }
+            //    err(1, "%s: bind", __func__);
 
         if (listen(ui_socket, 5) == -1)
-                err(1, "%s: listen, __func__");
+        {
+        	syslog(LOG_ERR, "%s: listen", __func__);
+        	exit(EXIT_FAILURE);
+        }
+            //    err(1, "%s: listen, __func__");
 
 	event_set(&ev_accept, ui_socket, EV_READ | EV_PERSIST, ui_new, NULL);
 	event_priority_set(&ev_accept, 0);

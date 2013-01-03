@@ -114,7 +114,11 @@ honeyd_logtime(void)
 	time_t seconds;
 
 	if (gettimeofday(&tv, NULL) == -1)
-		err(1, "%s: gettimeofday", __func__);
+	{
+		syslog(LOG_ERR, "%s: gettimeofday", __func__);
+		exit(EXIT_FAILURE);
+	}
+		//err(1, "%s: gettimeofday", __func__);
 	seconds = tv.tv_sec;
 	
 	/* ctime returns 26-character string */
@@ -137,7 +141,11 @@ honeyd_logdate(void)
 	time_t seconds;
 
 	if (gettimeofday(&tv, NULL) == -1)
-		err(1, "%s: gettimeofday", __func__);
+	{
+		syslog(LOG_ERR, "%s: gettimeofday, failed to get time of day", __func__);
+		exit(EXIT_FAILURE);
+	}
+		//err(1, "%s: gettimeofday", __func__);
 	seconds = tv.tv_sec;
 	
 	/* ctime returns 26-character string */

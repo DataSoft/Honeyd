@@ -199,7 +199,11 @@ _dhcp_getconf(struct template *tmpl)
 	if (req == NULL) {
 		req = calloc(1, sizeof(struct dhcpclient_req));
 		if (req == NULL)
-			err(1, "%s: calloc");
+		{
+			syslog(LOG_ERR, "%s: calloc");
+			exit(EXIT_FAILURE);
+		}
+			//err(1, "%s: calloc");
 		tmpl->dhcp_req = req;
 	}
 
@@ -464,7 +468,11 @@ _dhcp_reply(struct template *tmpl, u_char *buf, size_t buflen)
 		free(tmpl->name);
 		tmpl->name = strdup(addr_ntoa(&addr));
 		if (tmpl->name == NULL)
-			err(1, "%s: strdup", __func__);
+		{
+			syslog(LOG_ERR, "%s: strdup", __func__);
+			exit(EXIT_FAILURE);
+		}
+			//err(1, "%s: strdup", __func__);
 		template_insert(tmpl);
 		template_dump_ips(templateDump);
 
@@ -596,7 +604,11 @@ _bcast(struct template *tmpl,
 	ip_checksum(buf + ETH_HDR_LEN, iplen);
 
 	if (eth_send(inter->if_eth, buf, len) < 0)
-		err(1, "eth_send");
+	{
+		syslog(LOG_ERR, "eth_send function call failed");
+		exit(EXIT_FAILURE);
+	}
+	//err(1, "eth_send");
 
 	return (0);
 }
@@ -650,7 +662,11 @@ _unicast(struct template *tmpl,
 	ip_checksum(buf + ETH_HDR_LEN, iplen);
 
 	if (eth_send(inter->if_eth, buf, len) < 0)
-		err(1, "eth_send");
+	{
+		syslog(LOG_ERR, "eth_send function call failed");
+		exit(EXIT_FAILURE);
+	}
+		//err(1, "eth_send");
 
 	return (0);
 }

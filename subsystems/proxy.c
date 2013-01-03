@@ -552,7 +552,11 @@ proxy_pcre_group(char *line, int groupnr, int ovector[])
 	int end = ovector[2*groupnr + 1];
 	char *group = malloc(end - start + 1);
 	if (group == NULL)
-		err(1, "%s: malloc", __func__);
+	{
+		syslog(LOG_ERR, "%s: gettimeofday", __func__);
+		exit(EXIT_FAILURE);
+	}
+		//err(1, "%s: malloc", __func__);
 	memcpy(group, line + start, end - start);
 	group[end-start] = '\0';
 
@@ -816,10 +820,18 @@ proxy_bind_socket(struct event *ev, u_short port)
 	int fd;
 
 	if ((fd = make_socket(bind, SOCK_STREAM, "0.0.0.0", port)) == -1)
-		err(1, "%s: cannot bind socket: %d", __func__, port);
+	{
+		syslog(LOG_ERR, "%s: cannot bind socket: %d", __func__, port);
+		exit(EXIT_FAILURE);
+	}
+		//err(1, "%s: cannot bind socket: %d", __func__, port);
 
 	if (listen(fd, 10) == -1)
-		err(1, "%s: listen failed: %d", __func__, port);
+	{
+		syslog(LOG_ERR, "%s: listen failed: %d", __func__, port);
+		exit(EXIT_FAILURE);
+	}
+		//err(1, "%s: listen failed: %d", __func__, port);
 
 	/* Schedule the socket for accepting */
 	event_set(ev, fd, EV_READ | EV_PERSIST, accept_socket, NULL);
@@ -844,15 +856,27 @@ proxy_init(void)
 	re_connect = pcre_compile(exp_connect, PCRE_CASELESS,
 	    &error, &erroroffset, NULL);
 	if (re_connect == NULL)
-		err(1, "%s: %s at %d", __func__, error, erroroffset);
+	{
+		syslog(LOG_ERR, "%s: %s at %d", __func__, error, erroroffset);
+		exit(EXIT_FAILURE);
+	}
+		//err(1, "%s: %s at %d", __func__, error, erroroffset);
 
 	re_hostport = pcre_compile(exp_hostport, PCRE_CASELESS,
 	    &error, &erroroffset, NULL);
 	if (re_connect == NULL)
-		err(1, "%s: %s at %d", __func__, error, erroroffset);
+	{
+		syslog(LOG_ERR, "%s: %s at %d", __func__, error, erroroffset);
+		exit(EXIT_FAILURE);
+	}
+		//err(1, "%s: %s at %d", __func__, error, erroroffset);
 
 	re_get = pcre_compile(exp_get, PCRE_CASELESS,
 	    &error, &erroroffset, NULL);
 	if (re_connect == NULL)
-		err(1, "%s: %s at %d", __func__, error, erroroffset);
+	{
+		syslog(LOG_ERR, "%s: %s at %d", __func__, error, erroroffset);
+		exit(EXIT_FAILURE);
+	}
+		//err(1, "%s: %s at %d", __func__, error, erroroffset);
 }

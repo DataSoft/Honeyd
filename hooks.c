@@ -72,6 +72,7 @@
 #include <errno.h>
 #include <unistd.h>
 #include <dnet.h>
+#include <syslog.h>
 
 #include "hooks.h"
 
@@ -109,7 +110,11 @@ hooks_init(void)
 	for (i = 0; i < HD_DIR_MAX; i++) {
 		dir_hooks[i] = malloc(HD_HOOKS_LAST * sizeof(struct hooksq));
 		if (dir_hooks[i] == NULL)
-			err(1, "%s: malloc", __func__);
+		{
+			syslog(LOG_ERR, "%s: malloc, failed to allocate the array of hook tailqueues", __func__);
+			exit(EXIT_FAILURE);
+		}
+			//err(1, "%s: malloc", __func__);
 	}
 
 	for (i = 0; i < HD_HOOKS_LAST; i++)

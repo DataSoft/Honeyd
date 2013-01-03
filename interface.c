@@ -103,7 +103,11 @@ interface_initialize(pcap_handler cb)
 	TAILQ_INIT(&interfaces);
 
 	if ((intf = intf_open()) == NULL)
-		err(1, "intf_open");
+	{
+		syslog(LOG_ERR, "%s: intf_open");
+		exit(EXIT_FAILURE);
+	}
+		//err(1, "intf_open");
 
 	if_recv_cb = cb;
 }
@@ -117,11 +121,19 @@ interface_new(char *dev)
 	struct interface *inter;
 
 	if ((inter = calloc(1, sizeof(struct interface))) == NULL)
-		err(1, "%s: calloc", __func__);
+	{
+		syslog(LOG_ERR, "%s: calloc", __func__);
+		exit(EXIT_FAILURE);
+	}
+		//err(1, "%s: calloc", __func__);
 
 	if (dev == NULL) {
 		if ((dev = pcap_lookupdev(ebuf)) == NULL)
-			errx(1, "pcap_lookupdev: %s", ebuf);
+		{
+			syslog(LOG_ERR, "pcap_lookupdev: %s",ebuf);
+			exit(EXIT_FAILURE);
+		}
+			//errx(1, "pcap_lookupdev: %s", ebuf);
 	}
 
 	TAILQ_INSERT_TAIL(&interfaces, inter, next);
@@ -130,7 +142,11 @@ interface_new(char *dev)
 	strlcpy(inter->if_ent.intf_name, dev, sizeof(inter->if_ent.intf_name));
 	
 	if (intf_get(intf, &inter->if_ent) < 0)
-		err(1, "%s: intf_get", __func__);
+	{
+		syslog(LOG_ERR, "%s: intf_get", __func__);
+		exit(EXIT_FAILURE);
+	}
+		//err(1, "%s: intf_get", __func__);
 
 	if (inter->if_ent.intf_addr.addr_type != ADDR_TYPE_IP)
 		warn("%s: bad interface configuration: %s is not IP",
@@ -258,11 +274,19 @@ interface_ether_filter(struct interface *inter,
 		"(udp and src port 67 and dst port 68) or (ip %s%s%s))",
 		dst ? "and (" : "", dst ? dst : "", dst ? ")" : "") >= 
 	    sizeof(inter->if_filter))
-		errx(1, "%s: pcap filter exceeds maximum length", __func__);
+	{
+		syslog(LOG_ERR, "%s: pcap filter exceeds maximum length", __func__);
+		exit(EXIT_FAILURE);
+	}
+		//errx(1, "%s: pcap filter exceeds maximum length", __func__);
 
 	inter->if_eth = eth_open(inter->if_ent.intf_name);
 	if (inter->if_eth == NULL)
-		errx(1, "%s: eth_open: %s", inter->if_ent.intf_name);
+	{
+		syslog(LOG_ERR, "%s: eth_open: %s", inter->if_ent.intf_name);
+		exit(EXIT_FAILURE);
+	}
+		//errx(1, "%s: eth_open: %s", inter->if_ent.intf_name);
 
 	snprintf(line, sizeof(line), " and not ether src %s",
 	    addr_ntoa(&inter->if_ent.intf_link_addr));
@@ -282,7 +306,11 @@ interface_regular_filter(struct interface *inter,
 		"ip %s%s%s",
 		dst ? "and (" : "", dst ? dst : "", dst ? ")" : "") >= 
 	    sizeof(inter->if_filter))
-		errx(1, "%s: pcap filter exceeds maximum length", __func__);
+	{
+		syslog(LOG_ERR, "%s: pcap filter exceeds maximum length",__func__);
+		exit(EXIT_FAILURE);
+	}
+		//errx(1, "%s: pcap filter exceeds maximum length", __func__);
 }
 
 void
@@ -340,7 +368,11 @@ interface_init(char *dev, int naddresses, char **addresses)
 	time = interface_dopoll ? 10 : 30;
 	if ((inter->if_pcap = pcap_open_live(inter->if_ent.intf_name,
 		 inter->if_ent.intf_mtu + 40, promisc, time, ebuf)) == NULL)
-		errx(1, "pcap_open_live: %s", ebuf);
+	{
+		syslog(LOG_ERR, "pcap_open_live: %s",ebuf);
+		exit(EXIT_FAILURE);
+	}
+		//errx(1, "pcap_open_live: %s", ebuf);
 
 	/* Get offset to packet data */
 	inter->if_dloff = pcap_dloff(inter->if_pcap);
@@ -351,7 +383,11 @@ interface_init(char *dev, int naddresses, char **addresses)
 
 	if (pcap_compile(inter->if_pcap, &fcode, inter->if_filter, 1, 0) < 0 ||
 	    pcap_setfilter(inter->if_pcap, &fcode) < 0)
-		errx(1, "bad pcap filter: %s", pcap_geterr(inter->if_pcap));
+	{
+		syslog(LOG_ERR, "bad pcap filter: %s", pcap_geterr(inter->if_pcap));
+		exit(EXIT_FAILURE);
+	}
+		//errx(1, "bad pcap filter: %s", pcap_geterr(inter->if_pcap));
 
 #ifdef HAVE_PCAP_GET_SELECTABLE_FD
 	pcap_fd = pcap_get_selectable_fd(inter->if_pcap);
@@ -404,8 +440,12 @@ interface_expandips(int naddresses, char **addresses, int dstonly)
 
 		if (filter[0] != '\0') {
 			if (strlcat(filter, " or ", sizeof(filter)) >= sizeof(filter))
-				errx(1, "%s: too many address for filter", 
-				    __func__);
+			{
+				syslog(LOG_ERR, "%s: too many address for filter",__func__);
+				exit(EXIT_FAILURE);
+			}
+				//errx(1, "%s: too many address for filter",
+				  //  __func__);
 		}
 
 		/* XXX  addr_pton uses DNS and can block */
@@ -423,17 +463,29 @@ interface_expandips(int naddresses, char **addresses, int dstonly)
 
 			first = strsep(&second, "-");
 			if (second == NULL)
-				errx(1, "%s: Invalid network range: %s",
-				    __func__, p);
+			{
+				syslog(LOG_ERR, "%s: Invalid network range: %s",__func__,p);
+				exit(EXIT_FAILURE);
+			}
+				//errx(1, "%s: Invalid network range: %s",
+				  //  __func__, p);
 
 			line[0] = '\0';
 			if (addr_pton(first, &astart) == -1 ||
 			    addr_pton(second, &aend) == -1)
-				errx(1, "%s: bad addresses %s-%s", __func__,
-				    first, second);
+			{
+				syslog(LOG_ERR, "%s: bad addresses %s-%s", __func__, first, second);
+				exit(EXIT_FAILURE);
+			}
+				//errx(1, "%s: bad addresses %s-%s", __func__,
+				  //  first, second);
 			if (addr_cmp(&astart, &aend) >= 0)
-			    errx(1, "%s: inverted range %s-%s", __func__,
-				first, second);
+			{
+				syslog(LOG_ERR, "%s: inverted range %s-%s", __func__, first, second);
+				exit(EXIT_FAILURE);
+			}
+			    //errx(1, "%s: inverted range %s-%s", __func__,
+				//first, second);
 
 			/* Completely, IPv4 specific */
 			istart = ntohl(astart.addr_ip);
@@ -478,8 +530,12 @@ interface_expandips(int naddresses, char **addresses, int dstonly)
 		}
 		
 		if (strlcat(filter, line, sizeof(filter)) >= sizeof(filter))
-			errx(1, "%s: too many address for filter", 
-			    __func__);
+		{
+			syslog(LOG_ERR, "%s: too many address for filter", __func__);
+			exit(EXIT_FAILURE);
+		}
+			//errx(1, "%s: too many address for filter",
+			  //  __func__);
 	}
 
 	return (filter);
@@ -538,7 +594,11 @@ interface_test_insert_and_find(void)
 	struct addr tmp;
 
 	if ((inter = calloc(1, sizeof(struct interface))) == NULL)
-		err(1, "%s: calloc", __func__);
+	{
+		syslog(LOG_ERR, "%s: calloc", __func__);
+		exit(EXIT_FAILURE);
+	}
+		//err(1, "%s: calloc", __func__);
 
 	addr_pton("10.0.0.254", &inter->if_ent.intf_addr);
 	inter->if_addrbits = 24;
@@ -549,9 +609,9 @@ interface_test_insert_and_find(void)
 
 	addr_pton("10.0.0.1", &tmp);
 	if ( inter != interface_find_responsible(&tmp) )
-		errx(1, "interface_find_responsible failed");
+	errx(1, "interface_find_responsible failed");
 	if ( inter != interface_find("fxp0") )
-		errx(1, "interface_find failed");
+	errx(1, "interface_find failed");
 
 	fprintf(stderr, "\t%s: OK\n", __func__);
 }

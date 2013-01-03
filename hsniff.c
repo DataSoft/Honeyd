@@ -264,7 +264,11 @@ tcp_insert(struct tcp_track *con, uint32_t th_seq, void *data, size_t dlen)
 		if (TCP_SEQ_LEQ(th_seq + dlen, seg->seq)) {
 			newseg = calloc(1, sizeof(struct tcp_segment));
 			if (newseg == NULL)
-				err(1, "%s: calloc", __func__);
+			{
+				syslog(LOG_ERR, "%s: calloc", __func__);
+				exit(EXIT_FAILURE);
+			}
+				//err(1, "%s: calloc", __func__);
 			TAILQ_INSERT_BEFORE(seg, newseg, next);
 			return;
 		}
@@ -595,7 +599,11 @@ main(int argc, char *argv[])
 			break;
 		case 'i':
 			if (ninterfaces >= HSNIFF_MAX_INTERFACES)
-				errx(1, "Too many interfaces specified");
+			{
+				syslog(LOG_ERR, "Too many interfaces specified");
+				exit(EXIT_FAILURE);
+			}
+				//errx(1, "Too many interfaces specified");
 			dev[ninterfaces++] = optarg;
 			break;
 		case '0':
@@ -627,25 +635,41 @@ main(int argc, char *argv[])
 		struct addr addr;
 
 		if (addr_pton(*argv, &addr) == -1)
-			errx(1, "invalid address \"%s\"", *argv);
+		{
+			syslog(LOG_ERR, "invalid address \"%s\"", *argv);
+			exit(EXIT_FAILURE);
+		}
+			//errx(1, "invalid address \"%s\"", *argv);
 
 		if (strlen(filter) &&
 		    strlcat(filter, " or ", sizeof(filter)) >= sizeof(filter))
-			errx(1, "too many addresses; filter too long");
+		{
+			syslog(LOG_ERR, "too many addresses; filter too big");
+			exit(EXIT_FAILURE);
+		}
+			//errx(1, "too many addresses; filter too long");
 
 		if (addr.addr_bits == 32) {
 			snprintf(line, sizeof(line), "(not src %s and dst %s)",
 			    addr_ntoa(&addr), addr_ntoa(&addr));
 			if (strlcat(filter, line, sizeof(filter)) >= 
 			    sizeof(filter))
-				errx(1, "too many address; filter too long");
+			{
+				syslog(LOG_ERR, "too many addresses; filter too big");
+				exit(EXIT_FAILURE);
+			}
+				//errx(1, "too many address; filter too long");
 		} else {
 			snprintf(line, sizeof(line),
 			    "(not src net %s and dst net %s)",
 			    addr_ntoa(&addr), addr_ntoa(&addr));
 			if (strlcat(filter, line, sizeof(filter)) >= 
 			    sizeof(filter))
-				errx(1, "too many address; filter too long");
+			{
+				syslog(LOG_ERR, "too many addresses, filter too big");
+				exit(EXIT_FAILURE);
+			}
+				//errx(1, "too many address; filter too long");
 		}
 		argv++;
 		argc--;
@@ -677,7 +701,11 @@ main(int argc, char *argv[])
 	interface_initialize(hsniff_recv_cb);
 
 	if (stats_username == NULL)
-		errx(1, "no username specified for stats reporting");
+	{
+		syslog(LOG_ERR, "no username specified for stats reporting");
+		exit(EXIT_FAILURE);
+	}
+		//errx(1, "no username specified for stats reporting");
 
 	stats_init();
 	stats_init_collect(&stats_dst, stats_port,
@@ -685,7 +713,11 @@ main(int argc, char *argv[])
 
 	/* PF OS fingerprints */
 	if (honeyd_osfp_init(osfp) == -1)
-		errx(1, "reading OS fingerprints failed");
+	{
+		syslog(LOG_ERR, "failed to read OS fingerprints");
+		exit(EXIT_FAILURE);
+	}
+		//errx(1, "reading OS fingerprints failed");
 
 	/* Initialize the specified interfaces */
 	if (ninterfaces == 0)
@@ -698,7 +730,11 @@ main(int argc, char *argv[])
 	/* Create PID file, we might not be able to remove it */
 	unlink(HSNIFF_PIDFILE);
 	if ((fp = fopen(HSNIFF_PIDFILE, "w")) == NULL)
-		err(1, "fopen");
+	{
+		syslog(LOG_ERR, "fopen, failed to open file");
+		exit(EXIT_FAILURE);
+	}
+		//err(1, "fopen");
 
 	/* Start Hsniff in the background if necessary */
 	if (!honeyd_debug) {
@@ -707,7 +743,9 @@ main(int argc, char *argv[])
 		fprintf(stderr, "Hsniff starting as background process\n");
 		if (daemon(1, 0) < 0) {
 			unlink(HSNIFF_PIDFILE);
-			err(1, "daemon");
+			syslog(LOG_ERR, "daemon");
+			exit(EXIT_FAILURE);
+			//err(1, "daemon");
 		}
 	}
 	
@@ -809,6 +847,6 @@ droppriv(uid_t uid, gid_t gid)
 
 	return;
  error:
-	syslog(LOG_WARNING, error, "");
+	syslog(LOG_ERR, "%s: terminated", __func__);
 	errx(1, "%s: terminated", __func__);
 }

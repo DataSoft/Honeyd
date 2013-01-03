@@ -119,10 +119,18 @@ personality_new(const char *name)
 		return (NULL);
 
 	if ((pers = calloc(1, sizeof(struct personality))) == NULL)
-		err(1, "%s: calloc", __FUNCTION__);
+	{
+		syslog(LOG_ERR, "%s: calloc", __func__);
+		exit(EXIT_FAILURE);
+	}
+		//err(1, "%s: calloc", __FUNCTION__);
 
 	if ((pers->name = strdup(name)) == NULL)
-		err(1, "%s: stdup", __FUNCTION__);
+	{
+		syslog(LOG_ERR, "%s: stdrup", __func__);
+		exit(EXIT_FAILURE);
+	}
+		//err(1, "%s: stdup", __FUNCTION__);
 
 	/* Initialize defaults */
 	pers->tstamphz = -1;
@@ -142,7 +150,11 @@ personality_clone(const struct personality *person)
 	struct personality *newperson;
 
 	if ((newperson = malloc(sizeof(struct personality))) == NULL)
-		err(1, "%s: malloc", __FUNCTION__);
+	{
+		syslog(LOG_ERR, "%s: malloc", __func__);
+		exit(EXIT_FAILURE);
+	}
+		//err(1, "%s: malloc", __FUNCTION__);
 
 	memcpy(newperson, person, sizeof(struct personality));
 

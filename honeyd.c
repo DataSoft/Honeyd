@@ -253,7 +253,7 @@ usage(void)
 	    "  --include-dir          Prints out header files directory and exits.\n"
 	    "  --data-dir             Prints out data/plug-in directory and exits.\n");
 	
-	exit(1);
+	exit(EXIT_FAILURE);
 }
 
 /* XXX ches debug */
@@ -422,11 +422,19 @@ honeyd_rrd_start(const char *rrdtool_path)
 	/* Initialize our traffic stats for rrdtool */
 	char *honeyd_traffic_filename = "/tmp/honeyd_traffic.rrd";
 	if ((honeyd_rrd_drv = rrdtool_init(rrdtool_path)) == NULL)
-		errx(1, "%s: cannot start rrdtool", __func__);
+	{
+		syslog(LOG_ERR, "%s: cannot start rrdtool", __func__);
+		exit(EXIT_FAILURE);
+	}
+		//errx(1, "%s: cannot start rrdtool", __func__);
 	if ((honeyd_traffic_db = rrdtool_db_start(honeyd_rrd_drv, 
 		 honeyd_traffic_filename, 60)) == NULL)
-		errx(1, "%s: cannot create rrd db: %s",
-		    __func__, honeyd_traffic_filename);
+	{
+		syslog(LOG_ERR, "%s: cannot create rrd db(database): %s", __func__, honeyd_traffic_filename);
+				exit(EXIT_FAILURE);
+	}
+		//errx(1, "%s: cannot create rrd db: %s",
+		  //  __func__, honeyd_traffic_filename);
 
 	rrdtool_db_datasource(honeyd_traffic_db,
 	    "input", "GAUGE", 600);
@@ -476,18 +484,34 @@ honeyd_init(void)
 	if (setrlimit(RLIMIT_NOFILE, &rl) == -1) {
 		/* Linux does not seem to like this */
 		if (getrlimit(RLIMIT_NOFILE, &rl) == -1)
-			err(1, "getrlimit: NOFILE");
+		{
+			syslog(LOG_ERR, "getrlimit: NOFILE, failed at getting the files resources limit due to file not existing");
+			exit(EXIT_FAILURE);
+		}
+			//err(1, "getrlimit: NOFILE");
 		rl.rlim_cur = rl.rlim_max;
 		if (setrlimit(RLIMIT_NOFILE, &rl) == -1)
-			err(1, "setrlimit: NOFILE");
+		{
+			syslog(LOG_ERR, "setrlimit: NOFILE, failed to set resource limit due to file not existing");
+			exit(EXIT_FAILURE);
+		}
+			//err(1, "setrlimit: NOFILE");
 	}
 #ifdef RLIMIT_NPROC
 	if (getrlimit(RLIMIT_NPROC, &rl) == -1)
-		err(1, "getrlimit: NPROC");
+	{
+		syslog(LOG_ERR, "getrlimit: NPROC, failed at getting the process' resource limit due to process not running");
+		exit(EXIT_FAILURE);
+	}
+		//err(1, "getrlimit: NPROC");
 	rl.rlim_max = rl.rlim_max/2;
 	rl.rlim_cur = rl.rlim_max;
 	if (setrlimit(RLIMIT_NPROC, &rl) == -1)
-		err(1, "setrlimit: NPROC");
+	{
+		syslog(LOG_ERR, "setrlimit: NPROC, failed at setting the process' resource limit due to process not running");
+		exit(EXIT_FAILURE);
+	}
+		//err(1, "setrlimit: NPROC");
 #endif
 
 	stats_network.input_bytes = count_new();
@@ -739,7 +763,9 @@ honeyd_delay_cb(int fd, short which, void *arg)
 		    &ip->ip_dst, IP_ADDR_LEN);
 		router = network_lookup(reverse, &addr);
 		if (router == NULL)
-			errx(1, "%s: bad configuration", __func__);
+			syslog(LOG_ERR, "%s: bad configuration", __func__);
+			exit(EXIT_FAILURE);
+			//errx(1, "%s: bad configuration", __func__);
 
 		/* 
 		 * If we are routing for an external sender, then we
@@ -3244,7 +3270,10 @@ honeyd_signal(int fd, short what, void *arg)
 	{
 		FILE *fp;
 		if ((fp = fopen(templateDump , "w+")) == NULL)
-			warn("Error opening the DHCP IP address dump file");
+		{
+			syslog(LOG_WARNING, "Error opening the DHCP IP address dump file");
+		}
+			//warn("Error opening the DHCP IP address dump file");
 		else
 			fclose(fp);
 	}
@@ -3329,12 +3358,12 @@ main(int argc, char *argv[])
 		perror("");
 		exit(EXIT_FAILURE);
 	}
-
 	fprintf(stderr, "Honeyd V%s Copyright (c) 2002-2007 Niels Provos\n",
 	    VERSION);
 
 	orig_argc = argc;
 	orig_argv = argv;
+	syslog_init(orig_argc, orig_argv);
 	while ((c = getopt_long(argc, argv, "VPTdc:i:p:x:a:u:g:f:t:l:s:0:R:h?",
 				honeyd_long_opts, NULL)) != -1) {
 		char *ep;
@@ -3426,8 +3455,11 @@ main(int argc, char *argv[])
 			honeyd_debug++;
 			break;
 		case 'i':
-			if (ninterfaces >= HONEYD_MAX_INTERFACES)
-				errx(1, "Too many interfaces specified");
+			if (ninterfaces >= HONEYD_MAX_INTERFACES){
+				syslog(LOG_ERR, "Too many interfaces specified");
+				exit(EXIT_FAILURE);
+			}
+				//errx(1, "Too many interfaces specified");
 			dev[ninterfaces++] = optarg;
 			break;
 		case 'f':
@@ -3465,7 +3497,7 @@ main(int argc, char *argv[])
 
 	if (honeyd_show_version) {
 		printf("Honeyd Version %s\n", VERSION);
-		exit(0);
+		exit(EXIT_SUCCESS);
 	}
 	if (honeyd_show_usage) {
 		usage();
@@ -3473,18 +3505,22 @@ main(int argc, char *argv[])
 	}
 	if (honeyd_show_include_dir) {
 		printf("%s\n", PATH_HONEYDINCLUDE);
-		exit(0);
+		exit(EXIT_SUCCESS);
 	}
 	if (honeyd_show_data_dir) {
 		printf("%s\n", PATH_HONEYDDATA);
-		exit(0);
+		exit(EXIT_SUCCESS);
 	}
 
 	argc -= optind;
 	argv += optind;
 
 	if ((honeyd_rand = rand_open()) == NULL)
-		err(1, "rand_open");
+	{
+		syslog(LOG_ERR, "rand_open");
+		exit(EXIT_FAILURE);
+	}
+		//err(1, "rand_open");
 	/* We need reproduceable random numbers for regression testing */
 	if (setrand)
 		rand_set(honeyd_rand, &setrand, sizeof(setrand));
@@ -3498,8 +3534,6 @@ main(int argc, char *argv[])
 
 	/* Three priorities - UI connections always get a better priority */
 	event_priority_init(3);
-
-	syslog_init(orig_argc, orig_argv);
 
 	/* Initalize pool allocator */
 	pool_pkt = pool_init(HONEYD_MTU);
@@ -3526,29 +3560,57 @@ main(int argc, char *argv[])
 
 	/* Xprobe2 fingerprints */
 	if ((fp = fopen(config.xprobe, "r")) == NULL)
-		err(1, "fopen(%s)", config.xprobe);
+	{
+		syslog(LOG_ERR, "fopen(%s)", config.xprobe);
+		exit(EXIT_FAILURE);
+	}
+		//err(1, "fopen(%s)", config.xprobe);
 	if (xprobe_personality_parse(fp) == -1)
-		errx(1, "parsing xprobe personality file failed");
+	{
+		syslog(LOG_ERR, "parsing xprobe personality file failed");
+		exit(EXIT_FAILURE);
+	}
+		//errx(1, "parsing xprobe personality file failed");
 	fclose(fp);
 	
 	/* Association between xprobe and nmap fingerprints */
 	if ((fp = fopen(config.assoc, "r")) == NULL)
-		err(1, "fopen(%s)", config.assoc);
+	{
+		syslog(LOG_ERR, "fopen(%s)", config.assoc);
+		exit(EXIT_FAILURE);
+	}
+		//err(1, "fopen(%s)", config.assoc);
 	if (parse_associations(fp) == -1)
-		errx(1, "parsing associations file failed");
+	{
+		syslog(LOG_ERR, "parsing associations file failed");
+		exit(EXIT_FAILURE);
+	}
+		//errx(1, "parsing associations file failed");
 	fclose(fp);
 
 	/* Nmap fingerprints */
 	if ((fp = fopen(config.pers, "r")) == NULL)
-		err(1, "fopen(%s)", config.pers);
+	{
+		syslog(LOG_ERR, "fopen(%s)", config.pers);
+		exit(EXIT_FAILURE);
+	}
+		//err(1, "fopen(%s)", config.pers);
 	if (personality_parse(fp) == -1)
-		errx(1, "parsing personality file failed");
+	{
+		syslog(LOG_ERR, "parsing personality file failed");
+		exit(EXIT_FAILURE);
+	}
+		//errx(1, "parsing personality file failed");
 	fclose(fp);
 
 
 	/* PF OS fingerprints */
 	if (honeyd_osfp_init(config.osfp) == -1)
-		errx(1, "reading OS fingerprints failed");
+	{
+		syslog(LOG_ERR, "reading OS fingerprints failed");
+		exit(EXIT_FAILURE);
+	}
+		//errx(1, "reading OS fingerprints failed");
 
 	honeyd_init();
 	
@@ -3562,7 +3624,11 @@ main(int argc, char *argv[])
 		 * this call succeeding.
 		 */
 		if (!honeyd_verify_config)
-			err(1, "ip_open");
+		{
+			syslog(LOG_ERR, "ip_open");
+			exit(EXIT_FAILURE);
+		}
+			//err(1, "ip_open");
 	}
 
 	if (honeyd_verify_config) {
@@ -3601,7 +3667,11 @@ main(int argc, char *argv[])
 
 	/* Just verify the configuration - exit with success */
 	if (honeyd_verify_config)
-		errx(0, "parsing configuration file successful");
+	{
+		syslog(LOG_ERR, "parsing configuration file successful");
+		exit(EXIT_FAILURE);
+				//errx(0, "parsing configuration file successful");
+	}
 
 	//Start sending DHCP discoveries that have been queue'd up
 	dhcp_send_discover();
@@ -3627,16 +3697,21 @@ main(int argc, char *argv[])
 	/* Create PID file, we might not be able to remove it */
 	unlink(PIDFILE);
 	if ((fp = fopen(PIDFILE, "w")) == NULL)
-		err(1, "fopen");
+		{
+		syslog(LOG_ERR, "fopen");
+		exit(EXIT_FAILURE);
+		//err(1, "fopen");
+		}
 
 	/* Start Honeyd in the background if necessary */
 	if (!honeyd_debug) {
 		setlogmask(LOG_UPTO(LOG_INFO));
-
 		fprintf(stderr, "Honeyd starting as background process\n");
 		if (daemon(1, 0) < 0) {
 			unlink(PIDFILE);
-			err(1, "daemon");
+			syslog(LOG_ERR, "daemon");
+			exit(EXIT_FAILURE);
+			//err(1, "daemon");
 		}
 	}
 	
@@ -3661,7 +3736,8 @@ main(int argc, char *argv[])
 	{
 		FILE *fp;
 		if ((fp = fopen(templateDump , "w+")) == NULL)
-			warn("Error opening the DHCP IP address dump file");
+			syslog(LOG_WARNING, "Error opening the DHCP IP address dump file");
+			//warn("Error opening the DHCP IP address dump file");
 		else
 			fclose(fp);
 	}

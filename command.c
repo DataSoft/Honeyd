@@ -319,7 +319,7 @@ cmd_droppriv(uid_t uid, gid_t gid)
 
 	return;
  error:
-	syslog(LOG_WARNING, error, "");
+	syslog(LOG_ERR, "%s: terminated", __func__);
 	errx(1, "%s: terminated", __func__);
 }
 
@@ -348,7 +348,11 @@ cmd_setpriv(struct template *tmpl)
 	/* Raising file descriptor limits */
 	rl.rlim_cur = rl.rlim_max = nofiles;
 	if (setrlimit(RLIMIT_NOFILE, &rl) == -1)
-		err(1, "setrlimit: %d", nofiles);
+	{
+		syslog(LOG_ERR, "setrlimit: %d, failed to set resource limit", nofiles);
+		exit(EXIT_FAILURE);
+	}
+		//err(1, "setrlimit: %d", nofiles);
 
 	return (0);
 }
@@ -391,12 +395,24 @@ cmd_fork(struct tuple *hdr, struct command *cmd, struct template *tmpl,
 		/* Child */
 		TRACE_RESET(pair[0], close(pair[0]));
 		if (dup2(pair[1], fileno(stdout)) == -1)
-			err(1, "%s: dup2", __func__);
+		{
+			syslog(LOG_ERR, "dup2 failed to copy descriptor");
+			exit(EXIT_FAILURE);
+		}
+			//err(1, "%s: dup2", __func__);
 		if (dup2(pair[1], fileno(stdin)) == -1)
-			err(1, "%s: dup2", __func__);
+		{
+			syslog(LOG_ERR, "%s: dup2", __func__);
+			exit(EXIT_FAILURE);
+		}
+			//err(1, "%s: dup2", __func__);
 		TRACE_RESET(pair[0], close(perr[0]));
 		if (dup2(perr[1], fileno(stderr)) == -1)
-			err(1, "%s: dup2", __func__);
+		{
+			syslog(LOG_ERR, "%s: dup2", __func__);
+			exit(EXIT_FAILURE);
+		}
+			//err(1, "%s: dup2", __func__);
 
 		TRACE_RESET(pair[1], close(pair[1]));
 		TRACE_RESET(perr[1], close(perr[1]));
@@ -404,7 +420,11 @@ cmd_fork(struct tuple *hdr, struct command *cmd, struct template *tmpl,
 		cmd_environment(tmpl, hdr);
 
 		if (execvp(execcmd, argv) == -1)
-			err(1, "%s: execv(%s)", __func__, execcmd);
+		{
+			syslog(LOG_ERR, "%s: execv(%s)", __func__, execcmd);
+			exit(EXIT_FAILURE);
+		}
+			//err(1, "%s: execv(%s)", __func__, execcmd);
 
 		/* NOT REACHED */
 	}
@@ -528,13 +548,25 @@ cmd_subsystem(struct template *tmpl, struct subsystem *sub,
 		TRACE_RESET(pair[0], close(pair[0]));
 		/* Set the communication fd */
 		if ((magic_fd = dup(pair[1])) == -1)
-			err(1, "%s: dup(%d): no magic", __func__, pair[1]);
+		{
+			syslog(LOG_ERR, "%s: dup(%d): no magic failed to duplicate the pair", __func__, pair[1]);
+			exit(EXIT_FAILURE);
+		}
+			//err(1, "%s: dup(%d): no magic", __func__, pair[1]);
 		snprintf(magic_buf, sizeof(magic_buf), "%d", magic_fd);
 		setenv(SUBSYSTEM_MAGICFD, magic_buf, 1);
 		if (dup2(fileno(stderr), fileno(stdout)) == -1)
-			err(1, "%s: dup2", __func__);
+		{
+			syslog(LOG_ERR, "%s: dup2", __func__);
+			exit(EXIT_FAILURE);
+		}
+			//err(1, "%s: dup2", __func__);
 		if (dup2(fileno(stderr), fileno(stdin)) == -1)
-			err(1, "%s: dup2", __func__);
+		{
+			syslog(LOG_ERR, "%s: dup2", __func__);
+			exit(EXIT_FAILURE);
+		}
+			//err(1, "%s: dup2", __func__);
 
 		TRACE_RESET(pair[1], close(pair[1]));
 
@@ -542,10 +574,18 @@ cmd_subsystem(struct template *tmpl, struct subsystem *sub,
 
 		/* Setup the wrapper library */
 		if (setenv("LD_PRELOAD", PATH_HONEYDLIB"/libhoneyd.so", 1) == -1)
-			err(1, "%s: setenv", __func__);
+		{
+			syslog(LOG_ERR, "%s: setenv", __func__);
+			exit(EXIT_FAILURE);
+		}
+			//err(1, "%s: setenv", __func__);
 
 		if (execv(execcmd, argv) == -1)
-			err(1, "%s: execv(%s)", __func__, execcmd);
+		{
+			syslog(LOG_ERR, "%s: execv(%s)", __func__, execcmd);
+			exit(EXIT_FAILURE);
+		}
+			//err(1, "%s: execv(%s)", __func__, execcmd);
 
 		/* NOT REACHED */
 	}
