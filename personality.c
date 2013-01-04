@@ -2356,6 +2356,12 @@ personality_parse(FILE *fin)
 		p2 = p;
 		strsep(&p2, "#\r\n");
 
+		if (CMP(p, MATCHPOINTS) == 0) {
+			pers = NULL;
+			ignore = 1;
+			continue;
+		}
+
 		if (CMP(p, FINGERPRINT) == 0) {
 			p += sizeof(FINGERPRINT) - 1;
 			p += strspn(p, ": \t");
