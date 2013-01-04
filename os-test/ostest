@@ -93,8 +93,8 @@ create test\n
 set test personality \"$LINE\"\n
 set test uptime 1728650\n
 set test maxfds 35\n
-add test tcp port 8080 open\n
-add test udp port 5353 open\n
+add test tcp port 80 open\n
+add test udp port 139 open\n
 set test ethernet \"dell\"\n
 set test default tcp action closed\n
 set test default udp action closed\n
@@ -113,7 +113,7 @@ bind \"$VMIP\" test\n"
 
 		sleep 2
 			
-		nmap -O --fuzzy $VMIP &> "results/nmap.temp"
+		nmap -F -O --fuzzy $VMIP &> "results/nmap.temp"
 
 		killall honeyd
 
