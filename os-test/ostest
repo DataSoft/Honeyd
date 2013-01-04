@@ -108,7 +108,7 @@ bind \"$VMIP\" test\n"
 		#cat test.config
 	
 		echo -e "START PERSONALITY $PERSONALITY \n" >> results/honeyd.txt
-		honeyd -i $IFNAME -f $configFile &>> results/honeyd.txt
+		honeyd -p $FILENAME -i $IFNAME -f $configFile &>> results/honeyd.txt
 		echo -e "STOP PERSONALITY $PERSONALITY \n" >> results/honeyd.txt
 
 		sleep 2
