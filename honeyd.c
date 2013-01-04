@@ -132,7 +132,8 @@ struct config config = {
 	PATH_HONEYDDATA "/nmap-os-db",
 	PATH_HONEYDDATA "/xprobe2.conf",
 	PATH_HONEYDDATA "/nmap.assoc",
-	PATH_HONEYDDATA "/pf.os"
+	PATH_HONEYDDATA "/pf.os",
+	PATH_HONEYDDATA "/nmap-mac-prefixes"//add the install path for the file
 };
 
 struct stats_network stats_network = {
@@ -216,6 +217,7 @@ static struct option honeyd_long_opts[] = {
 	{"verify-config", 0, &honeyd_verify_config, 1},
 	{"ignore-parse-errors", 0, &honeyd_ignore_parse_errors, 1},
 	{"fix-webserver-permissions", 0, &honeyd_webserver_fix_permissions, 1},
+	{"mac-address",0,0,1},
 	{0, 0, 0, 0}
 };
 
@@ -237,6 +239,7 @@ usage(void)
 	    "  -0 osfingerprints      Read pf-style OS fingerprints from file.\n"
 	    "  -u uid		  Set the uid Honeyd should run as.\n"
 	    "  -g gid		  Set the gid Honeyd should run as.\n"
+		"  -m file				  Read nmap-mac-prefixes from file. \n"
 	    "  -f configfile          Read configuration from file.\n"
 	    "  -c host:port:name:pass Reports starts to collector.\n"
 	    "  --webserver-address=address Address on which webserver listens.\n"
@@ -3355,6 +3358,7 @@ main(int argc, char *argv[])
 	if(chdir(PATH_HONEYDDATA) == -1)
 	{
 		printf("ERROR: Could not find path PATH_HONEYDDATA: %s\n", PATH_HONEYDDATA);
+		syslog(LOG_ERR,"ERROR: Could not find path PATH_HONEYDDATA: %s\n", PATH_HONEYDDATA);
 		perror("");
 		exit(EXIT_FAILURE);
 	}
@@ -3364,7 +3368,7 @@ main(int argc, char *argv[])
 	orig_argc = argc;
 	orig_argv = argv;
 	syslog_init(orig_argc, orig_argv);
-	while ((c = getopt_long(argc, argv, "VPTdc:i:p:x:a:u:g:f:t:l:s:0:R:h?",
+	while ((c = getopt_long(argc, argv, "VPTdc:i:p:x:a:u:g:f:t:l:s:0:R:m:h?",
 				honeyd_long_opts, NULL)) != -1) {
 		char *ep;
 		switch (c) {
@@ -3486,6 +3490,11 @@ main(int argc, char *argv[])
 		case '0':
 			config.osfp = optarg;
 			break;
+		case 'm':
+			config.nmapMac = optarg;
+			printf("nmac: %s\n",config.nmapMac);
+
+			break;
 		case 0:
 			/* long option handled -- skip this one. */
 			break;
@@ -3603,7 +3612,6 @@ main(int argc, char *argv[])
 		//errx(1, "parsing personality file failed");
 	fclose(fp);
 
-
 	/* PF OS fingerprints */
 	if (honeyd_osfp_init(config.osfp) == -1)
 	{
@@ -3638,14 +3646,6 @@ main(int argc, char *argv[])
 		interface_verify_config = 1;
 	}
 
-	/* Initialize the specified interfaces */
-	if (ninterfaces == 0)
-		interface_init(NULL, argc, argc ? argv : NULL);
-	else {
-		for (i = 0; i < ninterfaces; i++)
-			interface_init(dev[i], argc, argc ? argv : NULL);
-	}
-
 #ifdef HAVE_PYTHON
 	/* Python support must be started before reading the configuration. */
 	pyextend_init();
@@ -3657,9 +3657,36 @@ main(int argc, char *argv[])
 			honeyd_webserver_port,
 			honeyd_webserver_root);
 #endif
-
 	/* Reads in the ethernet codes and indexes them for use in config */
-	ethernetcode_init();
+		//ethernetcode_init();
+
+		//nmap mac addresses are read in here
+	//they did enter the -m flag and entered a path for the ethernet codes and indexes
+
+			fp = fopen(config.nmapMac, "r");
+			printf("%s",fp);
+			if (fp != NULL){
+				/* Reads in the ethernet codes and indexes them for use in config */
+					ethernetcode_init(fp);
+			}else{
+				syslog(LOG_ERR,"Can't open the nmap-mac-address file");
+				exit(EXIT_FAILURE);
+				/* Reads in the ethernet codes and indexes them for use in config */
+			}
+
+
+
+
+	/* Initialize the specified interfaces */
+	if (ninterfaces == 0)
+		interface_init(NULL, argc, argc ? argv : NULL);
+	else {
+		for (i = 0; i < ninterfaces; i++)
+			interface_init(dev[i], argc, argc ? argv : NULL);
+	}
+
+
+
 
 	/* Read main configuration file */
 	if (config.config != NULL)
@@ -3750,7 +3777,6 @@ main(int argc, char *argv[])
 		syslog(LOG_INFO, "Internal webserver has been disabled.");
 #endif
 
-	/* Setup signal handler */
 	if (signal(SIGPIPE, SIG_IGN) == SIG_ERR) {
 		perror("signal");
 		return (-1);

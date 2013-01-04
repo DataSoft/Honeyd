@@ -161,7 +161,7 @@ ethernetcode_init(void)
 }
 */
 
-void ethernetcode_init(void){//16080 lines counting the 5 comments at the top
+void ethernetcode_init(FILE *in_file){//16080 lines counting the 5 comments at the top
 	char s[300];//string that contains the current line being read
 	char waste[300];//string used to read first five lines of the text file
 	char c;
@@ -170,12 +170,13 @@ void ethernetcode_init(void){//16080 lines counting the 5 comments at the top
 	int counter = 0;
 	int numOfLine = 0;
 	uint32_t prefix;
-	FILE *in_file  = fopen("/usr/share/nova/sharedFiles/nmap-mac-prefixes", "r"); // read only
+	//FILE *in_file  = fopen("/usr/share/nova/sharedFiles/nmap-mac-prefixes", "r"); // read only
 
 	if (!in_file)//file pointer is null
 	{
-		printf("File can't be found\n");
-		exit(-1);
+		printf("nmap-mac-prefixes File can't be found\n");
+		syslog(LOG_ERR, "nmap-mac-prefixes file can't be found \n");
+		exit(EXIT_FAILURE);
 	}
 
 	while(fgets( s, 300, in_file ) != NULL)
@@ -193,6 +194,8 @@ void ethernetcode_init(void){//16080 lines counting the 5 comments at the top
 	else
 	{
 		printf("nmap-mac-prefixes file cannot be parsed.");
+		syslog(LOG_ERR, "nmap-mac-prefixes file can't be parsed \n");
+		fclose(in_file);
 		exit(EXIT_FAILURE);
 	}
 	rewind(in_file);//go back to the beginning of the file
@@ -203,7 +206,7 @@ void ethernetcode_init(void){//16080 lines counting the 5 comments at the top
 		fgets( waste, 300, in_file );
 		//skips through first 5 garbage lines
 		counter++;
-	}while(counter < 5);
+	}while(waste[0] == '#');
 
 
 	SPLAY_INIT(&etherroot);
@@ -436,7 +439,8 @@ ethernetcode_test(void)
 void
 ethernet_test(void)
 {
-	ethernetcode_init();
+	FILE *in_file  = fopen("/usr/share/honeyd/nmap-mac-prefixes", "r"); // read only
+	ethernetcode_init(in_file);
 
 	ethernetcode_test();
 }

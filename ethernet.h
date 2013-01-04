@@ -33,7 +33,7 @@
 #ifndef _ETHERNET_
 #define _ETHERNET_
 #include <stdint.h>
-void ethernetcode_init(void);
+void ethernetcode_init(FILE *);
 uint32_t ethernetcode_find_prefix(char *, int);
 struct addr *ethernetcode_make_address(char *);
 struct addr *ethernetcode_clone(struct addr *);

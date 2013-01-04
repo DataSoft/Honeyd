@@ -312,6 +312,15 @@ ip_personality(struct template *tmpl, uint16_t *pid, enum ipid_protocol proto)
 			*pid = *ipid_cached;
 			break;
 		}
+		case(ID_NONE):
+		{
+			//need to know what to implement for this section
+			break;
+		}
+		default:
+		{
+			break;
+		}
 	}
 	//TODO this is a fringe case that can sometimes cause bad IP ID results particularly when TI = BI, II = BI and SS = O
 	if((proto == ICMP) && !person->ipid_shared_sequence)
