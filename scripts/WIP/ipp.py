@@ -143,8 +143,14 @@ class IPPResponseTCP :
     # To get chunk size, we're going to have to generate the IPP header 
     # and determine how many bytes there are
     ipp = self.generateIPP()
-    stringifylength = binascii.unhexlify("{0:08X}".format(int(hex(len(ipp) / 2), 16)))
-    http.append(stringifylength)
+    # which happens here. But, there's a twist: for some reason, the
+    # length given in the header is given as a hex string, not just a 
+    # hex value -- i.e. it'll be 0x0041 but they'll want "30303431" 
+    stringifylength = "{0:08X}".format(int(hex(len(ipp) / 2), 16))
+    chunklength = ""
+    for c in stringifylength :
+        chunklength += "".join("{0:02X}".format(int(hex(ord(c)), 16)))
+    http.append(chunklength)
     http.append(httprn)
     http.append(ipp)
     http.append(httprn)
@@ -157,7 +163,7 @@ class IPPResponseTCP :
     """Generates the hex for the response (WIP)."""
     if self.statusCode in STATUS_CODES_SUCCESS :
       return STATUS_CODES_SUCCESS[self.statusCode]
-    elif self.statusCode in STATUS_CODES_CLIENT_ERROR :
+    elif self.statusCode in STATUS_CODES_CLIENT_ERROR or self.statusCode in STATUS_CODES_SERVER_ERROR :
       packet = []
       """All of the IPP Response REQUIRED attributes are constructed here"""
       packet.append("{0:02X}".format(self.version[0]))
@@ -186,8 +192,8 @@ class IPPResponseTCP :
         packet.append("{0:02X}".format(self.tagvalues["keyword"])) # Tag
         packet.append("{0:04X}".format(int(hex(len("printer-state-reasons")), 16))) # Name length
         packet.append("printer-state-reasons".encode('hex')) # Name
-        packet.append("{0:04X}".format(int("0x0004", 16))) # Value length
-        packet.append("{0:08X}".format(int("0x00000000", 16))) # Value
+        packet.append("{0:04X}".format(int(hex(len("none")), 16))) # Value length
+        packet.append("none".encode('hex')) # Value
         packet.append("{0:02X}".format(self.tagvalues["mimeMediaType"])) # Tag
         packet.append("{0:04X}".format(int(hex(len("document-format-supported")), 16))) # Name length
         packet.append("document-format-supported".encode('hex')) # Name
@@ -197,11 +203,12 @@ class IPPResponseTCP :
         packet.append("{0:04X}".format(int(hex(len("printer-is-accepting-jobs")), 16))) # Name length
         packet.append("printer-is-accepting-jobs".encode('hex')) # Name
         packet.append("{0:04X}".format(int("0x0001", 16))) # Value length
-        packet.append("{0:02X}".format(int("1", 16))) # Value
+        if self.statusCode == "0x0506" : 
+          packet.append("{0:02X}".format(int("0", 16))) # Value
+        else :
+          packet.append("{0:02X}".format(int("1", 16)))
       packet.append("{0:02X}".format(self.tagvalues["end-of-attributes-tag"]))
       return "".join(packet)
-    elif self.statusCode in STATUS_CODES_SERVER_ERROR :
-      return STATUS_CODES_SERVER_ERROR[self.statusCode]
     else :
       return "STATUS CODE NOT RECOGNIZED"
 
