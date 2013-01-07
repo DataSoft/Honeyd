@@ -268,7 +268,6 @@ tcp_insert(struct tcp_track *con, uint32_t th_seq, void *data, size_t dlen)
 				syslog(LOG_ERR, "%s: calloc", __func__);
 				exit(EXIT_FAILURE);
 			}
-				//err(1, "%s: calloc", __func__);
 			TAILQ_INSERT_BEFORE(seg, newseg, next);
 			return;
 		}
@@ -639,7 +638,6 @@ main(int argc, char *argv[])
 			syslog(LOG_ERR, "invalid address \"%s\"", *argv);
 			exit(EXIT_FAILURE);
 		}
-			//errx(1, "invalid address \"%s\"", *argv);
 
 		if (strlen(filter) &&
 		    strlcat(filter, " or ", sizeof(filter)) >= sizeof(filter))
@@ -647,7 +645,6 @@ main(int argc, char *argv[])
 			syslog(LOG_ERR, "too many addresses; filter too big");
 			exit(EXIT_FAILURE);
 		}
-			//errx(1, "too many addresses; filter too long");
 
 		if (addr.addr_bits == 32) {
 			snprintf(line, sizeof(line), "(not src %s and dst %s)",
@@ -658,7 +655,6 @@ main(int argc, char *argv[])
 				syslog(LOG_ERR, "too many addresses; filter too big");
 				exit(EXIT_FAILURE);
 			}
-				//errx(1, "too many address; filter too long");
 		} else {
 			snprintf(line, sizeof(line),
 			    "(not src net %s and dst net %s)",
@@ -669,7 +665,6 @@ main(int argc, char *argv[])
 				syslog(LOG_ERR, "too many addresses, filter too big");
 				exit(EXIT_FAILURE);
 			}
-				//errx(1, "too many address; filter too long");
 		}
 		argv++;
 		argc--;
@@ -849,5 +844,4 @@ droppriv(uid_t uid, gid_t gid)
  error:
 	syslog(LOG_ERR, "%s: terminated", __func__);
 	exit(EXIT_FAILURE);
-	//errx(1, "%s: terminated", __func__);
 }

@@ -145,7 +145,6 @@ honeyd_logdate(void)
 		syslog(LOG_ERR, "%s: gettimeofday, failed to get time of day", __func__);
 		exit(EXIT_FAILURE);
 	}
-		//err(1, "%s: gettimeofday", __func__);
 	seconds = tv.tv_sec;
 	
 	/* ctime returns 26-character string */

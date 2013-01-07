@@ -243,7 +243,6 @@ arp_find(struct addr *addr)
 	} else {
 		syslog(LOG_ERR, "%s: lookup for unsupported address type", __func__);
 		exit(EXIT_FAILURE);
-		//errx(1, "%s: lookup for unsupported address type", __func__);
 	}
 
 	return (res);

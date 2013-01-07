@@ -144,10 +144,9 @@ subsystem_insert_template(struct subsystem *sub, struct template *tmpl)
 
 	if ((cont = calloc(1, sizeof(struct template_container))) == NULL)
 	{
-		syslog(LOG_ERR, "%s: calloc");
+		syslog(LOG_ERR, "%s: calloc",__func__);
 		exit(EXIT_FAILURE);
 	}
-		//err(1, "%s: calloc");
 	cont->tmpl = template_ref(tmpl);
 
 	TAILQ_INSERT_TAIL(&sub->templates, cont, next);
@@ -396,8 +395,6 @@ subsystem_cmd_listen(int fd,
 				syslog(LOG_ERR, "%s: no proto %d port %d", __func__, proto, port);
 				exit(EXIT_FAILURE);
 			}
-				//errx(1, "%s: no proto %d port %d",
-				  //  __func__, proto, port);
 			if (sub_port->sub == NULL) {
 				syslog(LOG_DEBUG,
 				    "Subsystem %s fails to listen on %s:%d",
@@ -562,8 +559,6 @@ subsystem_read(int fd, short what, void *arg)
 				syslog(LOG_ERR, "%s: source address %s not found", __func__, asrc);
 				exit(EXIT_FAILURE);
 			}
-				//errx(1, "%s: source address %s not found",
-				  //  __func__, asrc);
 		} else {
 			cont = SPLAY_ROOT(&sub->root);
 			tmpl = cont->tmpl;

@@ -55,14 +55,12 @@ pool_init(size_t size)
 		syslog(LOG_ERR, "%s: object size too large for pool", __func__);
 		exit(EXIT_FAILURE);
 	}
-		//errx(1, "%s: object size too large for pool", __func__);
 
 	if ((pool = calloc(1, sizeof(struct pool))) == NULL)
 	{
 		syslog(LOG_ERR, "%s: calloc", __func__);
 		exit(EXIT_FAILURE);
 	}
-		//err(1, "%s: calloc", __func__);
 
 	SLIST_INIT(&pool->entries);
 	pool->size = size;
@@ -82,7 +80,6 @@ pool_alloc_size(struct pool *pool, size_t size)
 			syslog(LOG_ERR, "%s: malloc", __func__);
 			exit(EXIT_FAILURE);
 		}
-			//err(1, "%s: malloc", __func__);
 		
 		entry->data = (void *)entry + sizeof(struct pool_entry);;
 		entry->size = size;
@@ -96,7 +93,6 @@ pool_alloc_size(struct pool *pool, size_t size)
 			syslog(LOG_ERR, "%s: malloc", __func__);
 			exit(EXIT_FAILURE);
 		}
-			//err(1, "%s: malloc", __func__);
 
 		size = pool->size;
 		max = POOL_PAGE_SIZE / (sizeof(struct pool_entry) + size);

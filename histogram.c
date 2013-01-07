@@ -113,7 +113,6 @@ count_new(void)
 		syslog(LOG_ERR, "%s: calloc, failed to allocate count", __func__);
 		exit(EXIT_FAILURE);
 	}
-		//err(1, "%s: calloc", __func__);
 
 	count_get_time(&count->tv_seconds);
 
@@ -235,7 +234,6 @@ count_internal_increment(struct count *count, struct timeval *tv, int delta)
 			syslog(LOG_ERR, "%s: calloc failed to allocate entry", __func__);
 			exit(EXIT_FAILURE);
 		}
-			//err(1, "%s: calloc", __func__);
 		entry->count = delta;
 		TAILQ_INSERT_HEAD(&count->seconds, entry, next);
 	}

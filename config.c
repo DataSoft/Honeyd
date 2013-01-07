@@ -133,15 +133,12 @@ config_read(char *config)
 		syslog(LOG_ERR, "fopen(%s)",config);
 		exit(EXIT_FAILURE);
 	}
-		//err(1, "fopen(%s)", config);
 	if (parse_configuration(fp, config) == -1 &&
 	    !honeyd_ignore_parse_errors)
 	{
-		syslog(LOG_ERR, "parsing configuration file failed");
+		syslog(LOG_ERR, "%s: parsing configuration file failed",__func__);
 		exit(EXIT_FAILURE);
 	}
-		//errx(1, "parsing configuration file failed");
-	//use this to test whether the error goes to the syslog or not
 	fclose(fp);
 }
 
@@ -201,10 +198,9 @@ template_list_glob(struct evbuffer *buffer, const char *pattern)
 
 	if ((tmp = evbuffer_new()) == NULL)
 		{
-		syslog(LOG_ERR, "%s: malloc");
+		syslog(LOG_ERR, "%s: malloc",__func__);
 		exit(EXIT_FAILURE);
 		}
-		//err(1, "%s: malloc");
 
 	SPLAY_FOREACH(tmpl, templtree, &templates) {
 		/* Ignore it if it does not match */
@@ -282,7 +278,6 @@ template_create(const char *name)
 			syslog(LOG_ERR, "%s: calloc",__func__);
 			exit(EXIT_FAILURE);
 		}
-		//err(1, "%s: calloc", __func__);
 
 	tmpl->name = strdup(name);
 
@@ -434,7 +429,6 @@ port_action_clone(struct action *dst, const struct action *src)
 			syslog(LOG_ERR, "%s: strdup",__func__);
 			exit(EXIT_FAILURE);
 		}
-			//err(1, "%s: strdup", __func__);
 	}
 
 	if (src->aitop != NULL) {
@@ -450,7 +444,6 @@ port_action_clone(struct action *dst, const struct action *src)
 			syslog(LOG_ERR, "%s: getnameinfo", __func__);
 			exit(EXIT_FAILURE);
 		}
-			//err(1, "%s: getnameinfo", __func__);
 		nport = atoi(port);
 		dst->aitop = cmd_proxy_getinfo(addr, ai->ai_socktype, nport);
 		if (dst->aitop == NULL)
@@ -458,7 +451,6 @@ port_action_clone(struct action *dst, const struct action *src)
 			syslog(LOG_ERR, "%s: cmd_proxy_getinfo failed", __func__);
 			exit(EXIT_FAILURE);
 		}
-			//errx(1, "%s: cmd_proxy_getinfo failed", __func__);
 	}
 }
 
@@ -533,7 +525,6 @@ port_insert(struct template *tmpl, int proto, int number,
 		syslog(LOG_ERR, "%s: calloc", __func__);
 		exit(EXIT_FAILURE);
 	}
-		//err(1, "%s: calloc", __func__);
 
 	TAILQ_INIT(&port->pending);
 	port->sub = NULL;
@@ -583,7 +574,6 @@ template_insert_subsystem(struct template *tmpl, struct subsystem *sub)
 		syslog(LOG_ERR, "%s: malloc", __func__);
 		exit(EXIT_FAILURE);
 	}
-		//err(1, "%s: malloc", __func__);
 
 	container->sub = sub;
 	TAILQ_INSERT_TAIL(&tmpl->subsystems, container, next);
@@ -603,11 +593,9 @@ template_remove_subsystem(struct template *tmpl, struct subsystem *sub)
 
 	if (container == NULL)
 	{
-		syslog(LOG_ERR, "%s: could not remove subsystem %p from %s", sub, tmpl->name);
+		syslog(LOG_ERR, "%s: could not remove subsystem %p from %s",__func__, sub, tmpl->name);
 		exit(EXIT_FAILURE);
 	}
-		//errx(1, "%s: could not remove subsystem %p from %s",
-		   // sub, tmpl->name);
 
 	TAILQ_REMOVE(&tmpl->subsystems, container, next);
 
@@ -623,10 +611,9 @@ template_post_arp(struct template *tmpl, struct addr *ipaddr)
 	req = arp_new(tmpl->inter, NULL, NULL, ipaddr, tmpl->ethernet_addr);
 	if (req == NULL)
 	{
-		syslog(LOG_ERR, "%s: cannot create arp entry");
+		syslog(LOG_ERR, "%s: cannot create arp entry",__func__);
 		exit(EXIT_FAILURE);
 	}
-		//errx(1, "%s: cannot create arp entry");
 		
 	req->flags |= ARP_INTERNAL;
 	req->owner = tmpl;
@@ -781,14 +768,12 @@ template_subsystem(struct template *tmpl, char *subsystem, int flags)
 		syslog(LOG_ERR, "%s: calloc", __func__);
 		exit(EXIT_FAILURE);
 	}
-		//err(1, "%s: calloc", __func__);
 
 	if ((sub->cmdstring = strdup(subsystem)) == NULL)
 	{
 		syslog(LOG_ERR, "%s: strdup", __func__);
 		exit(EXIT_FAILURE);
 	}
-		//err(1, "%s: strdup", __func__);
 
 	/* Initializes subsystem data structures */
 	TAILQ_INIT(&sub->ports);
@@ -849,10 +834,9 @@ template_subsystem_list_glob(struct evbuffer *buffer, const char *pattern)
 
 	if ((tmp = evbuffer_new()) == NULL)
 	{
-		syslog(LOG_ERR, "%s: malloc");
+		syslog(LOG_ERR, "%s: malloc",__func__);
 		exit(EXIT_FAILURE);
 	}
-		//err(1, "%s: malloc");
 
 	TAILQ_FOREACH(sub, &subsystems, next) {
 		/* Ignore it if it does not match */
@@ -922,7 +906,6 @@ template_insert_dynamic(struct template *tmpl, struct template *child,
 		syslog(LOG_ERR, "%s: calloc", __func__);
 		exit(EXIT_FAILURE);
 	}
-		//err(1, "%s: calloc", __func__);
 
 	if (condition != NULL)
 		*cond = *condition;
@@ -949,7 +932,6 @@ template_insert_dynamic(struct template *tmpl, struct template *child,
 		syslog(LOG_ERR, "%s: malloc", __func__);
 		exit(EXIT_FAILURE);
 	}
-		//err(1, "%s: malloc", __func__);
 
 	memcpy(cond->match_arg, condition->match_arg, cond->match_arglen);
 
@@ -969,7 +951,6 @@ template_get_dhcp_address(struct addr *addr)
 		syslog(LOG_ERR, "%s: out of temporary IP addresses", __func__);
 		exit(EXIT_FAILURE);
 	}
-		//errx(1, "%s: out of temporary IP addresses", __func__);
 
 	return (addr_aton(address, addr));
 }
@@ -1012,11 +993,9 @@ template_subsystem_start(struct template *tmpl, struct subsystem *sub)
 	argv[2] = line;
 	if (cmd_subsystem(tmpl, sub, "/bin/sh", argv) == -1)
 	{
-		syslog(LOG_ERR, "%s: can not start subsystem \"%s\" for %s",sub->cmdstring,name);
+		syslog(LOG_ERR, "%s: can not start subsystem \"%s\" for %s",__func__ ,sub->cmdstring, name);
 		exit(EXIT_FAILURE);
 	}
-		//errx(1, "%s: can not start subsystem \"%s\" for %s",
-		  //  sub->cmdstring, name);
 
 }
 
@@ -1126,7 +1105,6 @@ template_test_parse_error(char *line, struct evbuffer *evbuf)
 	p[off - 1] = '\0';
 	syslog(LOG_ERR, "parse_line \"%s\" failed: %s",line,p);
 	exit(EXIT_FAILURE);
-	//errx(1, "parse_line \"%s\" failed: %s", line, p);
 }
 
 #define MAKE_CONFIG(x)	do { \

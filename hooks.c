@@ -114,7 +114,6 @@ hooks_init(void)
 			syslog(LOG_ERR, "%s: malloc, failed to allocate the array of hook tailqueues", __func__);
 			exit(EXIT_FAILURE);
 		}
-			//err(1, "%s: malloc", __func__);
 	}
 
 	for (i = 0; i < HD_HOOKS_LAST; i++)

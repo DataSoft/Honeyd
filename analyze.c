@@ -109,10 +109,9 @@ port_key_extract(struct keycount *keycount, void **pkey, size_t *pkeylen)
 {
 	if ((*pkey = calloc(1, sizeof(uint16_t))) == NULL)
 	{
-		syslog(LOG_ERR, "%s: calloc");
+		syslog(LOG_ERR, "calloc");
 		exit(EXIT_FAILURE);
 	}
-		//err(1, "%s: calloc");
 	memcpy(*pkey, keycount->key, sizeof(uint16_t));
 	*pkeylen = sizeof(uint16_t);
 }
@@ -130,10 +129,9 @@ spammer_key_extract(struct keycount *keycount, void **pkey, size_t *pkeylen)
 {
 	if ((*pkey = calloc(1, keycount->keylen)) == NULL)
 	{
-		syslog(LOG_ERR, "%s: calloc");
+		syslog(LOG_ERR, "calloc");
 		exit(EXIT_FAILURE);
 	}
-		//err(1, "%s: calloc");
 	memcpy(*pkey, keycount->key, keycount->keylen);
 	*pkeylen = keycount->keylen;
 }
@@ -151,10 +149,9 @@ country_key_extract(struct keycount *keycount, void **pkey, size_t *pkeylen)
 {
 	if ((*pkey = calloc(1, keycount->keylen)) == NULL)
 	{
-		syslog(LOG_ERR, "%s: calloc, failed to allocate the pkey");
+		syslog(LOG_ERR, "calloc, failed to allocate the pkey");
 		exit(EXIT_FAILURE);
 	}
-		//err(1, "%s: calloc");
 	memcpy(*pkey, keycount->key, keycount->keylen);
 	*pkeylen = keycount->keylen;
 }
@@ -192,10 +189,9 @@ aux_create(void)
 
 	if ((aux = calloc(1, sizeof(struct aux))) == NULL)
 	{
-		syslog(LOG_ERR, "%s: calloc failed to allocate aux");
+		syslog(LOG_ERR, "%s: calloc failed to allocate aux",__func__);
 		exit(EXIT_FAILURE);
 	}
-		//err(1, "%s: calloc");
 	SPLAY_INIT(&aux->tree);
 	TAILQ_INIT(&aux->queue);
 	aux->limit = 100000;	/* Make better at some point */
@@ -245,10 +241,9 @@ aux_enter(struct aux *aux, uint32_t value)
 	} else {
 		if ((key = calloc(1, sizeof(struct auxkey))) == NULL)
 		{
-			syslog(LOG_ERR, "%s: calloc failed to allocate key");
+			syslog(LOG_ERR, "%s: calloc failed to allocate key",__func__);
 			exit(EXIT_FAILURE);
 		}
-			//err(1, "%s: calloc");
 	}
 	key->value = tmp.value;
 
@@ -267,10 +262,9 @@ os_key_extract(struct keycount *keycount, void **pkey, size_t *pkeylen)
 
 	if ((*pkey = strdup(key)) == NULL)
 	{
-		syslog(LOG_ERR, "%s: strdup");
+		syslog(LOG_ERR, "%s: strdup",__func__);
 		exit(EXIT_FAILURE);
 	}
-		//err(1, "%s: strdup");
 	*pkeylen = strlen(key) + 1;
 }
 
@@ -439,7 +433,6 @@ analyze_country_enter(const struct addr *addr, const struct addr *dst)
 		syslog(LOG_ERR, "%s: failed to calloc state", __func__);
 		exit(EXIT_FAILURE);
 	}
-		//err(1, "%s: calloc", __func__);
 
 	state->src = *addr;
 	state->dst = *dst;
@@ -587,7 +580,6 @@ report_create(struct kctree *kctree,
 		syslog(LOG_ERR, "%s: calloc", __func__);
 		exit(EXIT_FAILURE);
 	}
-		//err(1, "%s: calloc", __func__);
 
 	SPLAY_INIT(tree);
 
@@ -602,10 +594,9 @@ report_create(struct kctree *kctree,
 			report = calloc(1, sizeof(struct report));
 			if (report == NULL)
 			{
-				syslog(LOG_ERR, "%s: calloc");
+				syslog(LOG_ERR, "%s: calloc",__func__);
 				exit(EXIT_FAILURE);
 			}
-				//err(1, "%s: calloc");
 			report->key = tmp.key;
 			report->keylen = tmp.keylen;
 			SPLAY_INSERT(reporttree, tree, report);
@@ -683,9 +674,8 @@ analyze_print_port_report()
 
 	if ((filtered_tree = calloc(1, sizeof(struct reporttree))) == NULL)
 	{
-		syslog(LOG_ERR, "%s: calloc failed to allocate filtered_tree");
+		syslog(LOG_ERR, "%s: calloc failed to allocate filtered_tree",__func__);
 		exit(EXIT_FAILURE);
-		//err(1, "%s: calloc");
 	}
 	SPLAY_INIT(filtered_tree);
 
@@ -737,10 +727,9 @@ analyze_print_spammer_report()
 
 	if ((filtered_tree = calloc(1, sizeof(struct reporttree))) == NULL)
 	{
-		syslog(LOG_ERR, "%s: calloc failed to allocate filtered_tree" );
+		syslog(LOG_ERR, "%s: calloc failed to allocate filtered_tree",__func__ );
 		exit(EXIT_FAILURE);
 	}
-		//err(1, "%s: calloc");
 	SPLAY_INIT(filtered_tree);
 
 	/* 
@@ -791,10 +780,9 @@ analyze_print_country_report()
 
 	if ((filtered_tree = calloc(1, sizeof(struct reporttree))) == NULL)
 	{
-		syslog(LOG_ERR, "%s: calloc failed to initialize failed tree");
+		syslog(LOG_ERR, "%s: calloc failed to initialize failed tree",__func__);
 		exit(EXIT_FAILURE);
 	}
-		//err(1, "%s: calloc");
 	SPLAY_INIT(filtered_tree);
 
 	/* 

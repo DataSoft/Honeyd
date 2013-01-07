@@ -429,15 +429,12 @@ honeyd_rrd_start(const char *rrdtool_path)
 		syslog(LOG_ERR, "%s: cannot start rrdtool", __func__);
 		exit(EXIT_FAILURE);
 	}
-		//errx(1, "%s: cannot start rrdtool", __func__);
 	if ((honeyd_traffic_db = rrdtool_db_start(honeyd_rrd_drv, 
 		 honeyd_traffic_filename, 60)) == NULL)
 	{
 		syslog(LOG_ERR, "%s: cannot create rrd db(database): %s", __func__, honeyd_traffic_filename);
 		exit(EXIT_FAILURE);
 	}
-		//errx(1, "%s: cannot create rrd db: %s",
-		  //  __func__, honeyd_traffic_filename);
 
 	rrdtool_db_datasource(honeyd_traffic_db,
 	    "input", "GAUGE", 600);
@@ -765,11 +762,10 @@ honeyd_delay_cb(int fd, short which, void *arg)
 		addr_pack(&addr, ADDR_TYPE_IP, IP_ADDR_BITS,
 		    &ip->ip_dst, IP_ADDR_LEN);
 		router = network_lookup(reverse, &addr);
-		if (router == NULL)
+		if (router == NULL){
 			syslog(LOG_ERR, "%s: bad configuration", __func__);
 			exit(EXIT_FAILURE);
-			//errx(1, "%s: bad configuration", __func__);
-
+		}
 		/* 
 		 * If we are routing for an external sender, then we
 		 * might have to copy the packet into an allocated
@@ -3568,57 +3564,43 @@ main(int argc, char *argv[])
 	associations_init();
 
 	/* Xprobe2 fingerprints */
-	if ((fp = fopen(config.xprobe, "r")) == NULL)
-	{
+	if ((fp = fopen(config.xprobe, "r")) == NULL){
 		syslog(LOG_ERR, "fopen(%s)", config.xprobe);
 		exit(EXIT_FAILURE);
 	}
-		//err(1, "fopen(%s)", config.xprobe);
-	if (xprobe_personality_parse(fp) == -1)
-	{
+	if (xprobe_personality_parse(fp) == -1){
 		syslog(LOG_ERR, "parsing xprobe personality file failed");
 		exit(EXIT_FAILURE);
 	}
-		//errx(1, "parsing xprobe personality file failed");
 	fclose(fp);
 	
 	/* Association between xprobe and nmap fingerprints */
-	if ((fp = fopen(config.assoc, "r")) == NULL)
-	{
+	if ((fp = fopen(config.assoc, "r")) == NULL){
 		syslog(LOG_ERR, "fopen(%s)", config.assoc);
 		exit(EXIT_FAILURE);
 	}
-		//err(1, "fopen(%s)", config.assoc);
-	if (parse_associations(fp) == -1)
-	{
+	if (parse_associations(fp) == -1){
 		syslog(LOG_ERR, "parsing associations file failed");
 		exit(EXIT_FAILURE);
 	}
-		//errx(1, "parsing associations file failed");
 	fclose(fp);
 
 	/* Nmap fingerprints */
-	if ((fp = fopen(config.pers, "r")) == NULL)
-	{
+	if ((fp = fopen(config.pers, "r")) == NULL){
 		syslog(LOG_ERR, "fopen(%s)", config.pers);
 		exit(EXIT_FAILURE);
 	}
-		//err(1, "fopen(%s)", config.pers);
-	if (personality_parse(fp) == -1)
-	{
+	if (personality_parse(fp) == -1){
 		syslog(LOG_ERR, "parsing personality file failed");
 		exit(EXIT_FAILURE);
 	}
-		//errx(1, "parsing personality file failed");
 	fclose(fp);
 
 	/* PF OS fingerprints */
-	if (honeyd_osfp_init(config.osfp) == -1)
-	{
+	if (honeyd_osfp_init(config.osfp) == -1){
 		syslog(LOG_ERR, "reading OS fingerprints failed");
 		exit(EXIT_FAILURE);
 	}
-		//errx(1, "reading OS fingerprints failed");
 
 	honeyd_init();
 	
@@ -3631,12 +3613,10 @@ main(int argc, char *argv[])
 		 * the configuration - some configs will not load without
 		 * this call succeeding.
 		 */
-		if (!honeyd_verify_config)
-		{
+		if (!honeyd_verify_config){
 			syslog(LOG_ERR, "ip_open");
 			exit(EXIT_FAILURE);
 		}
-			//err(1, "ip_open");
 	}
 
 	if (honeyd_verify_config) {
@@ -3659,20 +3639,17 @@ main(int argc, char *argv[])
 #endif
 	/* Reads in the ethernet codes and indexes them for use in config */
 		//ethernetcode_init();
-
 		//nmap mac addresses are read in here
 	//they did enter the -m flag and entered a path for the ethernet codes and indexes
+	/* Reads in the ethernet codes and indexes them for use in config */
 
-			fp = fopen(config.nmapMac, "r");
-			printf("%s",fp);
-			if (fp != NULL){
-				/* Reads in the ethernet codes and indexes them for use in config */
-					ethernetcode_init(fp);
-			}else{
-				syslog(LOG_ERR,"Can't open the nmap-mac-address file");
-				exit(EXIT_FAILURE);
-				/* Reads in the ethernet codes and indexes them for use in config */
-			}
+	fp = fopen(config.nmapMac, "r");
+	if (fp != NULL){
+		ethernetcode_init(fp);
+	}else{
+		syslog(LOG_ERR,"Can't open the nmap-mac-address file");
+		exit(EXIT_FAILURE);
+	}
 
 
 

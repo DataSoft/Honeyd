@@ -194,7 +194,6 @@ pyrecord_test(void)
 			syslog(LOG_ERR, "%s: calloc", __func__);
 			exit(EXIT_FAILURE);
 		}
-			//err(1, "%s: calloc", __func__);
 
 		assert(tag_unmarshal_record(tmp, M_RECORD, record) != -1);
 
@@ -202,18 +201,19 @@ pyrecord_test(void)
 
 		if (pValue == NULL) {
 			PyErr_Print();
-			errx(1, "%s: failed to convert record", __func__);
+			syslog(LOG_ERR,"%s: failed to convert record", __func__);
+			exit(EXIT_FAILURE);
 		}
 
 		pRes = PyFilterRun(filter, pValue);
 		if (pRes == NULL) {
 			PyErr_Print();
-			exit(1);
+			exit(EXIT_FAILURE);
 		}
 
 		if (PyMarshalToString(pRes, &result, &res_len) == -1) {
 			PyErr_Print();
-			exit(1);
+			exit(EXIT_FAILURE);
 		}
 
 		Py_DECREF(pRes);

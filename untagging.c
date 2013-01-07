@@ -189,7 +189,6 @@ record_unmarshal(struct record *record, struct evbuffer *evbuf)
 				syslog(LOG_ERR, "%s: calloc", __func__);
 				exit(EXIT_FAILURE);
 			}
-				//err(1, "%s: calloc", __func__);
 			if (evtag_unmarshal_fixed(evbuf, REC_HASH, tmp->digest,
 				sizeof(tmp->digest)) == -1) {
 				free(tmp);

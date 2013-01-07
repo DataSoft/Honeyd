@@ -358,7 +358,6 @@ router_new(struct addr *addr)
 		syslog(LOG_ERR, "%s: calloc, failed to allocate new router", __func__);
 		exit(EXIT_FAILURE);
 	}
-		//err(1, "%s: calloc", __FUNCTION__);
 
 	new->routes = NULL;
 	new->addr = *addr;
@@ -460,7 +459,6 @@ link_entry_new(struct addr *dst)
 		syslog(LOG_ERR, "%s: calloc", __func__);
 		exit(EXIT_FAILURE);
 	}
-		//err(1, "%s: calloc", __func__);
 
 	link->dst = *dst;
 
@@ -478,7 +476,6 @@ router_entry_new(struct addr *net, struct router *parent,
 		syslog(LOG_ERR, "%s: calloc", __func__);
 		exit(EXIT_FAILURE);
 	}
-		//err(1, "%s: calloc", __func__);
 	rte->net = *net;
 	rte->parent = parent;
 	rte->type = type;

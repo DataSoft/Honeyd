@@ -99,7 +99,6 @@ plugins_cfg_copy(const struct honeyd_plugin_cfg *cfg_src,
 			syslog(LOG_ERR, "%s: strdup", __func__);
 			exit(EXIT_FAILURE);
 		}
-			//err(1, "%s: strdup", __func__);
 	}      
 }
 
@@ -123,20 +122,17 @@ plugins_config_item_add(const char *plugin, const char *option,
 		syslog(LOG_ERR, "%s: calloc", __func__);
 		exit(EXIT_FAILURE);
 	}
-		//err(1, "%s: calloc", __func__);
 
 	if ((item->plugin = strdup(plugin)) == NULL)
 	{
 		syslog(LOG_ERR, "%s: strdup, string copy failed", __func__);
 		exit(EXIT_FAILURE);
 	}
-		//err(1, "%s: strdup", __func__);
 	if ((item->option = strdup(option)) == NULL)
 	{
 		syslog(LOG_ERR, "%s: strdup, string copy failed", __func__);
 		exit(EXIT_FAILURE);
 	}
-		//err(1, "%s: strdup", __func__);
 	plugins_cfg_copy(cfg, &item->cfg);
 
 	TAILQ_INSERT_HEAD(&cfg_items, item, next);

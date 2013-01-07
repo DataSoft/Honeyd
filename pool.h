@@ -79,8 +79,6 @@ pool_free(struct pool *pool, void *addr)
 		syslog(LOG_ERR, "%s: bad address: %p != %p", __func__, addr, entry->data);
 		exit(EXIT_FAILURE);
 	}
-		//errx(1, "%s: bad address: %p != %p", __func__,
-		  //  addr, entry->data);
 
 	if (entry->size == pool->size)
 		SLIST_INSERT_HEAD(&pool->entries, entry, next);

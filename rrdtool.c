@@ -289,14 +289,12 @@ rrdtool_command(struct rrdtool_drv *drv, char *command,
 		syslog(LOG_ERR, "%s: calloc", __func__);
 		exit(EXIT_FAILURE);
 	}
-		//err(1, "%s: calloc", __func__);
 	
 	if ((cmd->command = strdup(command)) == NULL)
 	{
 		syslog(LOG_ERR, "%s: strdup", __func__);
 		exit(EXIT_FAILURE);
 	}
-		//err(1, "%s: strdup", __func__);
 
 	cmd->cb = cb;
 	cmd->cb_arg = cb_arg;
@@ -321,7 +319,6 @@ rrdtool_db_start(struct rrdtool_drv *drv, char *filename, int stepsize)
 		syslog(LOG_ERR, "%s: calloc", __func__);
 		exit(EXIT_FAILURE);
 	}
-		//err(1, "%s: calloc", __func__);
 
 	db->drv = drv;
 
@@ -353,10 +350,9 @@ rrdtool_db_datasource(struct rrdtool_db *db, char *name, char *type,
 	    name, type, heartbeat);
 	if ((db->datasrcs[db->ndatasrcs++] = strdup(line)) == NULL)
 	{
-		syslog(LOG_ERR, "%s: strdup");
+		syslog(LOG_ERR, "%s: strdup",__func__);
 		exit(EXIT_FAILURE);
 	}
-		//err(1, "%s: strdup");
 
 	strlcat(db->create_command, " ", sizeof(db->create_command));
 	if ( strlcat(db->create_command, line, sizeof(db->create_command)) >=
@@ -499,13 +495,11 @@ rrdtool_fork(struct rrdtool_drv *drv)
 			syslog(LOG_ERR, "%s: dup2", __func__);
 			exit(EXIT_FAILURE);
 		}
-			//err(1, "%s: dup2", __func__);
 		if (dup2(pair[1], fileno(stdin)) == -1)
 		{
 			syslog(LOG_ERR, "%s: dup2", __func__);
 			exit(EXIT_FAILURE);
 		}
-			//err(1, "%s: dup2", __func__);
 
 		close(pair[1]);
 
@@ -514,7 +508,6 @@ rrdtool_fork(struct rrdtool_drv *drv)
 			syslog(LOG_ERR, "%s: execv(%s)", __func__, drv->bin_path);
 			exit(EXIT_FAILURE);
 		}
-			//err(1, "%s: execv(%s)", __func__, drv->bin_path);
 
 		/* NOT REACHED */
 	}
@@ -615,7 +608,6 @@ rrdtool_test(void)
 		syslog(LOG_ERR, "%s: graph creation failed", __func__);
 		exit(EXIT_FAILURE);
 	}
-		//errx(1, "%s: graph creation failed", __func__);
 
 	rrdtool_free(drv);
 	fprintf(stderr, "\t%s: OK\n", __func__);

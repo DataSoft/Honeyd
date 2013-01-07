@@ -85,10 +85,9 @@ filter_create(void)
 	struct filtertree *filters;
 	if ((filters = calloc(1, sizeof(struct filtertree))) == NULL)
 	{
-		syslog(LOG_ERR, "%s: calloc, failed to allocate filtertree");
+		syslog(LOG_ERR, "%s: calloc, failed to allocate filtertree",__func__);
 		exit(EXIT_FAILURE);
 	}
-		//err(1, "%s: calloc");
 
 	SPLAY_INIT(filters);
 
@@ -127,10 +126,9 @@ filter_insert(struct filtertree *filters, uint32_t count, void *report)
 
 	if ((filter = calloc(1, sizeof(struct filter))) == NULL)
 	{
-		syslog(LOG_ERR, "%s: calloc failed to allocate filter");
+		syslog(LOG_ERR, "%s: calloc failed to allocate filter",__func__);
 		exit(EXIT_FAILURE);
 	}
-		//err(1, "%s: calloc");
 
 	filter->count = count;
 	filter->report = report;

@@ -173,19 +173,15 @@ usage(void)
 void
 setup_socket(char *address, int port)
 {
-	if ((evbuf_recv = evbuffer_new()) == NULL)
-	{
+	if ((evbuf_recv = evbuffer_new()) == NULL){
 		syslog(LOG_ERR, "%s: evbuffer_new", __func__);
 		exit(EXIT_FAILURE);
 	}
-		//err(1, "%s: evbuffer_new", __func__);
 
-	if ((fd_recv = make_socket(bind, SOCK_DGRAM, address, port)) == -1)
-	{
+	if ((fd_recv = make_socket(bind, SOCK_DGRAM, address, port)) == -1){
 		syslog(LOG_ERR, "%s: make_socket", __func__);
 		exit(EXIT_FAILURE);
 	}
-		//err(1, "%s: make_socket", __func__);
 
 	syslog(LOG_NOTICE, "Listening on %s:%d", address, port);
 
@@ -278,6 +274,7 @@ main(int argc, char *argv[])
 			break;
 		case 'p':
 			if ((port = atoi(optarg)) == 0) {
+				syslog(LOG_ERR, "Bad port number: %s\n",optarg);
 				fprintf(stderr, "Bad port number: %s\n",
 				    optarg);
 				usage();
@@ -366,7 +363,6 @@ main(int argc, char *argv[])
 				syslog(LOG_ERR, "%s: open(%s)", __func__,p);
 				exit(EXIT_FAILURE);
 			}
-				//err(1, "%s: open(%s)", __func__, p);
 			checkpoint_replay(fd);
 		}
 	}

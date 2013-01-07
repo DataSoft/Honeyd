@@ -86,10 +86,8 @@ send_fd(int socket, int fd, void *base, size_t len)
 		errx(1, "%s: sendmsg: expected sent >0 got %ld",
 		    __func__, (long)n);
 #else
-	syslog(LOG_ERR, "%s: subsystems not supported due to lack of fd passing");
+	syslog(LOG_ERR, "%s: subsystems not supported due to lack of fd passing",__func__);
 			exit(EXIT_FAILURE);
-	//errx(1, "%s: subsystems not supported due to lack of fd passing",
-	  //  __func__);
 #endif
 
 	return (0);
@@ -154,7 +152,5 @@ receive_fd(int socket, void *base, size_t *len)
 #else
 	syslog(LOG_ERR, "%s: subsystems not supported due to lack of fd pasing", __func__);
 			exit(EXIT_FAILURE);
-	//errx(1, "%s: subsystems not supported due to lack of fd passing",
-	  //  __func__);
 #endif
 }

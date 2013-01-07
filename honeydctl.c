@@ -380,9 +380,7 @@ main(int argc, char **argv)
 			len++;
 		}
 #endif
-		if(write(fd, l, len) == -1)
-		{
-			//errx(EXIT_FAILURE, "Failed to write to file descriptor");
+		if(write(fd, l, len) == -1){
 			syslog(LOG_ERR, "Failed to write to file descriptor");
 			exit(EXIT_FAILURE);
 		}

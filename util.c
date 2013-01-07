@@ -417,7 +417,6 @@ kv_add(struct keyvalueq *head, char *key, char *value)
 		syslog(LOG_ERR, "%s: malloc, failed to allocate keyvalue entry", __func__);
 		exit(EXIT_FAILURE);
 	}
-		//err(1, "%s: malloc", __func__);
 
 	entry->key = strdup(key);
 	entry->value = strdup(value);
@@ -427,7 +426,6 @@ kv_add(struct keyvalueq *head, char *key, char *value)
 		syslog(LOG_ERR, "%s: strdup", __func__);
 		exit(EXIT_FAILURE);
 	}
-		//err(1, "%s: strdup", __func__);
 
 	TAILQ_INSERT_TAIL(head, entry, next);
 }
@@ -482,7 +480,6 @@ kv_replace(struct keyvalueq *head, char *key, char *value)
 			syslog(LOG_ERR, "%s: malloc, failed to allocate entry", __func__);
 			exit(EXIT_FAILURE);
 		}
-			//err(1, "%s: malloc", __func__);
 	} else {
 		free(entry->key);
 		free(entry->value);
@@ -497,7 +494,6 @@ kv_replace(struct keyvalueq *head, char *key, char *value)
 		syslog(LOG_ERR, "%s: strdup", __func__);
 		exit(EXIT_FAILURE);
 	}
-		//err(1, "%s: strdup", __func__);
 
 	TAILQ_INSERT_TAIL(head, entry, next);
 }
@@ -516,7 +512,6 @@ name_from_addr(struct sockaddr *sa, socklen_t salen,
 		syslog(LOG_ERR, "%s: getnameinfo failed", __func__);
 	    exit(EXIT_FAILURE);
 	}
-		//err(1, "%s: getnameinfo failed", __func__);
 
 	*phost = ntop;
 	*pport = strport;
@@ -632,7 +627,6 @@ trace_init(int fd)
 			syslog(LOG_ERR, "%s: malloc", __func__);
 			exit(EXIT_FAILURE);
 		}
-			//err(1, "%s: malloc", __func__);
 		TAILQ_INIT(head);
 		tmp[i] = head;
 	}

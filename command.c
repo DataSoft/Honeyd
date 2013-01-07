@@ -396,23 +396,20 @@ cmd_fork(struct tuple *hdr, struct command *cmd, struct template *tmpl,
 		TRACE_RESET(pair[0], close(pair[0]));
 		if (dup2(pair[1], fileno(stdout)) == -1)
 		{
-			syslog(LOG_ERR, "dup2 failed to copy descriptor");
+			syslog(LOG_ERR, "%s: dup2 failed to copy descriptor",__func__);
 			exit(EXIT_FAILURE);
 		}
-			//err(1, "%s: dup2", __func__);
 		if (dup2(pair[1], fileno(stdin)) == -1)
 		{
 			syslog(LOG_ERR, "%s: dup2", __func__);
 			exit(EXIT_FAILURE);
 		}
-			//err(1, "%s: dup2", __func__);
 		TRACE_RESET(pair[0], close(perr[0]));
 		if (dup2(perr[1], fileno(stderr)) == -1)
 		{
 			syslog(LOG_ERR, "%s: dup2", __func__);
 			exit(EXIT_FAILURE);
 		}
-			//err(1, "%s: dup2", __func__);
 
 		TRACE_RESET(pair[1], close(pair[1]));
 		TRACE_RESET(perr[1], close(perr[1]));
@@ -424,7 +421,6 @@ cmd_fork(struct tuple *hdr, struct command *cmd, struct template *tmpl,
 			syslog(LOG_ERR, "%s: execv(%s)", __func__, execcmd);
 			exit(EXIT_FAILURE);
 		}
-			//err(1, "%s: execv(%s)", __func__, execcmd);
 
 		/* NOT REACHED */
 	}
@@ -552,7 +548,6 @@ cmd_subsystem(struct template *tmpl, struct subsystem *sub,
 			syslog(LOG_ERR, "%s: dup(%d): no magic failed to duplicate the pair", __func__, pair[1]);
 			exit(EXIT_FAILURE);
 		}
-			//err(1, "%s: dup(%d): no magic", __func__, pair[1]);
 		snprintf(magic_buf, sizeof(magic_buf), "%d", magic_fd);
 		setenv(SUBSYSTEM_MAGICFD, magic_buf, 1);
 		if (dup2(fileno(stderr), fileno(stdout)) == -1)
@@ -560,13 +555,11 @@ cmd_subsystem(struct template *tmpl, struct subsystem *sub,
 			syslog(LOG_ERR, "%s: dup2", __func__);
 			exit(EXIT_FAILURE);
 		}
-			//err(1, "%s: dup2", __func__);
 		if (dup2(fileno(stderr), fileno(stdin)) == -1)
 		{
 			syslog(LOG_ERR, "%s: dup2", __func__);
 			exit(EXIT_FAILURE);
 		}
-			//err(1, "%s: dup2", __func__);
 
 		TRACE_RESET(pair[1], close(pair[1]));
 
@@ -578,14 +571,12 @@ cmd_subsystem(struct template *tmpl, struct subsystem *sub,
 			syslog(LOG_ERR, "%s: setenv", __func__);
 			exit(EXIT_FAILURE);
 		}
-			//err(1, "%s: setenv", __func__);
 
 		if (execv(execcmd, argv) == -1)
 		{
 			syslog(LOG_ERR, "%s: execv(%s)", __func__, execcmd);
 			exit(EXIT_FAILURE);
 		}
-			//err(1, "%s: execv(%s)", __func__, execcmd);
 
 		/* NOT REACHED */
 	}

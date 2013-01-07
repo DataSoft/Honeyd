@@ -211,8 +211,6 @@ stats_compress(struct evbuffer *evbuf)
 			syslog(LOG_ERR, "%s: deflate failed with %d", __func__, status);
 			exit(EXIT_FAILURE);
 		}
-			//errx(1, "%s: deflate failed with %d",
-			  //  __func__, status);
 			/* NOTREACHED */
 		}
 	} while (stream.avail_out == 0);
@@ -424,7 +422,6 @@ stats_prepare_send(struct evbuffer *evbuf)
 		syslog(LOG_ERR, "%s: calloc", __func__);
 		exit(EXIT_FAILURE);
 	}
-		//err(1, "%s: calloc", __func__);
 
 	tmp->evbuf = evbuf;
 	TAILQ_INSERT_TAIL(&sc.send_queue, tmp, next);
@@ -449,7 +446,6 @@ stats_package_measurement()
 		syslog(LOG_ERR, "%s: evbuffer_new", __func__);
 		exit(EXIT_FAILURE);
 	}
-		//err(1, "%s: evbuffer_new", __func__);
 
 	/* Compress the measured data */
 	stats_compress(sc.evbuf_measure);
@@ -616,7 +612,6 @@ stats_new(const struct tuple *conhdr)
 		syslog(LOG_ERR, "%s: calloc", __func__);
 		exit(EXIT_FAILURE);
 	}
-		//err(1, "%s: calloc", __func__);
 
 	TAILQ_INIT(&stats->hashes);
 	stats->conhdr = *conhdr;
@@ -628,7 +623,6 @@ stats_new(const struct tuple *conhdr)
 		syslog(LOG_ERR, "%s: evbuffer_new", __func__);
 		exit(EXIT_FAILURE);
 	}
-		//err(1, "%s: evbuffer_new", __func__);
 
 	evtimer_set(&stats->ev_timeout, stats_timeout_cb, stats);
 	stats_add_timeout(stats);
@@ -658,7 +652,6 @@ record_add_hash(struct hashq *hashes, void *data, size_t len)
 		syslog(LOG_ERR, "%s: calloc", __func__);
 		exit(EXIT_FAILURE);
 	}
-		//err(1, "%s: calloc", __func__);
 
 	/* We just xor the overlap together */
 	for (i = 0; i < sizeof(digest); i++)
@@ -817,7 +810,6 @@ stats_make_fd(struct addr *dst, u_short port)
 		syslog(LOG_ERR, "%s: make_socket", __func__);
 		exit(EXIT_FAILURE);
 	}
-		//err(1, "%s: make_socket", __func__);
 	event_set(&sc.ev_send, sc.stats_fd, EV_WRITE, stats_ready_cb, NULL);
 }
 
@@ -895,11 +887,17 @@ stats_hmac_test()
 
 	if (!hmac_verify(&sc.hmac, digest, sizeof(digest),
 		test1, strlen(test1)))
-		errx(1, "%s: verify failed", __func__);
+	{
+		syslog(LOG_ERR,"%s: verified failed",__func__);
+		exit(EXIT_FAILURE);
+	}
 
 	if (hmac_verify(&sc.hmac, digest, sizeof(digest),
 		test2, strlen(test2)))
-		errx(1, "%s: verify should have failed", __func__);
+	{
+		syslog(LOG_ERR,"%s: verify should have failed", __func__);
+		exit(EXIT_FAILURE);
+	}
 
 	fprintf(stderr, "\t%s: OK\n", __func__);
 }

@@ -87,17 +87,15 @@ keycount_new(const void *key, size_t len,
 
 	if ((keycount = calloc(1, sizeof(struct keycount))) == NULL)
 	{
-		syslog(LOG_ERR, "%s: calloc, failed to allocate keycount");
+		syslog(LOG_ERR, "%s: calloc, failed to allocate keycount",__func__);
 		exit(EXIT_FAILURE);
 	}
-		//err(1, "%s: calloc");
 
 	if ((keycount->key = malloc(len)) == NULL)
 	{
-		syslog(LOG_ERR, "%s: malloc");
+		syslog(LOG_ERR, "%s: malloc",__func__);
 		exit(EXIT_FAILURE);
 	}
-		//err(1, "%s: malloc");
 
 	keycount->keylen = len;
 	memcpy((void *)keycount->key, key, len);
@@ -185,13 +183,11 @@ timeseries_new(char *name, struct kctree *kct, 	void (*extract)(struct keycount 
 		syslog(LOG_ERR, "%s: calloc", __func__);
 		exit(EXIT_FAILURE);
 	}
-		//err(1, "%s: calloc", __func__);
 	if ((ts->name = strdup(name)) == NULL)
 	{
 		syslog(LOG_ERR, "%s: strdup", __func__);
 		exit(EXIT_FAILURE);
 	}
-		//err(1, "%s: strdup", __func__);
 
 	ts->extract = ts->extract;
 	ts->print = ts->print;
@@ -216,16 +212,14 @@ timekey_new(const void *key, size_t keylen)
 
 	if ((tk = calloc(1, sizeof(struct timekey))) == NULL)
 	{
-		syslog(LOG_ERR, "%s: calloc");
+		syslog(LOG_ERR, "%s: calloc",__func__);
 		exit(EXIT_FAILURE);
 	}
-		//err(1, "%s: calloc");
 	if ((tk->key = malloc(keylen)) == NULL)
 	{
-		syslog(LOG_ERR, "%s: malloc");
+		syslog(LOG_ERR, "%s: malloc",__func__);
 		exit(EXIT_FAILURE);
 	}
-		//err(1, "%s: malloc");
 	memcpy(tk->key, key, keylen);
 	tk->keylen = keylen;
 

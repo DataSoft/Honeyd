@@ -104,10 +104,9 @@ interface_initialize(pcap_handler cb)
 
 	if ((intf = intf_open()) == NULL)
 	{
-		syslog(LOG_ERR, "%s: intf_open");
+		syslog(LOG_ERR, "%s: intf_open",__func__);
 		exit(EXIT_FAILURE);
 	}
-		//err(1, "intf_open");
 
 	if_recv_cb = cb;
 }
@@ -125,7 +124,6 @@ interface_new(char *dev)
 		syslog(LOG_ERR, "%s: calloc", __func__);
 		exit(EXIT_FAILURE);
 	}
-		//err(1, "%s: calloc", __func__);
 
 	if (dev == NULL) {
 		if ((dev = pcap_lookupdev(ebuf)) == NULL)
@@ -133,7 +131,6 @@ interface_new(char *dev)
 			syslog(LOG_ERR, "pcap_lookupdev: %s",ebuf);
 			exit(EXIT_FAILURE);
 		}
-			//errx(1, "pcap_lookupdev: %s", ebuf);
 	}
 
 	TAILQ_INSERT_TAIL(&interfaces, inter, next);
@@ -146,7 +143,6 @@ interface_new(char *dev)
 		syslog(LOG_ERR, "%s: intf_get", __func__);
 		exit(EXIT_FAILURE);
 	}
-		//err(1, "%s: intf_get", __func__);
 
 	if (inter->if_ent.intf_addr.addr_type != ADDR_TYPE_IP)
 		warn("%s: bad interface configuration: %s is not IP",
@@ -278,15 +274,13 @@ interface_ether_filter(struct interface *inter,
 		syslog(LOG_ERR, "%s: pcap filter exceeds maximum length", __func__);
 		exit(EXIT_FAILURE);
 	}
-		//errx(1, "%s: pcap filter exceeds maximum length", __func__);
 
 	inter->if_eth = eth_open(inter->if_ent.intf_name);
 	if (inter->if_eth == NULL)
 	{
-		syslog(LOG_ERR, "%s: eth_open: %s", inter->if_ent.intf_name);
+		syslog(LOG_ERR, "%s: eth_open: %s",__func__, inter->if_ent.intf_name);
 		exit(EXIT_FAILURE);
 	}
-		//errx(1, "%s: eth_open: %s", inter->if_ent.intf_name);
 
 	snprintf(line, sizeof(line), " and not ether src %s",
 	    addr_ntoa(&inter->if_ent.intf_link_addr));
@@ -310,7 +304,6 @@ interface_regular_filter(struct interface *inter,
 		syslog(LOG_ERR, "%s: pcap filter exceeds maximum length",__func__);
 		exit(EXIT_FAILURE);
 	}
-		//errx(1, "%s: pcap filter exceeds maximum length", __func__);
 }
 
 void
@@ -372,7 +365,6 @@ interface_init(char *dev, int naddresses, char **addresses)
 		syslog(LOG_ERR, "pcap_open_live: %s",ebuf);
 		exit(EXIT_FAILURE);
 	}
-		//errx(1, "pcap_open_live: %s", ebuf);
 
 	/* Get offset to packet data */
 	inter->if_dloff = pcap_dloff(inter->if_pcap);
@@ -387,7 +379,6 @@ interface_init(char *dev, int naddresses, char **addresses)
 		syslog(LOG_ERR, "bad pcap filter: %s", pcap_geterr(inter->if_pcap));
 		exit(EXIT_FAILURE);
 	}
-		//errx(1, "bad pcap filter: %s", pcap_geterr(inter->if_pcap));
 
 #ifdef HAVE_PCAP_GET_SELECTABLE_FD
 	pcap_fd = pcap_get_selectable_fd(inter->if_pcap);
@@ -444,8 +435,6 @@ interface_expandips(int naddresses, char **addresses, int dstonly)
 				syslog(LOG_ERR, "%s: too many address for filter",__func__);
 				exit(EXIT_FAILURE);
 			}
-				//errx(1, "%s: too many address for filter",
-				  //  __func__);
 		}
 
 		/* XXX  addr_pton uses DNS and can block */
@@ -467,8 +456,6 @@ interface_expandips(int naddresses, char **addresses, int dstonly)
 				syslog(LOG_ERR, "%s: Invalid network range: %s",__func__,p);
 				exit(EXIT_FAILURE);
 			}
-				//errx(1, "%s: Invalid network range: %s",
-				  //  __func__, p);
 
 			line[0] = '\0';
 			if (addr_pton(first, &astart) == -1 ||
@@ -477,15 +464,11 @@ interface_expandips(int naddresses, char **addresses, int dstonly)
 				syslog(LOG_ERR, "%s: bad addresses %s-%s", __func__, first, second);
 				exit(EXIT_FAILURE);
 			}
-				//errx(1, "%s: bad addresses %s-%s", __func__,
-				  //  first, second);
 			if (addr_cmp(&astart, &aend) >= 0)
 			{
 				syslog(LOG_ERR, "%s: inverted range %s-%s", __func__, first, second);
 				exit(EXIT_FAILURE);
 			}
-			    //errx(1, "%s: inverted range %s-%s", __func__,
-				//first, second);
 
 			/* Completely, IPv4 specific */
 			istart = ntohl(astart.addr_ip);
@@ -534,8 +517,6 @@ interface_expandips(int naddresses, char **addresses, int dstonly)
 			syslog(LOG_ERR, "%s: too many address for filter", __func__);
 			exit(EXIT_FAILURE);
 		}
-			//errx(1, "%s: too many address for filter",
-			  //  __func__);
 	}
 
 	return (filter);
@@ -598,7 +579,6 @@ interface_test_insert_and_find(void)
 		syslog(LOG_ERR, "%s: calloc", __func__);
 		exit(EXIT_FAILURE);
 	}
-		//err(1, "%s: calloc", __func__);
 
 	addr_pton("10.0.0.254", &inter->if_ent.intf_addr);
 	inter->if_addrbits = 24;
