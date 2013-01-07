@@ -191,7 +191,7 @@ class IPPResponseTCP :
         packet.append("{0:08X}".format(int("0x00000003", 16))) # Value
         packet.append("{0:02X}".format(self.tagvalues["keyword"])) # Tag
         packet.append("{0:04X}".format(int(hex(len("printer-state-reasons")), 16))) # Name length
-        packet.append("printer-state-reasons".encode('hex')) # Name
+        packet.append("printer-state-reasons0".encode('hex')) # Name
         packet.append("{0:04X}".format(int(hex(len("none")), 16))) # Value length
         packet.append("none".encode('hex')) # Value
         packet.append("{0:02X}".format(self.tagvalues["mimeMediaType"])) # Tag
@@ -214,7 +214,99 @@ class IPPResponseTCP :
 
 class IPPResponseUDP :
   """Class for UDP responses to IPP requests."""
+  def __init__ (self, reqoid=None, requestid=None) :
+    self.reqoid = reqoid if reqoid != None else ""
+    self.requestid = requestid if requestid != None else "1"
+    
+    self.ids = {"integer":0x02, 
+                "octet-string":0x04, 
+                "null":0x05, 
+                "object-identifier":0x06, 
+                "sequence":0x30, 
+                "get-request":0xA0, 
+                "get-response":0xA2, 
+                "set-request":0xA3}
+    
+  def generateResponse(self) :
+    packet = []
+    head = []
+    snmpversion = []
+    snmpversion.append("{0:02X}".format(self.ids["integer"]))
+    snmpversion.append("{0:02X}".format(int("1", 16)))
+    snmpversion.append("{0:02X}".format(int("0", 16)))
+    head.append("".join(snmpversion))
+    snmpcommstring = []
+    snmpcommstring.append("{0:02X}".format(self.ids["octet-string"]))
+    snmpcommstring.append("{0:02X}".format(int(hex(len("public")), 16)))
+    snmpcommstring.append("public".encode('hex'))
+    head.append("".join(snmpcommstring))
+    head = "".join(head)
+    pdu = self.generatePDU()
+    packet.append("{0:02X}".format(self.ids["sequence"]))
+    packet.append("{0:02X}".format(int(hex((len(head) + len(pdu)) / 2), 16)))
+    packet.append(head)
+    packet.append(pdu)
+    return "".join(packet)
 
+  def generatePDU(self) :
+    pdu = []
+    reqid = []
+    reqid.append("{0:02X}".format(self.ids["integer"]))
+    reqid.append("{0:02X}".format(int("1", 16)))
+    reqid.append("{0:02X}".format(int(hex(self.requestid), 16)))
+    reqid = "".join(reqid)
+    error = []
+    error.append("{0:02X}".format(self.ids["integer"]))
+    error.append("{0:02X}".format(int("1", 16)))
+    error.append("{0:02X}".format(int("0", 16)))
+    error = "".join(error)
+    errindex = []
+    errindex.append("{0:02X}".format(self.ids["integer"]))
+    errindex.append("{0:02X}".format(int("1", 16)))
+    errindex.append("{0:02X}".format(int("0", 16)))
+    errindex = "".join(errindex)
+    pdu.append("{0:02X}".format(self.ids["get-response"]))
+    varbindlist = self.generateVarbindList()
+    pdu.append("{0:02X}".format(int(hex((len(reqid) + len(error) + len(errindex) + len(varbindlist)) / 2), 16)))
+    pdu.append(reqid)
+    pdu.append(error)
+    pdu.append(errindex)
+    pdu.append(varbindlist)    
+    return "".join(pdu)
+    
+  def generateVarbindList(self) :
+    #Need to find a fake MIB to copy and present attributes from
+    varbind = self.generateVarbind()
+    varbindlist = []
+    varbindlist.append("{0:02X}".format(self.ids["sequence"]))
+    varbindlist.append("{0:02X}".format(int(hex(len(varbind)), 16)))
+    varbindlist.append(varbind)
+    return "".join(varbindlist)
+    
+  def generateVarbind(self) :
+    oid = []
+    oid.append("{0:02X}".format(self.ids["object-identifier"]))
+    oid.append("{0:02x}".format(int(hex((len(self.reqoid) / 2)), 16)))
+    oid.append(self.reqoid)
+    oid = "".join(oid)
+    value = []
+    mib = self.generateMIB()
+    value.append("{0:02X}".format(self.ids["object-identifier"]))
+    value.append("{0:02X}".format(int(hex(len(mib) / 2), 16)))
+    value.append(mib)
+    value = "".join(value)
+    varbind = []
+    varbind.append("{0:02X}".format(self.ids["sequence"]))
+    varbindlength = len(oid) + len(value)
+    varbind.append("{0:02X}".format(int(hex(varbindlength / 2), 16)))
+    varbind.append(oid)
+    varbind.append(value)
+    return "".join(varbind)
+  
+  def generateMIB(self) :
+    mib = []
+    mib = "2b060104018f5101010182295d011b020201"
+    return mib
 
 """if __name__ == "__main__" :
   parser = argparse.ArgumentParser()
