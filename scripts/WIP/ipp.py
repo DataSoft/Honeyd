@@ -214,9 +214,10 @@ class IPPResponseTCP :
 
 class IPPResponseUDP :
   """Class for UDP responses to IPP requests."""
-  def __init__ (self, reqoid=None, requestid=None) :
+  def __init__ (self, reqoid=None, requestid=None, requestidlength=None) :
     self.reqoid = reqoid if reqoid != None else ""
     self.requestid = requestid if requestid != None else "1"
+    self.requestidlength = requestidlength if requestidlength != None else "1"
     
     self.ids = {"integer":0x02, 
                 "octet-string":0x04, 
@@ -252,7 +253,7 @@ class IPPResponseUDP :
     pdu = []
     reqid = []
     reqid.append("{0:02X}".format(self.ids["integer"]))
-    reqid.append("{0:02X}".format(int("1", 16)))
+    reqid.append("{0:02X}".format(int(str(self.requestidlength), 16)))
     reqid.append("{0:02X}".format(int(hex(self.requestid), 16)))
     reqid = "".join(reqid)
     error = []
@@ -279,7 +280,7 @@ class IPPResponseUDP :
     varbind = self.generateVarbind()
     varbindlist = []
     varbindlist.append("{0:02X}".format(self.ids["sequence"]))
-    varbindlist.append("{0:02X}".format(int(hex(len(varbind)), 16)))
+    varbindlist.append("{0:02X}".format(int(hex(len(varbind) / 2), 16)))
     varbindlist.append(varbind)
     return "".join(varbindlist)
     
