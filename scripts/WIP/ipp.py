@@ -3,9 +3,7 @@
 import binascii
 import sys
 import os
-import urllib2
-import socket
-import argparse
+import re
 from struct import pack, unpack
 
 IPP_VERSION = "1.1"
@@ -214,9 +212,10 @@ class IPPResponseTCP :
 
 class IPPResponseUDP :
   """Class for UDP responses to IPP requests."""
-  def __init__ (self, reqoid=None, requestid=None, requestidlength=None) :
+  def __init__ (self, reqoid=None, requestid=None, requestidlength=None, pdutype=None) :
     self.reqoid = reqoid if reqoid != None else ""
     self.requestid = requestid if requestid != None else "1"
+    self.pdutype = pdutype if pdutype != None else 0xA0
     self.requestidlength = requestidlength if requestidlength != None else "1"
     
     self.ids = {"integer":0x02, 
@@ -224,30 +223,54 @@ class IPPResponseUDP :
                 "null":0x05, 
                 "object-identifier":0x06, 
                 "sequence":0x30, 
-                "get-request":0xA0, 
+                "get-request":0xA0,
+                "get-next-request":0xA1, 
                 "get-response":0xA2, 
                 "set-request":0xA3}
     
   def generateResponse(self) :
-    packet = []
-    head = []
-    snmpversion = []
-    snmpversion.append("{0:02X}".format(self.ids["integer"]))
-    snmpversion.append("{0:02X}".format(int("1", 16)))
-    snmpversion.append("{0:02X}".format(int("0", 16)))
-    head.append("".join(snmpversion))
-    snmpcommstring = []
-    snmpcommstring.append("{0:02X}".format(self.ids["octet-string"]))
-    snmpcommstring.append("{0:02X}".format(int(hex(len("public")), 16)))
-    snmpcommstring.append("public".encode('hex'))
-    head.append("".join(snmpcommstring))
-    head = "".join(head)
-    pdu = self.generatePDU()
-    packet.append("{0:02X}".format(self.ids["sequence"]))
-    packet.append("{0:02X}".format(int(hex((len(head) + len(pdu)) / 2), 16)))
-    packet.append(head)
-    packet.append(pdu)
-    return "".join(packet)
+    if int(self.pdutype, 16) == self.ids["get-request"] :
+      packet = []
+      head = []
+      snmpversion = []
+      snmpversion.append("{0:02X}".format(self.ids["integer"]))
+      snmpversion.append("{0:02X}".format(int("1", 16)))
+      snmpversion.append("{0:02X}".format(int("0", 16)))
+      head.append("".join(snmpversion))
+      snmpcommstring = []
+      snmpcommstring.append("{0:02X}".format(self.ids["octet-string"]))
+      snmpcommstring.append("{0:02X}".format(int(hex(len("public")), 16)))
+      snmpcommstring.append("public".encode('hex'))
+      head.append("".join(snmpcommstring))
+      head = "".join(head)
+      pdu = self.generatePDU()
+      packet.append("{0:02X}".format(self.ids["sequence"]))
+      packet.append("{0:02X}".format(int(hex((len(head) + len(pdu)) / 2), 16)))
+      packet.append(head)
+      packet.append(pdu)
+      return "".join(packet)
+    elif int(self.pdutype, 16) == self.ids["get-next-request"] :
+      packet = []
+      head = []
+      snmpversion = []
+      snmpversion.append("{0:02X}".format(self.ids["integer"]))
+      snmpversion.append("{0:02X}".format(int("1", 16)))
+      snmpversion.append("{0:02X}".format(int("0", 16)))
+      head.append("".join(snmpversion))
+      snmpcommstring = []
+      snmpcommstring.append("{0:02X}".format(self.ids["octet-string"]))
+      snmpcommstring.append("{0:02X}".format(int(hex(len("public")), 16)))
+      snmpcommstring.append("public".encode('hex'))
+      head.append("".join(snmpcommstring))
+      head = "".join(head)
+      pdu = self.generatePDU()
+      packet.append("{0:02X}".format(self.ids["sequence"]))
+      packet.append("{0:02X}".format(int(hex((len(head) + len(pdu)) / 2), 16)))
+      packet.append(head)
+      packet.append(pdu)
+      return "".join(packet)
+    else :
+      return "00"
 
   def generatePDU(self) :
     pdu = []
@@ -305,9 +328,58 @@ class IPPResponseUDP :
     return "".join(varbind)
   
   def generateMIB(self) :
-    mib = []
-    mib = "2b060104018f5101010182295d011b020201"
+    # This method is going to require a refactor
+    # Essentially, depending on the structure of the reqoid 
+    # the script is going to have to determine what values are 
+    # being request, and then proffer them in the correct format
+    """
+    mib = ""
+    # hardcode a lexmark printer since we have one around 
+    # and I found a mib structure for it
+    if re.match("2b06010201", self.reqoid) :
+      # If this string matches, that means the request was for
+      # something within the 1.3.6.1.2 MIB subtree, which 
+      # corresponds to system-specific information and 
+      # identifiers
+      mib = "2b06010201"
+      mib += self.determineMIBSystemValue(self.reqoid[10:])
+    elif re.match("2b06010401", self.reqoid) :
+      # This corresponds to a response for a particular variable
+      # within our "printer's" MIB, and as we're using lexmark, 
+      # the string translates to 1.3.6.1.4.1.641
+      # Any appended string is going to correspond to more specific
+      # printer things like toner color, etc.
+      mib = "2b060104018501"
+      mib += self.determineMIBHostValue(self.reqoid[14:])
+    else :
+      mib = ""
     return mib
+    """
+    return "2b0601020119030105"
+  
+  def determineMIBSystemValue(self, oid) :
+    mibtreepath = []
+    returnmib = []
+    sys.stderr.write("oid : " + oid + "\n")
+    sys.stderr.write("len(oid) : " + str(len(oid)) + "\n")
+    for i in xrange(0, len(oid), 2) :
+      mibtreepath.append(str(oid[i:i+2]))
+    # response should be 1.3.6.1.2.1.25.3.1.5
+    # have 1.3.6.1.2
+    if mibtreepath[0] == "19" and mibtreepath[1] == "02" : 
+      returnmib.append("19030105") 
+    elif mibtreepath[0] == "19" and mibtreepath[1] == "03" :
+      # Lexmark T620 NM820C50 541.019
+      returnmib.append("Lexmark T620 NM820C50 541.019".encode('hex'))
+    return "".join(returnmib)
+
+  def determineMIBHostValue(self, oid) :
+    mibtreepath = []
+    sys.stderr.write("oid : " + oid + "\n")
+    sys.stderr.write("len(oid) : " + str(len(oid)) + "\n")
+    for i in xrange(0, len(oid), 2) :
+      mibtreepath.append(str(oid[i:i+2]))
+    return ""
 
 """if __name__ == "__main__" :
   parser = argparse.ArgumentParser()

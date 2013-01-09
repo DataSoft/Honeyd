@@ -27,8 +27,9 @@ if __name__ == "__main__" :
   snmperrindex = int(binascii.hexlify(sys.stdin.read(snmperrindexlength)), 16)
   snmpvarbindlistlength = int(binascii.hexlify(sys.stdin.read(2)[1]), 16)
   snmpvarbindlength = int(binascii.hexlify(sys.stdin.read(2)[1]), 16)
-  snmpoidlength = int(binascii.hexlify(sys.stdin.read(2)[1]), 16)
-  snmpoid = str(binascii.hexlify(sys.stdin.read(snmpoidlength)))
+  snmpvaluetype = int(binascii.hexlify(sys.stdin.read(1)), 16) 
+  snmpvaluelength = int(binascii.hexlify(sys.stdin.read(1)), 16)
+  snmpoid = str(binascii.hexlify(sys.stdin.read(snmpvaluelength)))
   
   """
   DEBUG FOR PARSED VALUES
@@ -47,11 +48,15 @@ if __name__ == "__main__" :
   sys.stderr.write("snmperrindex: " + str(snmperrindex) + "\n")
   sys.stderr.write("snmpvarbindlistlength: " + str(snmpvarbindlistlength) + "\n")
   sys.stderr.write("snmpvarbindlength: " + str(snmpvarbindlength) + "\n")
-  sys.stderr.write("snmpoidlength: " + str(snmpoidlength) + "\n")
+  sys.stderr.write("snmpvaluetype: " + str(snmpvaluetype) + "\n")
+  sys.stderr.write("snmpvaluelength: " + str(snmpvaluelength) + "\n")
   sys.stderr.write("snmpoid: " + str(snmpoid) + "\n")
   """
   
   # give paramaters to IPPResponseUDP constructor
-  req = IPPResponseUDP(reqoid=snmpoid,requestid=snmpreqid, requestidlength=snmpreqidlength)
+  req = IPPResponseUDP(reqoid=snmpoid,
+                       requestid=snmpreqid,
+                       requestidlength=snmpreqidlength,
+                       pdutype=snmppdutype)
   response = req.generateResponse()
   print binascii.a2b_hex(response)
