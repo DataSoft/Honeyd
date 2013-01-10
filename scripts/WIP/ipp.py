@@ -219,14 +219,27 @@ class IPPResponseUDP :
     self.requestidlength = requestidlength if requestidlength != None else "1"
     
     self.ids = {"integer":0x02, 
+                "bit-string":0x03,
                 "octet-string":0x04, 
                 "null":0x05, 
-                "object-identifier":0x06, 
+                "object-identifier":0x06,
                 "sequence":0x30, 
+                "ip-address":0x40,
+                "counter":0x41,
+                "gauge":0x42,
+                "timeticks":0x43,
+                "opaque":0x44,
+                "nsap-address":0x45,
+                "counter64":0x46,
+                "uinteger32":0x47,
                 "get-request":0xA0,
                 "get-next-request":0xA1, 
                 "get-response":0xA2, 
-                "set-request":0xA3}
+                "set-request":0xA3,
+                "trap-pdu":0xA4,
+                "get-bulk-request":0xA5,
+                "inform-request":0xA6,
+                "snmpv2-trap":0xA7}
     
   def generateResponse(self) :
     if int(self.pdutype, 16) == self.ids["get-request"] :
