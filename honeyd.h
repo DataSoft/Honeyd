@@ -60,6 +60,7 @@ struct config {
 	char *xprobe;
 	char *assoc;
 	char *osfp;
+	char *nmapMac;
 };
 
 struct count;

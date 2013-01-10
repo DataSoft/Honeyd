@@ -13,6 +13,7 @@
 .Op Fl s Ar servicelog
 .Op Fl p Ar fingerprints
 .Op Fl 0 Ar p0f-file
+.Op Fl m Ar file \" here is the command for changing command line arguments for the nmap router prefix file
 .Op Fl x Ar xprobe
 .Op Fl a Ar assoc
 .Op Fl f Ar file
@@ -99,6 +100,11 @@ for pcap via
 In that case,
 .Nm
 needs to run in polling mode.  This flag enables polling.
+.It Fl m Ar nmap-mac-prefixes
+Read 
+.Nm nmap-mac-prefixes. the prefix file located
+in a different location but must be of the same format.
+Example file located in /usr/share/honeyd/nmap-mac-prefixes
 .It Fl l Ar logfile
 Log packets and connections to the logfile specified by
 .Ar logfile .

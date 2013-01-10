@@ -132,7 +132,8 @@ struct config config = {
 	PATH_HONEYDDATA "/nmap-os-db",
 	PATH_HONEYDDATA "/xprobe2.conf",
 	PATH_HONEYDDATA "/nmap.assoc",
-	PATH_HONEYDDATA "/pf.os"
+	PATH_HONEYDDATA "/pf.os",
+	PATH_HONEYDDATA "/nmap-mac-prefixes"//add the install path for the file
 };
 
 struct stats_network stats_network = {
@@ -216,6 +217,7 @@ static struct option honeyd_long_opts[] = {
 	{"verify-config", 0, &honeyd_verify_config, 1},
 	{"ignore-parse-errors", 0, &honeyd_ignore_parse_errors, 1},
 	{"fix-webserver-permissions", 0, &honeyd_webserver_fix_permissions, 1},
+	{"mac-address",0,0,1},
 	{0, 0, 0, 0}
 };
 
@@ -237,6 +239,7 @@ usage(void)
 	    "  -0 osfingerprints      Read pf-style OS fingerprints from file.\n"
 	    "  -u uid		  Set the uid Honeyd should run as.\n"
 	    "  -g gid		  Set the gid Honeyd should run as.\n"
+		"  -m file				  Read nmap-mac-prefixes from file. \n"
 	    "  -f configfile          Read configuration from file.\n"
 	    "  -c host:port:name:pass Reports starts to collector.\n"
 	    "  --webserver-address=address Address on which webserver listens.\n"
@@ -253,7 +256,7 @@ usage(void)
 	    "  --include-dir          Prints out header files directory and exits.\n"
 	    "  --data-dir             Prints out data/plug-in directory and exits.\n");
 	
-	exit(1);
+	exit(EXIT_FAILURE);
 }
 
 /* XXX ches debug */
@@ -422,11 +425,16 @@ honeyd_rrd_start(const char *rrdtool_path)
 	/* Initialize our traffic stats for rrdtool */
 	char *honeyd_traffic_filename = "/tmp/honeyd_traffic.rrd";
 	if ((honeyd_rrd_drv = rrdtool_init(rrdtool_path)) == NULL)
-		errx(1, "%s: cannot start rrdtool", __func__);
+	{
+		syslog(LOG_ERR, "%s: cannot start rrdtool", __func__);
+		exit(EXIT_FAILURE);
+	}
 	if ((honeyd_traffic_db = rrdtool_db_start(honeyd_rrd_drv, 
 		 honeyd_traffic_filename, 60)) == NULL)
-		errx(1, "%s: cannot create rrd db: %s",
-		    __func__, honeyd_traffic_filename);
+	{
+		syslog(LOG_ERR, "%s: cannot create rrd db(database): %s", __func__, honeyd_traffic_filename);
+		exit(EXIT_FAILURE);
+	}
 
 	rrdtool_db_datasource(honeyd_traffic_db,
 	    "input", "GAUGE", 600);
@@ -476,18 +484,34 @@ honeyd_init(void)
 	if (setrlimit(RLIMIT_NOFILE, &rl) == -1) {
 		/* Linux does not seem to like this */
 		if (getrlimit(RLIMIT_NOFILE, &rl) == -1)
-			err(1, "getrlimit: NOFILE");
+		{
+			syslog(LOG_ERR, "getrlimit: NOFILE, failed at getting the files resources limit due to file not existing");
+			exit(EXIT_FAILURE);
+		}
+			//err(1, "getrlimit: NOFILE");
 		rl.rlim_cur = rl.rlim_max;
 		if (setrlimit(RLIMIT_NOFILE, &rl) == -1)
-			err(1, "setrlimit: NOFILE");
+		{
+			syslog(LOG_ERR, "setrlimit: NOFILE, failed to set resource limit due to file not existing");
+			exit(EXIT_FAILURE);
+		}
+			//err(1, "setrlimit: NOFILE");
 	}
 #ifdef RLIMIT_NPROC
 	if (getrlimit(RLIMIT_NPROC, &rl) == -1)
-		err(1, "getrlimit: NPROC");
+	{
+		syslog(LOG_ERR, "getrlimit: NPROC, failed at getting the process' resource limit due to process not running");
+		exit(EXIT_FAILURE);
+	}
+		//err(1, "getrlimit: NPROC");
 	rl.rlim_max = rl.rlim_max/2;
 	rl.rlim_cur = rl.rlim_max;
 	if (setrlimit(RLIMIT_NPROC, &rl) == -1)
-		err(1, "setrlimit: NPROC");
+	{
+		syslog(LOG_ERR, "setrlimit: NPROC, failed at setting the process' resource limit due to process not running");
+		exit(EXIT_FAILURE);
+	}
+		//err(1, "setrlimit: NPROC");
 #endif
 
 	stats_network.input_bytes = count_new();
@@ -738,9 +762,10 @@ honeyd_delay_cb(int fd, short which, void *arg)
 		addr_pack(&addr, ADDR_TYPE_IP, IP_ADDR_BITS,
 		    &ip->ip_dst, IP_ADDR_LEN);
 		router = network_lookup(reverse, &addr);
-		if (router == NULL)
-			errx(1, "%s: bad configuration", __func__);
-
+		if (router == NULL){
+			syslog(LOG_ERR, "%s: bad configuration", __func__);
+			exit(EXIT_FAILURE);
+		}
 		/* 
 		 * If we are routing for an external sender, then we
 		 * might have to copy the packet into an allocated
@@ -3244,7 +3269,10 @@ honeyd_signal(int fd, short what, void *arg)
 	{
 		FILE *fp;
 		if ((fp = fopen(templateDump , "w+")) == NULL)
-			warn("Error opening the DHCP IP address dump file");
+		{
+			syslog(LOG_WARNING, "Error opening the DHCP IP address dump file");
+		}
+			//warn("Error opening the DHCP IP address dump file");
 		else
 			fclose(fp);
 	}
@@ -3326,16 +3354,17 @@ main(int argc, char *argv[])
 	if(chdir(PATH_HONEYDDATA) == -1)
 	{
 		printf("ERROR: Could not find path PATH_HONEYDDATA: %s\n", PATH_HONEYDDATA);
+		syslog(LOG_ERR,"ERROR: Could not find path PATH_HONEYDDATA: %s\n", PATH_HONEYDDATA);
 		perror("");
 		exit(EXIT_FAILURE);
 	}
-
 	fprintf(stderr, "Honeyd V%s Copyright (c) 2002-2007 Niels Provos\n",
 	    VERSION);
 
 	orig_argc = argc;
 	orig_argv = argv;
-	while ((c = getopt_long(argc, argv, "VPTdc:i:p:x:a:u:g:f:t:l:s:0:R:h?",
+	syslog_init(orig_argc, orig_argv);
+	while ((c = getopt_long(argc, argv, "VPTdc:i:p:x:a:u:g:f:t:l:s:0:R:m:h?",
 				honeyd_long_opts, NULL)) != -1) {
 		char *ep;
 		switch (c) {
@@ -3426,8 +3455,11 @@ main(int argc, char *argv[])
 			honeyd_debug++;
 			break;
 		case 'i':
-			if (ninterfaces >= HONEYD_MAX_INTERFACES)
-				errx(1, "Too many interfaces specified");
+			if (ninterfaces >= HONEYD_MAX_INTERFACES){
+				syslog(LOG_ERR, "Too many interfaces specified");
+				exit(EXIT_FAILURE);
+			}
+				//errx(1, "Too many interfaces specified");
 			dev[ninterfaces++] = optarg;
 			break;
 		case 'f':
@@ -3454,6 +3486,11 @@ main(int argc, char *argv[])
 		case '0':
 			config.osfp = optarg;
 			break;
+		case 'm':
+			config.nmapMac = optarg;
+			printf("nmac: %s\n",config.nmapMac);
+
+			break;
 		case 0:
 			/* long option handled -- skip this one. */
 			break;
@@ -3465,7 +3502,7 @@ main(int argc, char *argv[])
 
 	if (honeyd_show_version) {
 		printf("Honeyd Version %s\n", VERSION);
-		exit(0);
+		exit(EXIT_SUCCESS);
 	}
 	if (honeyd_show_usage) {
 		usage();
@@ -3473,18 +3510,22 @@ main(int argc, char *argv[])
 	}
 	if (honeyd_show_include_dir) {
 		printf("%s\n", PATH_HONEYDINCLUDE);
-		exit(0);
+		exit(EXIT_SUCCESS);
 	}
 	if (honeyd_show_data_dir) {
 		printf("%s\n", PATH_HONEYDDATA);
-		exit(0);
+		exit(EXIT_SUCCESS);
 	}
 
 	argc -= optind;
 	argv += optind;
 
 	if ((honeyd_rand = rand_open()) == NULL)
-		err(1, "rand_open");
+	{
+		syslog(LOG_ERR, "rand_open");
+		exit(EXIT_FAILURE);
+	}
+		//err(1, "rand_open");
 	/* We need reproduceable random numbers for regression testing */
 	if (setrand)
 		rand_set(honeyd_rand, &setrand, sizeof(setrand));
@@ -3498,8 +3539,6 @@ main(int argc, char *argv[])
 
 	/* Three priorities - UI connections always get a better priority */
 	event_priority_init(3);
-
-	syslog_init(orig_argc, orig_argv);
 
 	/* Initalize pool allocator */
 	pool_pkt = pool_init(HONEYD_MTU);
@@ -3525,30 +3564,43 @@ main(int argc, char *argv[])
 	associations_init();
 
 	/* Xprobe2 fingerprints */
-	if ((fp = fopen(config.xprobe, "r")) == NULL)
-		err(1, "fopen(%s)", config.xprobe);
-	if (xprobe_personality_parse(fp) == -1)
-		errx(1, "parsing xprobe personality file failed");
+	if ((fp = fopen(config.xprobe, "r")) == NULL){
+		syslog(LOG_ERR, "fopen(%s)", config.xprobe);
+		exit(EXIT_FAILURE);
+	}
+	if (xprobe_personality_parse(fp) == -1){
+		syslog(LOG_ERR, "parsing xprobe personality file failed");
+		exit(EXIT_FAILURE);
+	}
 	fclose(fp);
 	
 	/* Association between xprobe and nmap fingerprints */
-	if ((fp = fopen(config.assoc, "r")) == NULL)
-		err(1, "fopen(%s)", config.assoc);
-	if (parse_associations(fp) == -1)
-		errx(1, "parsing associations file failed");
+	if ((fp = fopen(config.assoc, "r")) == NULL){
+		syslog(LOG_ERR, "fopen(%s)", config.assoc);
+		exit(EXIT_FAILURE);
+	}
+	if (parse_associations(fp) == -1){
+		syslog(LOG_ERR, "parsing associations file failed");
+		exit(EXIT_FAILURE);
+	}
 	fclose(fp);
 
 	/* Nmap fingerprints */
-	if ((fp = fopen(config.pers, "r")) == NULL)
-		err(1, "fopen(%s)", config.pers);
-	if (personality_parse(fp) == -1)
-		errx(1, "parsing personality file failed");
+	if ((fp = fopen(config.pers, "r")) == NULL){
+		syslog(LOG_ERR, "fopen(%s)", config.pers);
+		exit(EXIT_FAILURE);
+	}
+	if (personality_parse(fp) == -1){
+		syslog(LOG_ERR, "parsing personality file failed");
+		exit(EXIT_FAILURE);
+	}
 	fclose(fp);
 
-
 	/* PF OS fingerprints */
-	if (honeyd_osfp_init(config.osfp) == -1)
-		errx(1, "reading OS fingerprints failed");
+	if (honeyd_osfp_init(config.osfp) == -1){
+		syslog(LOG_ERR, "reading OS fingerprints failed");
+		exit(EXIT_FAILURE);
+	}
 
 	honeyd_init();
 	
@@ -3561,8 +3613,10 @@ main(int argc, char *argv[])
 		 * the configuration - some configs will not load without
 		 * this call succeeding.
 		 */
-		if (!honeyd_verify_config)
-			err(1, "ip_open");
+		if (!honeyd_verify_config){
+			syslog(LOG_ERR, "ip_open");
+			exit(EXIT_FAILURE);
+		}
 	}
 
 	if (honeyd_verify_config) {
@@ -3570,14 +3624,6 @@ main(int argc, char *argv[])
 		
 		/* Make sure that we do not open interfaces for real */
 		interface_verify_config = 1;
-	}
-
-	/* Initialize the specified interfaces */
-	if (ninterfaces == 0)
-		interface_init(NULL, argc, argc ? argv : NULL);
-	else {
-		for (i = 0; i < ninterfaces; i++)
-			interface_init(dev[i], argc, argc ? argv : NULL);
 	}
 
 #ifdef HAVE_PYTHON
@@ -3591,9 +3637,33 @@ main(int argc, char *argv[])
 			honeyd_webserver_port,
 			honeyd_webserver_root);
 #endif
-
 	/* Reads in the ethernet codes and indexes them for use in config */
-	ethernetcode_init();
+		//ethernetcode_init();
+		//nmap mac addresses are read in here
+	//they did enter the -m flag and entered a path for the ethernet codes and indexes
+	/* Reads in the ethernet codes and indexes them for use in config */
+
+	fp = fopen(config.nmapMac, "r");
+	if (fp != NULL){
+		ethernetcode_init(fp);
+	}else{
+		syslog(LOG_ERR,"Can't open the nmap-mac-address file");
+		exit(EXIT_FAILURE);
+	}
+
+
+
+
+	/* Initialize the specified interfaces */
+	if (ninterfaces == 0)
+		interface_init(NULL, argc, argc ? argv : NULL);
+	else {
+		for (i = 0; i < ninterfaces; i++)
+			interface_init(dev[i], argc, argc ? argv : NULL);
+	}
+
+
+
 
 	/* Read main configuration file */
 	if (config.config != NULL)
@@ -3601,7 +3671,11 @@ main(int argc, char *argv[])
 
 	/* Just verify the configuration - exit with success */
 	if (honeyd_verify_config)
-		errx(0, "parsing configuration file successful");
+	{
+		syslog(LOG_ERR, "parsing configuration file successful");
+		exit(EXIT_FAILURE);
+				//errx(0, "parsing configuration file successful");
+	}
 
 	//Start sending DHCP discoveries that have been queue'd up
 	dhcp_send_discover();
@@ -3627,16 +3701,21 @@ main(int argc, char *argv[])
 	/* Create PID file, we might not be able to remove it */
 	unlink(PIDFILE);
 	if ((fp = fopen(PIDFILE, "w")) == NULL)
-		err(1, "fopen");
+		{
+		syslog(LOG_ERR, "fopen");
+		exit(EXIT_FAILURE);
+		//err(1, "fopen");
+		}
 
 	/* Start Honeyd in the background if necessary */
 	if (!honeyd_debug) {
 		setlogmask(LOG_UPTO(LOG_INFO));
-
 		fprintf(stderr, "Honeyd starting as background process\n");
 		if (daemon(1, 0) < 0) {
 			unlink(PIDFILE);
-			err(1, "daemon");
+			syslog(LOG_ERR, "daemon");
+			exit(EXIT_FAILURE);
+			//err(1, "daemon");
 		}
 	}
 	
@@ -3661,7 +3740,8 @@ main(int argc, char *argv[])
 	{
 		FILE *fp;
 		if ((fp = fopen(templateDump , "w+")) == NULL)
-			warn("Error opening the DHCP IP address dump file");
+			syslog(LOG_WARNING, "Error opening the DHCP IP address dump file");
+			//warn("Error opening the DHCP IP address dump file");
 		else
 			fclose(fp);
 	}
@@ -3674,7 +3754,6 @@ main(int argc, char *argv[])
 		syslog(LOG_INFO, "Internal webserver has been disabled.");
 #endif
 
-	/* Setup signal handler */
 	if (signal(SIGPIPE, SIG_IGN) == SIG_ERR) {
 		perror("signal");
 		return (-1);

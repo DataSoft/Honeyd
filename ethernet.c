@@ -38,6 +38,7 @@
 #endif
 
 #include <sys/tree.h>
+#include <syslog.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -83,7 +84,6 @@ ethernetcode_index(struct ethertree *etherroot, struct ethernetcode *code)
 	struct etherindex tmp, *entry;
 	char line[1024], *p, *e;
 
-	//printf("Adding %d:%s\n", code->prefix, code->vendor);
 
 	strlcpy(line, code->vendor, sizeof(line));
 	e = line;
@@ -95,15 +95,24 @@ ethernetcode_index(struct ethertree *etherroot, struct ethernetcode *code)
 			/* Generate a new entry for this word */
 			entry = calloc(1, sizeof(struct etherindex));
 			if (entry == NULL)
-				err(1, "%s: calloc", __func__);
+			{
+				syslog(LOG_ERR, "%s: calloc, failed to allocate new entry for the current word", __func__);
+				exit(EXIT_FAILURE);
+			}
 
 			if ((entry->index_word = strdup(p)) == NULL)
-				err(1, "%s: strdup", __func__);
+			{
+				syslog(LOG_ERR, "%s: strdup", __func__);
+				exit(EXIT_FAILURE);
+			}
 
 			entry->list_mem = 32;
 			if ((entry->list = calloc(entry->list_mem,
 					sizeof(struct ethernetcode *))) == NULL)
-				err(1, "%s: calloc");
+			{
+				syslog(LOG_ERR, "%s: calloc",__func__);
+				exit(EXIT_FAILURE);
+			}
 
 			SPLAY_INSERT(ethertree, etherroot, entry);
 		}
@@ -116,7 +125,10 @@ ethernetcode_index(struct ethertree *etherroot, struct ethernetcode *code)
 			tmp = realloc(entry->list,
 					entry->list_mem * sizeof(struct ethernetcode *));
 			if (tmp == NULL)
-				err(1, "%s: realloc", __func__);
+			{
+				syslog(LOG_ERR, "%s: realloc", __func__);
+				exit(EXIT_FAILURE);
+			}
 			entry->list = tmp;
 		}
 
@@ -125,133 +137,83 @@ ethernetcode_index(struct ethertree *etherroot, struct ethernetcode *code)
 
 	return (0);
 }
-/*
-void
-ethernetcode_init(void)
-{
-	struct ethernetcode *code = &codes[0];
 
-	SPLAY_INIT(&etherroot);
-
-	while (code->vendor != NULL) {
-		printf("Vendor name is: %s \n", code->vendor);
-		printf("the prefix is: %x \n", code->prefix);
-		fflush(stdout);
-		ethernetcode_index(&etherroot, code);
-
-		++code;
-	}
-}
-*/
-
-void ethernetcode_init(void){//16080 lines counting the 5 comments at the top
-	char s[300];//string that contains the current line being read
-	char waste[300];//string used to read first five lines of the text file
+void ethernetcode_init(FILE *in_file){
+	char s[300];
 	char c;
 	struct ethernetcode *currentCode;
 	struct ethernetcode *codes;
 	int counter = 0;
 	int numOfLine = 0;
 	uint32_t prefix;
-	FILE *in_file  = fopen("/usr/share/nova/sharedFiles/nmap-mac-prefixes", "r"); // read only
 
-	if (!in_file)//file pointer is null
-	{
-		printf("File can't be found\n");
-		exit(-1);
+
+	if (!in_file){
+		printf("nmap-mac-prefixes File can't be found\n");
+		syslog(LOG_ERR, "nmap-mac-prefixes file can't be found \n");
+		exit(EXIT_FAILURE);
 	}
 
-	while(fgets( s, 300, in_file ) != NULL)
-	{
-		numOfLine++;//get the number of lines to dynamically allocate the codes array
+	while(fgets( s, 300, in_file ) != NULL){
+		numOfLine++;
 	}
-
-	//printf("Found %d lines in the file\n", numOfLine);
-
-	if(numOfLine > 0)
-	{
+	if(numOfLine > 0){
 		codes = (struct ethernetcode *)malloc(numOfLine * sizeof(struct ethernetcode));
 		currentCode = codes;
-	}
-	else
+	}else{
 		printf("nmap-mac-prefixes file cannot be parsed.");
-
-	rewind(in_file);//go back to the beginning of the file
-
-
-	do//used to skip first five lines
-	{
-		fgets( waste, 300, in_file );
-		//skips through first 5 garbage lines
+		syslog(LOG_ERR, "nmap-mac-prefixes file can't be parsed \n");
+		fclose(in_file);
+		exit(EXIT_FAILURE);
+	}
+	rewind(in_file);
+	do{
+		memset (s,'\0',300);
+		fgets( s, 300, in_file );
 		counter++;
-	}while(counter < 5);
-
-
+	}while(s[0] == '#');
 	SPLAY_INIT(&etherroot);
-	//while there is another line, continue reading
-	while (fgets( s, 300, in_file ) != NULL)
-	{
-		char routerID[10];
+		do{
+		char routerID[20];
 		char routerCompany[80];
-		//should read in the router numbers/characters
 		int i;
-		for(i = 0; i < 10; i++)
-		{
+		for(i = 0; i < 20; i++)		{
 			c = s[i];
-			if(c != ' ')
-				{
+			if(c != ' '){
 					routerID[i] = c;
-				}
-			else
-				{
+				}else{
 					routerID[i] = '\0';
-
 					break;
 				}
 		}
-		int companyStart = 0;
 		int j;
 		int companyNameStart = 0;
 		int firstSpaceFound = 0;
-		for(j = 0; j < 300; j++)
-		{
+		for(j = 0; j < 300; j++){
 			c = s[j];
-
-			if(c >=65 && c <= 90)//converts uppercase to lower case
-			{
+			if(c >=65 && c <= 90){
 				c = c + 32;
 		    }
-
-			if(companyNameStart > 0)
-			{
-			routerCompany[j-companyNameStart] = c; //we start adding the company name here
+			if(companyNameStart > 0){
+			routerCompany[j-companyNameStart] = c;
 			}
-			if(c == ' ' && firstSpaceFound == 0)
-			{
+			if(c == ' ' && firstSpaceFound == 0){
 				firstSpaceFound = 1;
 				companyNameStart = j+1;
-				//turn flag on and a counter to 1
 			}
-
-
-			if(s[j] == '\0' || s[j] == '\n')
-			{
+			if(s[j] == '\0' || s[j] == '\n'){
 				routerCompany[j-companyNameStart] = '\0';
-				break;//quit loop because we reached the end of the string/current line
+				break;
 			}
 
 		}
-
-
-
 		prefix = 0;
 		sscanf(routerID, "%x", &prefix);
 		currentCode->prefix = prefix;
 		currentCode->vendor = routerCompany;
 		ethernetcode_index(&etherroot, currentCode);
-		++currentCode;//move on to the next struct
-
-	}
+		++currentCode;
+	}while (fgets( s, 300, in_file ) != NULL);
 	fclose(in_file);
 }
 
@@ -418,7 +380,8 @@ ethernetcode_test(void)
 void
 ethernet_test(void)
 {
-	ethernetcode_init();
+	FILE *in_file  = fopen("/usr/share/honeyd/nmap-mac-prefixes", "r"); // read only
+	ethernetcode_init(in_file);
 
 	ethernetcode_test();
 }

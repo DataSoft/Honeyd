@@ -78,6 +78,7 @@
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
+#include <syslog.h>
 
 #ifdef HAVE_LIBREADLINE
 #include <readline/readline.h>
@@ -156,7 +157,9 @@ receive(int fd, int display)
                     last++;
                     if(write(1, Buffer, last-Buffer) == -1)
 			{
-				errx(EXIT_FAILURE, "Failed to write to file descriptor");
+                  syslog(LOG_ERR, "Failed to write to file descriptor");
+                  exit(EXIT_FAILURE);
+				//errx(EXIT_FAILURE, "Failed to write to file descriptor");
 			}
                 }
             }
@@ -179,7 +182,9 @@ receive(int fd, int display)
                 flush = last - Buffer + 1;
             if(write(1, Buffer, flush) == -1)
 		{
-			errx(EXIT_FAILURE, "Failed to write to file descriptor");
+            syslog(LOG_ERR, "Failed to write to file descriptor");
+            exit(EXIT_FAILURE);
+			//errx(EXIT_FAILURE, "Failed to write to file descriptor");
 		}
             strlcpy(Buffer, Buffer + flush, sizeof(Buffer));
             len -= flush;
@@ -210,7 +215,9 @@ check_fd(int sig)
 			{
 				if(write(fileno(stdout), buf, len))
 				{
-					errx(EXIT_FAILURE, "Failed to write to file descriptor");
+					syslog(LOG_ERR, "Failed to write to file descriptor");
+					exit(EXIT_FAILURE);
+					//errx(EXIT_FAILURE, "Failed to write to file descriptor");
 				}
 			}
 			else
@@ -299,7 +306,11 @@ main(int argc, char **argv)
 	strlcpy(ifsun.sun_path, sockname, sizeof(ifsun.sun_path));
 
 	if ((fd = socket(AF_UNIX, SOCK_STREAM, 0)) == -1)
-		errx(2, "cannot create local domain socket");
+	{
+		syslog(LOG_ERR, "Cannot create local domain socket");
+		exit(EXIT_FAILURE);
+	}
+		//errx(2, "cannot create local domain socket");
 
 	TimedOut = 0;
 	if (TimeoutVal) {
@@ -369,9 +380,9 @@ main(int argc, char **argv)
 			len++;
 		}
 #endif
-		if(write(fd, l, len) == -1)
-		{
-			errx(EXIT_FAILURE, "Failed to write to file descriptor");
+		if(write(fd, l, len) == -1){
+			syslog(LOG_ERR, "Failed to write to file descriptor");
+			exit(EXIT_FAILURE);
 		}
 		if (receive(fd, display) != 0)
 			break;

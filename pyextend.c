@@ -199,7 +199,8 @@ pyextend_populate_connections(struct tuple *hdr, void *arg)
 	    "sent", hdr->sent);
 	if (pValue == NULL) {
 		PyErr_Print();
-		errx(1, "%s: failed to build argument list", __func__);
+		syslog(LOG_ERR, "%s: failed to build argument list", __func__);
+		exit(EXIT_FAILURE);
 	}
 
 	/* pValue reference stolen here */
@@ -301,8 +302,10 @@ pyextend_humanreadable_action(struct action *action, char *buffer, size_t len)
 			if (getnameinfo(ai->ai_addr, ai->ai_addrlen,
 				addr, sizeof(addr), port, sizeof(port),
 				NI_NUMERICHOST|NI_NUMERICSERV) != 0)
-				err(1, "%s: getnameinfo", __func__);
-
+			{
+				syslog(LOG_ERR, "%s: getnameinfo", __func__);
+				exit(EXIT_FAILURE);
+			}
 			snprintf(buffer, len, "%sproxy %s:%s",
 			    flags != NULL ? flags : "",
 			    addr, port);
@@ -347,7 +350,8 @@ pyextend_populate_ips(struct template *tmpl, void *arg)
 	    addr_ntoa(tmpl->ethernet_addr) : NULL);
 	if (pValue == NULL) {
 		PyErr_Print();
-		errx(1, "%s: failed to build argument list", __func__);
+		syslog(LOG_ERR, "%s: failed to build argument list", __func__);
+		exit(EXIT_FAILURE);
 	}
 	/* pValue reference stolen here */
 	PyList_SetItem(pArgs, count->offset++, pValue);
@@ -393,7 +397,8 @@ pyextend_stats_network(PyObject *self, PyObject *args)
 
 	if (pValue == NULL) {
 		PyErr_Print();
-		errx(1, "%s: failed to build argument list", __func__);
+		syslog(LOG_ERR, "%s: failed to build argument list", __func__);
+		exit(EXIT_FAILURE);
 	}
 
 	return (pValue);
@@ -414,7 +419,8 @@ pyextend_config(PyObject *self, PyObject *args)
 	    "osfp", config.osfp);
 	if (pValue == NULL) {
 		PyErr_Print();
-		errx(1, "%s: failed to build argument list", __func__);
+		syslog(LOG_ERR, "%s: failed to build argument list", __func__);
+		exit(EXIT_FAILURE);
 	}
 
 	return (pValue);
@@ -439,7 +445,8 @@ pyextend_interfaces(PyObject *self, PyObject *args)
 		    "link", addr_ntoa(&if_ent->intf_link_addr));
 		if (pValue == NULL) {
 			PyErr_Print();
-			errx(1, "%s: failed to build argument list", __func__);
+			syslog(LOG_ERR, "%s: failed to build argument list", __func__);
+			exit(EXIT_FAILURE);
 		}
 		/* pValue reference stolen here */
 		PyTuple_SetItem(pArgs, i, pValue);
@@ -833,7 +840,10 @@ pyextend_run(struct evbuffer *output, char *command)
 	char *code = NULL;
 
 	if (asprintf(&code, preamble, command) == -1)
-		err(1, "%s: asprintf", __func__);
+	{
+		syslog(LOG_ERR, "%s: asprintf", __func__);
+		exit(EXIT_FAILURE);
+	}
 
 	compiled_code = Py_CompileStringFlags(code, "<filter>",
 	    Py_file_input, 0);
@@ -939,7 +949,11 @@ pyextend_load_module(const char *name)
 	CHECK_FUNC(pFunc, "honeyd_end");
 
 	if ((pye = calloc(1, sizeof(struct pyextend))) == NULL)
-		err(1, "calloc");
+	{
+		syslog(LOG_ERR, "calloc");
+		exit(EXIT_FAILURE);
+	}
+		//err(1, "calloc");
 
 	CHECK_FUNC(pye->pFuncInit, "honeyd_init");
 	CHECK_FUNC(pye->pFuncReadData, "honeyd_readdata");
@@ -947,7 +961,10 @@ pyextend_load_module(const char *name)
 	CHECK_FUNC(pye->pFuncEnd, "honeyd_end");
 
 	if ((pye->name = strdup(script)) == NULL)
-		err(1, "%s: strdup", __func__);
+	{
+		syslog(LOG_ERR, "%s: strdup", __func__);
+		exit(EXIT_FAILURE);
+	}
 
 	SPLAY_INSERT(pyetree, &pyextends, pye);
 	  
@@ -1255,21 +1272,33 @@ pyextend_webserver_fix_permissions(const char *path, uid_t uid, gid_t gid)
 		created_dirs = 1;
 		if (snprintf(fullname, sizeof(fullname), "%s/graphs", path) >=
 		    sizeof(fullname))
-			errx(1, "Path too long: %s/graphs", path);
+		{
+			syslog(LOG_ERR, "Path too long: %s\graphs", path);
+			exit(EXIT_FAILURE);
+		}
 		if (lstat(fullname, &sb) == -1 && errno == ENOENT) {
 			syslog(LOG_INFO, "Creating directory %s", fullname);
 			if (mkdir(fullname, 0722) == -1)
-				err(1, "mkdir(%s)", fullname);
+			{
+				syslog(LOG_ERR, "mkdir(%s)", fullname);
+				exit(EXIT_FAILURE);
+			}
 		}
 	}
 
 	/* Fix permissions */
 	if (strlen(path) >= sizeof (fullname) - 2)
-		errx(1, "directory name too long");
+	{
+		syslog(LOG_ERR, "directory name too long");
+		exit(EXIT_FAILURE);
+	}
 
 	dir = opendir(path);
 	if (dir == NULL)
-		err(1, "opendir(%s)", path);
+	{
+		syslog(LOG_ERR, "opendir(%s)", path);
+		exit(EXIT_FAILURE);
+	}
 
 	strlcpy(fullname, path, sizeof (fullname));
 	off = strlen(fullname);
@@ -1286,7 +1315,10 @@ pyextend_webserver_fix_permissions(const char *path, uid_t uid, gid_t gid)
 		strlcpy(fullname + off, filename, sizeof(fullname) - off);
 
 		if (lstat(fullname, &sb) == -1)
-			err(1, "lstat(%s)", fullname);
+		{
+			syslog(LOG_ERR, "lstat(%s)", fullname);
+			exit(EXIT_FAILURE);
+		}
 
 		/* We ignore symbolic links - shoot yourself in the foot */
 		if (sb.st_mode & S_IFLNK)
@@ -1296,7 +1328,10 @@ pyextend_webserver_fix_permissions(const char *path, uid_t uid, gid_t gid)
 		if (sb.st_uid != uid || sb.st_gid != gid) {
 			syslog(LOG_INFO, "Fixing ownership: %s", fullname);
 			if (chown(fullname, uid, gid) == -1)
-				err(1, "chown(%s)", fullname);
+			{
+				syslog(LOG_ERR, "chown(%s)", fullname);
+				exit(EXIT_FAILURE);
+			}
 		}
 
 		if ((sb.st_mode & (S_IRUSR|S_IWUSR)) != (S_IRUSR|S_IWUSR) ||
@@ -1308,7 +1343,10 @@ pyextend_webserver_fix_permissions(const char *path, uid_t uid, gid_t gid)
 
 			syslog(LOG_INFO, "Fixing modes: %s", fullname);
 			if (chmod(fullname, mode) == -1)
-				err(1, "chmod(%s)", fullname);
+			{
+				syslog(LOG_ERR, "chmod(%s)", fullname);
+				exit(EXIT_FAILURE);
+			}
 		}
 
 		if ((sb.st_mode & S_IFDIR) && filename[0] != '.')
@@ -1343,7 +1381,7 @@ pyextend_webserver_verify_setup(const char *root_dir)
 			    p->mode & W_OK ? " write" : "",
 			    p->mode & R_OK ? " read" : "",
 			    filename);
-			exit(1);
+			exit(EXIT_FAILURE);
 		}
 	}
 }
@@ -1365,8 +1403,8 @@ pyextend_webserver_init(char *address, int port, char *root_dir)
 
 	if (pModule == NULL) {
 		PyErr_Print();
-		err(1, "%s: could not load python module: %s",
-		    __func__, script);
+		syslog(LOG_ERR, "%s: could not load python module: %s", __func__, script);
+		exit(EXIT_FAILURE);
 	}
 
 	pDict = PyModule_GetDict(pModule); /* Borrowed */
@@ -1376,13 +1414,15 @@ pyextend_webserver_init(char *address, int port, char *root_dir)
 	pArgs = Py_BuildValue("(s)", root_dir);
 	if (pArgs == NULL) {
 		PyErr_Print();
-		errx(1, "%s: Failed to build value", __func__);
+		syslog(LOG_ERR, "%s: Failed to build value", __func__);
+		exit(EXIT_FAILURE);
 	}
 	pWebServer = PyObject_CallObject(pFuncWebInit, pArgs);
 	Py_DECREF(pArgs);
 	if (pWebServer == NULL) {
 		PyErr_Print();
-		errx(1, "%s: make_server function returned error.", __func__);
+		syslog(LOG_ERR, "%s: make_server function returned error.", __func__);
+		exit(EXIT_FAILURE);
 	}
 
 	pyserver_fd = make_socket(bind, SOCK_STREAM, address, port);
@@ -1396,7 +1436,10 @@ pyextend_webserver_init(char *address, int port, char *root_dir)
 	}
 
 	if (listen(pyserver_fd, 10) == -1)
-		err(1, "%s: listen", __func__);
+	{
+		syslog(LOG_ERR, "%s: listen", __func__);
+		exit(EXIT_FAILURE);
+	}
 
 	syslog(LOG_NOTICE, "HTTP server listening on %s:%d", address, port);
 	syslog(LOG_NOTICE, "HTTP server root at %s", root_dir);
@@ -1412,7 +1455,8 @@ pyextend_webserver_init(char *address, int port, char *root_dir)
 
  error:
 	Py_DECREF(pModule);
-	errx(1, "Cannot initialize module.");
+	syslog(LOG_ERR, "Cannot initialize module");
+	exit(EXIT_FAILURE);
 }
 
 void

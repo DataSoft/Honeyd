@@ -59,6 +59,7 @@
 #include <ctype.h>
 #include <getopt.h>
 #include <err.h>
+#include <syslog.h>
 
 #include <event.h>
 #include <evdns.h>
@@ -83,7 +84,7 @@ usage(char *progname)
 	    "\t -l logfile - logs PROXY transaction to specified file\n"
 	    "\t -L mail_logfile - logs SMTP transactions to specified file\n",
 	    progname);
-	exit(1);
+	exit(EXIT_SUCCESS);
 }
 
 int
@@ -102,8 +103,12 @@ main(int argc, char **argv)
 		case 'e':
 			fprintf(stderr, "Redirecting stderr to %s\n", optarg);
 			if (freopen(optarg, "a", stderr) == NULL)
-				err(1, "%s: failed to reopen stderr", 
-				    __func__);
+			{
+				syslog(LOG_ERR, "%s: failed to reopen stderr", __func__);
+				exit(EXIT_FAILURE);
+			}
+				//err(1, "%s: failed to reopen stderr",
+				  //  __func__);
 			setvbuf(stderr, NULL, _IOLBF, 0);
 			break;
 		case 'v':
@@ -120,8 +125,12 @@ main(int argc, char **argv)
 			break;
 		case 'd': {
 			if (smtp_set_datadir(optarg) == -1)
-				errx(1, "Bad directory specification: %s", 
-				    log_datadir);
+			{
+				syslog(LOG_ERR, "Bad directory specification: %s", log_datadir);
+				exit(EXIT_FAILURE);
+			}
+				//errx(1, "Bad directory specification: %s",
+				  //  log_datadir);
 			break;
 		}
 		default:
@@ -132,14 +141,22 @@ main(int argc, char **argv)
 	if (logfile != NULL) {
 		flog_proxy = fopen(logfile, "a");
 		if (flog_proxy == NULL)
-			err(1, "%s: fopen(%s)", __func__, logfile);
+		{
+			syslog(LOG_ERR, "%s: fopen(%s)", __func__,logfile);
+			exit(EXIT_FAILURE);
+		}
+			//err(1, "%s: fopen(%s)", __func__, logfile);
 		fprintf(stderr, "Logging to %s\n", logfile);
 	}
 
 	if (mail_logfile != NULL) {
 		flog_email = fopen(mail_logfile, "a");
 		if (flog_email == NULL)
-			err(1, "%s: fopen(%s)", __func__, mail_logfile);
+		{
+			syslog(LOG_ERR, "%s: fopen(%s)", __func__,mail_logfile);
+			exit(EXIT_FAILURE);
+		}
+			//err(1, "%s: fopen(%s)", __func__, mail_logfile);
 		fprintf(stderr, "Logging SMTP to %s\n", mail_logfile);
 	}
 
@@ -160,10 +177,18 @@ main(int argc, char **argv)
 		while ((p = strsep(&ports, ",")) != NULL) {
 			port = atoi(p);
 			if (port == 0)
-				errx(1, "Bad port number: %s", p);
+			{
+				syslog(LOG_ERR, "Bad port number: %s", p);
+				exit(EXIT_FAILURE);
+			}
+				//errx(1, "Bad port number: %s", p);
 			event = malloc(sizeof(struct event));
 			if (event == NULL)
-				err(1, "%s: malloc", __func__);
+			{
+				syslog(LOG_ERR, "%s: malloc", __func__);
+				exit(EXIT_FAILURE);
+			}
+				//err(1, "%s: malloc", __func__);
 			proxy_bind_socket(event, port);
 		}
 	}

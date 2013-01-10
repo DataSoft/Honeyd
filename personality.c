@@ -119,10 +119,16 @@ personality_new(const char *name)
 		return (NULL);
 
 	if ((pers = calloc(1, sizeof(struct personality))) == NULL)
-		err(1, "%s: calloc", __FUNCTION__);
+	{
+		syslog(LOG_ERR, "%s: calloc", __func__);
+		exit(EXIT_FAILURE);
+	}
 
 	if ((pers->name = strdup(name)) == NULL)
-		err(1, "%s: stdup", __FUNCTION__);
+	{
+		syslog(LOG_ERR, "%s: stdrup", __func__);
+		exit(EXIT_FAILURE);
+	}
 
 	/* Initialize defaults */
 	pers->tstamphz = -1;
@@ -142,7 +148,10 @@ personality_clone(const struct personality *person)
 	struct personality *newperson;
 
 	if ((newperson = malloc(sizeof(struct personality))) == NULL)
-		err(1, "%s: malloc", __FUNCTION__);
+	{
+		syslog(LOG_ERR, "%s: malloc", __func__);
+		exit(EXIT_FAILURE);
+	}
 
 	memcpy(newperson, person, sizeof(struct personality));
 
@@ -300,6 +309,15 @@ ip_personality(struct template *tmpl, uint16_t *pid, enum ipid_protocol proto)
 			*pid = *ipid_cached;
 			break;
 		}
+		case(ID_NONE):
+		{
+			//need to know what to implement for this section
+			break;
+		}
+		default:
+		{
+			break;
+		}
 	}
 	//TODO this is a fringe case that can sometimes cause bad IP ID results particularly when TI = BI, II = BI and SS = O
 	if((proto == ICMP) && !person->ipid_shared_sequence)
@@ -355,7 +373,11 @@ tcp_personality_test(const struct tcp_con *con, struct personality *person,
 					return (NULL);
 
 				//This might be one of the 6 Nmap SEQ packets, reply appropriately
+
 				//Apply WIN and OPS fields to the t_tests[0] test
+				test->options = person->seq_tests[0].options;
+				test->window = person->seq_tests[0].window;
+
 				switch( con->recv_window )
 				{
 					case 1:
@@ -2351,6 +2373,12 @@ personality_parse(FILE *fin)
 		/* Remove trailing comments */
 		p2 = p;
 		strsep(&p2, "#\r\n");
+
+		if (CMP(p, MATCHPOINTS) == 0) {
+			pers = NULL;
+			ignore = 1;
+			continue;
+		}
 
 		if (CMP(p, FINGERPRINT) == 0) {
 			p += sizeof(FINGERPRINT) - 1;

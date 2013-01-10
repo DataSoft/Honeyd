@@ -69,6 +69,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <err.h>
+#include <syslog.h>
 
 #include "plugins_config.h"
 
@@ -94,7 +95,10 @@ plugins_cfg_copy(const struct honeyd_plugin_cfg *cfg_src,
 	
 	if (cfg_src->cfg_type == HD_CONFIG_STR) {
 		if ((cfg_dst->cfg_str = strdup(cfg_src->cfg_str)) == NULL)
-			err(1, "%s: strdup", __func__);
+		{
+			syslog(LOG_ERR, "%s: strdup", __func__);
+			exit(EXIT_FAILURE);
+		}
 	}      
 }
 
@@ -114,12 +118,21 @@ plugins_config_item_add(const char *plugin, const char *option,
 		return;
 
 	if ((item = calloc(1, sizeof(struct honeyd_plugin_cfgitem))) == NULL)
-		err(1, "%s: calloc", __func__);
+	{
+		syslog(LOG_ERR, "%s: calloc", __func__);
+		exit(EXIT_FAILURE);
+	}
 
 	if ((item->plugin = strdup(plugin)) == NULL)
-		err(1, "%s: strdup", __func__);
+	{
+		syslog(LOG_ERR, "%s: strdup, string copy failed", __func__);
+		exit(EXIT_FAILURE);
+	}
 	if ((item->option = strdup(option)) == NULL)
-		err(1, "%s: strdup", __func__);
+	{
+		syslog(LOG_ERR, "%s: strdup, string copy failed", __func__);
+		exit(EXIT_FAILURE);
+	}
 	plugins_cfg_copy(cfg, &item->cfg);
 
 	TAILQ_INSERT_HEAD(&cfg_items, item, next);
