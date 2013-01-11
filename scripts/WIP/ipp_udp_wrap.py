@@ -11,6 +11,9 @@ from ipp import *
 if __name__ == "__main__" :
   # get requisite SNMP data here by
   # parsing stdin for parameters we need
+  if len(sys.argv) != 2 :
+    sys.exit(1)
+  snmpdstip = sys.argv[1]
   snmpmessagelength = int(binascii.hexlify(sys.stdin.read(2)[1]), 16)
   snmpversionlength = int(binascii.hexlify(sys.stdin.read(2)[1]), 16)
   snmpversion = int(binascii.hexlify(sys.stdin.read(snmpversionlength)))
@@ -58,6 +61,7 @@ if __name__ == "__main__" :
                        requestid=snmpreqid,
                        requestidlength=snmpreqidlength,
                        pdutype=snmppdutype,
-                       version=snmpversion)
+                       version=snmpversion,
+                       dstip=snmpdstip)
   response = req.generateResponse()
   print binascii.a2b_hex(response)

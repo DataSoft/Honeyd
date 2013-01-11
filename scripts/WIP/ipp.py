@@ -212,12 +212,19 @@ class IPPResponseTCP :
 
 class IPPResponseUDP :
   """Class for UDP responses to IPP requests."""
-  def __init__ (self, reqoid=None, requestid=None, requestidlength=None, pdutype=None, version=None) :
+  def __init__ (self, 
+                reqoid=None, 
+                requestid=None, 
+                requestidlength=None, 
+                pdutype=None, 
+                version=None,
+                dstip=None) :
     self.reqoid = reqoid if reqoid != None else ""
     self.requestid = requestid if requestid != None else "1"
     self.pdutype = pdutype if pdutype != None else 0xA0
     self.requestidlength = requestidlength if requestidlength != None else "1"
     self.version = version if version != None else 0x00
+    self.dstip = dstip if dstip != None else ""
     
     self.ids = {"integer":0x02, 
                 "bit-string":0x03,
@@ -356,29 +363,39 @@ class IPPResponseUDP :
     # the script is going to have to determine what values are 
     # being request, and then proffer them in the correct format
     """
-    mib = ""
-    # hardcode a lexmark printer since we have one around 
-    # and I found a mib structure for it
-    if re.match("2b06010201", self.reqoid) :
-      # If this string matches, that means the request was for
-      # something within the 1.3.6.1.2 MIB subtree, which 
-      # corresponds to system-specific information and 
-      # identifiers
-      mib = "2b06010201"
-      mib += self.determineMIBSystemValue(self.reqoid[10:])
-    elif re.match("2b06010401", self.reqoid) :
-      # This corresponds to a response for a particular variable
-      # within our "printer's" MIB, and as we're using lexmark, 
-      # the string translates to 1.3.6.1.4.1.641
-      # Any appended string is going to correspond to more specific
-      # printer things like toner color, etc.
-      mib = "2b060104018501"
-      mib += self.determineMIBHostValue(self.reqoid[14:])
-    else :
       mib = ""
-    return mib
+      # hardcode a lexmark printer since we have one around 
+      # and I found a mib structure for it
+      if re.match("2b06010201", self.reqoid) :
+        # If this string matches, that means the request was for
+        # something within the 1.3.6.1.2 MIB subtree, which 
+        # corresponds to system-specific information and 
+        # identifiers
+        mib = "2b06010201"
+        mib += self.determineMIBSystemValue(self.reqoid[10:])
+      elif re.match("2b06010401", self.reqoid) :
+        # This corresponds to a response for a particular variable
+        # within our "printer's" MIB, and as we're using lexmark, 
+        # the string translates to 1.3.6.1.4.1.641
+        # Any appended string is going to correspond to more specific
+        # printer things like toner color, etc.
+        mib = "2b060104018501"
+        mib += self.determineMIBHostValue(self.reqoid[14:])
+      else :
+        mib = ""
+      return mib
     """
     return "2b0601020119030105"
+  
+  def matchOidToResponse(self) :
+    f = open(ip + '.txt', 'r')
+    match = f.readlines()
+    res = []
+    for line in match :
+      split = line.split(':')
+      if split[0] == self.reqoid :
+        res.append("{0:02X}".format(self.ids[split[1]]))
+        res.append("{0:02X}".format())
   
   def determineMIBSystemValue(self, oid) :
     mibtreepath = []
