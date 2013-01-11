@@ -32,6 +32,7 @@
 
 #include <sys/socket.h>
 #include <sys/uio.h>
+#include <syslog.h>
 
 #include <errno.h>
 #include <err.h>
@@ -85,8 +86,8 @@ send_fd(int socket, int fd, void *base, size_t len)
 		errx(1, "%s: sendmsg: expected sent >0 got %ld",
 		    __func__, (long)n);
 #else
-	errx(1, "%s: subsystems not supported due to lack of fd passing",
-	    __func__);
+	syslog(LOG_ERR, "%s: subsystems not supported due to lack of fd passing",__func__);
+			exit(EXIT_FAILURE);
 #endif
 
 	return (0);
@@ -149,7 +150,7 @@ receive_fd(int socket, void *base, size_t *len)
 #endif
 	return fd;
 #else
-	errx(1, "%s: subsystems not supported due to lack of fd passing",
-	    __func__);
+	syslog(LOG_ERR, "%s: subsystems not supported due to lack of fd pasing", __func__);
+			exit(EXIT_FAILURE);
 #endif
 }

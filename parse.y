@@ -103,7 +103,7 @@ int curtype = -1;	/* Lex sets it to SOCK_STREAM or _DGRAM */
 
 %}
 
-%token	CREATE ADD PORT BIND CLONE DOT BLOCK OPEN RESET DEFAULT SET ACTION
+%token	CREATE ADD PORT BIND CLONE DOT FILTERED OPEN CLOSED DEFAULT SET ACTION
 %token	PERSONALITY RANDOM ANNOTATE NO FINSCAN FRAGMENT DROP OLD NEW COLON
 %token	PROXY UPTIME DROPRATE IN SYN UID GID ROUTE ENTRY LINK NET UNREACH
 %token	SLASH LATENCY MS LOSS BANDWIDTH SUBSYSTEM OPTION TO SHARED NETWORK
@@ -210,8 +210,7 @@ delete		: DELETE template
 ;
 addition	: ADD template PROTO PORT NUMBER action
 	{
-		struct action *action;
-
+		struct action *action;		
 		if ($2 == NULL) {
 			yyerror("No template");
 			break;
@@ -752,16 +751,16 @@ action		: flags STRING
 				yyerror("Out of memory");
 		free($5);
 	}
-		| BLOCK
+		| FILTERED
 	{
 		memset(&$$, 0, sizeof($$));
-		$$.status = PORT_BLOCK;
+		$$.status = PORT_FILTERED;
 		$$.action = NULL;
 	}
-		| RESET
+		| CLOSED
 	{
 		memset(&$$, 0, sizeof($$));
-		$$.status = PORT_RESET;
+		$$.status = PORT_CLOSED;
 		$$.action = NULL;
 	}
 		| flags OPEN
@@ -1147,11 +1146,7 @@ dhcp_template(struct template *tmpl, char *interface, char *mac_addr)
 		return;
 
 	/* Wow - now we can assign the DHCP object to it */
-	if (dhcp_getconf(newtmpl) == -1) {
-		yyerror("Failed to start DHCP on %s",
-		    inter->if_ent.intf_name);
-		return;
-	}
+	queue_dhcp_discover(newtmpl);
 
 	need_arp = need_dhcp = 1;
 }

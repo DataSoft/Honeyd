@@ -143,7 +143,10 @@ subsystem_insert_template(struct subsystem *sub, struct template *tmpl)
 	int isipaddr = addr_aton(tmpl->name, &addr) != -1;
 
 	if ((cont = calloc(1, sizeof(struct template_container))) == NULL)
-		err(1, "%s: calloc");
+	{
+		syslog(LOG_ERR, "%s: calloc",__func__);
+		exit(EXIT_FAILURE);
+	}
 	cont->tmpl = template_ref(tmpl);
 
 	TAILQ_INSERT_TAIL(&sub->templates, cont, next);
@@ -388,8 +391,10 @@ subsystem_cmd_listen(int fd,
 			tmpl = cont->tmpl;
 			sub_port = port_find(tmpl, proto, port);
 			if (sub_port == NULL)
-				errx(1, "%s: no proto %d port %d",
-				    __func__, proto, port);
+			{
+				syslog(LOG_ERR, "%s: no proto %d port %d", __func__, proto, port);
+				exit(EXIT_FAILURE);
+			}
 			if (sub_port->sub == NULL) {
 				syslog(LOG_DEBUG,
 				    "Subsystem %s fails to listen on %s:%d",
@@ -550,8 +555,10 @@ subsystem_read(int fd, short what, void *arg)
 		if (strcmp(asrc, "0.0.0.0") != 0) {
 			tmpl = subsystem_template_find(sub, asrc);
 			if (tmpl == NULL)
-				errx(1, "%s: source address %s not found",
-				    __func__, asrc);
+			{
+				syslog(LOG_ERR, "%s: source address %s not found", __func__, asrc);
+				exit(EXIT_FAILURE);
+			}
 		} else {
 			cont = SPLAY_ROOT(&sub->root);
 			tmpl = cont->tmpl;

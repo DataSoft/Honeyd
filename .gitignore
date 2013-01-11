@@ -149,3 +149,7 @@ os-test/test.config
 os-test/results*
 /.project
 /.cproject
+/pypcap/Makefile
+/pypcap/Makefile.in
+/regress/Makefile
+/regress/Makefile.in

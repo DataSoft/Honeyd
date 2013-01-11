@@ -285,10 +285,16 @@ rrdtool_command(struct rrdtool_drv *drv, char *command,
 	struct rrdtool_command *cmd;
 
 	if ((cmd = calloc(1, sizeof(struct rrdtool_command))) == NULL)
-		err(1, "%s: calloc", __func__);
+	{
+		syslog(LOG_ERR, "%s: calloc", __func__);
+		exit(EXIT_FAILURE);
+	}
 	
 	if ((cmd->command = strdup(command)) == NULL)
-		err(1, "%s: strdup", __func__);
+	{
+		syslog(LOG_ERR, "%s: strdup", __func__);
+		exit(EXIT_FAILURE);
+	}
 
 	cmd->cb = cb;
 	cmd->cb_arg = cb_arg;
@@ -309,7 +315,10 @@ rrdtool_db_start(struct rrdtool_drv *drv, char *filename, int stepsize)
 	struct rrdtool_db *db;
 
 	if ((db = calloc(1, sizeof(struct rrdtool_db))) == NULL)
-		err(1, "%s: calloc", __func__);
+	{
+		syslog(LOG_ERR, "%s: calloc", __func__);
+		exit(EXIT_FAILURE);
+	}
 
 	db->drv = drv;
 
@@ -340,7 +349,10 @@ rrdtool_db_datasource(struct rrdtool_db *db, char *name, char *type,
 	snprintf(line, sizeof(line), "DS:%s:%s:%d:U:U",
 	    name, type, heartbeat);
 	if ((db->datasrcs[db->ndatasrcs++] = strdup(line)) == NULL)
-		err(1, "%s: strdup");
+	{
+		syslog(LOG_ERR, "%s: strdup",__func__);
+		exit(EXIT_FAILURE);
+	}
 
 	strlcat(db->create_command, " ", sizeof(db->create_command));
 	if ( strlcat(db->create_command, line, sizeof(db->create_command)) >=
@@ -479,14 +491,23 @@ rrdtool_fork(struct rrdtool_drv *drv)
 		/* Child */
 		close(pair[0]);
 		if (dup2(pair[1], fileno(stdout)) == -1)
-			err(1, "%s: dup2", __func__);
+		{
+			syslog(LOG_ERR, "%s: dup2", __func__);
+			exit(EXIT_FAILURE);
+		}
 		if (dup2(pair[1], fileno(stdin)) == -1)
-			err(1, "%s: dup2", __func__);
+		{
+			syslog(LOG_ERR, "%s: dup2", __func__);
+			exit(EXIT_FAILURE);
+		}
 
 		close(pair[1]);
 
 		if (execvp(drv->bin_path, (char * const*)argv) == -1)
-			err(1, "%s: execv(%s)", __func__, drv->bin_path);
+		{
+			syslog(LOG_ERR, "%s: execv(%s)", __func__, drv->bin_path);
+			exit(EXIT_FAILURE);
+		}
 
 		/* NOT REACHED */
 	}
@@ -583,7 +604,10 @@ rrdtool_test(void)
 	event_dispatch();
 
 	if (access("/tmp/honeyd_myrouter.gif", R_OK) == -1)
-		errx(1, "%s: graph creation failed", __func__);
+	{
+		syslog(LOG_ERR, "%s: graph creation failed", __func__);
+		exit(EXIT_FAILURE);
+	}
 
 	rrdtool_free(drv);
 	fprintf(stderr, "\t%s: OK\n", __func__);

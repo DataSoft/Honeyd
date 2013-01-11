@@ -136,6 +136,7 @@ struct persudp {
 #define WHITESPACE	" \t\n"
 #define XPRINT		"fingerprint {"
 #define FINGERPRINT	"Fingerprint"
+#define MATCHPOINTS "MatchPoints"
 #define CMP(y,x)	strncasecmp(y, x, sizeof(x) -1)
 #define ID_MAX		1024
 

@@ -33,6 +33,8 @@
 #ifndef _POOL_
 #define _POOL_
 
+#include <syslog.h>
+
 #define POOL_PAGE_SIZE	4096
 
 struct pool_entry {
@@ -73,8 +75,10 @@ pool_free(struct pool *pool, void *addr)
 	struct pool_entry *entry = addr - sizeof(struct pool_entry);
 
 	if (entry->data != addr)
-		errx(1, "%s: bad address: %p != %p", __func__,
-		    addr, entry->data);
+	{
+		syslog(LOG_ERR, "%s: bad address: %p != %p", __func__, addr, entry->data);
+		exit(EXIT_FAILURE);
+	}
 
 	if (entry->size == pool->size)
 		SLIST_INSERT_HEAD(&pool->entries, entry, next);

@@ -173,10 +173,15 @@ usage(void)
 void
 setup_socket(char *address, int port)
 {
-	if ((evbuf_recv = evbuffer_new()) == NULL)
-		err(1, "%s: evbuffer_new", __func__);
-	if ((fd_recv = make_socket(bind, SOCK_DGRAM, address, port)) == -1)
-		err(1, "%s: make_socket", __func__);
+	if ((evbuf_recv = evbuffer_new()) == NULL){
+		syslog(LOG_ERR, "%s: evbuffer_new", __func__);
+		exit(EXIT_FAILURE);
+	}
+
+	if ((fd_recv = make_socket(bind, SOCK_DGRAM, address, port)) == -1){
+		syslog(LOG_ERR, "%s: make_socket", __func__);
+		exit(EXIT_FAILURE);
+	}
 
 	syslog(LOG_NOTICE, "Listening on %s:%d", address, port);
 
@@ -188,7 +193,7 @@ void
 honeydstats_signal(int fd, short what, void *arg)
 {
 	syslog(LOG_NOTICE, "exiting on signal %d", fd);
-	exit(0);
+	exit(EXIT_SUCCESS);
 }
 
 void
@@ -269,6 +274,7 @@ main(int argc, char *argv[])
 			break;
 		case 'p':
 			if ((port = atoi(optarg)) == 0) {
+				syslog(LOG_ERR, "Bad port number: %s\n",optarg);
 				fprintf(stderr, "Bad port number: %s\n",
 				    optarg);
 				usage();
@@ -330,7 +336,11 @@ main(int argc, char *argv[])
 		
 		fprintf(stderr, "Starting as background process\n");
 		if (daemon(1, 0) < 0)
-			err(1, "daemon");
+		{
+			syslog(LOG_ERR, "daemon");
+			exit(EXIT_FAILURE);
+		}
+			//err(1, "daemon");
 	}
 
 	event_init();
@@ -349,7 +359,10 @@ main(int argc, char *argv[])
 
 		while ((p = strsep(&replay_filename, ",")) != NULL) {
 			if ((fd = open(p, O_RDONLY, 0)) == -1)
-				err(1, "%s: open(%s)", __func__, p);
+			{
+				syslog(LOG_ERR, "%s: open(%s)", __func__,p);
+				exit(EXIT_FAILURE);
+			}
 			checkpoint_replay(fd);
 		}
 	}

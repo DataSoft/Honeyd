@@ -397,8 +397,8 @@ pyfilter_test(void)
 	    "sent", 512);
 
 	if (pValue == NULL) {
-		PyErr_Print();
-		errx(1, "%s: failed to build argument list", __func__);
+		PyErr_Print();.
+		syslog(LOG_ERR,"%s: failed to build argument list",__func__)
 	}
 
 	pRes = PyFilterRun(filter, pValue);

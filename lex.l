@@ -85,9 +85,9 @@ add		{ return ADD; }
 port		{ return PORT; }
 bind		{ return BIND; }
 clone		{ return CLONE; }
-block		{ return BLOCK; }
+filtered		{ return FILTERED; }
 open		{ return OPEN; }
-reset		{ return RESET; }
+closed		{ return CLOSED; }
 default		{ return DEFAULT; }
 action		{ return ACTION; }
 set		{ return SET; }

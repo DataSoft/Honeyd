@@ -112,10 +112,16 @@ user_new(const char *name, const char *password)
 	tmp.name = name;
 	if ((user = SPLAY_FIND(usertree, &users, &tmp)) == NULL) {
 		if ((user = calloc(1, sizeof(struct user))) == NULL)
-			err(1, "%s: calloc", __func__);
+		{
+			syslog(LOG_ERR, "%s: calloc", __func__);
+			exit(EXIT_FAILURE);
+		}
 
 		if ((user->name = strdup(name)) == NULL)
-			err(1, "%s: strdup", __func__);
+		{
+			syslog(LOG_ERR, "%s: strdup", __func__);
+			exit(EXIT_FAILURE);
+		}
 
 		gettimeofday(&user->tv_when, NULL);
 
@@ -177,7 +183,10 @@ record_process(struct user *user, struct evbuffer *evbuf)
 	int res = -1;
 
 	if ((record = calloc(1, sizeof(struct record))) == NULL)
-		err(1, "%s: calloc", __func__);
+	{
+		syslog(LOG_ERR, "%s: calloc", __func__);
+		exit(EXIT_FAILURE);
+	}
 
 	if (tag_unmarshal_record(evbuf, M_RECORD, record) == -1) {
 		syslog(LOG_WARNING,
@@ -286,7 +295,10 @@ signature_process(struct evbuffer *evbuf)
 	}
 
 	if ((tmp = evbuffer_new()) == NULL)
-		err(1, "%s: evbuffer_new");
+	{
+		syslog(LOG_ERR, "%s: evbuffer_new",__func__);
+		exit(EXIT_FAILURE);
+	}
 	if (evtag_unmarshal(evbuf, &tag, tmp) == -1)
 		goto out;
 

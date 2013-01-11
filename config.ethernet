@@ -1,7 +1,7 @@
 create default
-set default default tcp action block
-set default default udp action block
-set default default icmp action block
+set default default tcp action filtered
+set default default udp action filtered
+set default default icmp action filtered
 
 create template
 set template ethernet "3com"
