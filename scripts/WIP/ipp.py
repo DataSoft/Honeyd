@@ -212,11 +212,12 @@ class IPPResponseTCP :
 
 class IPPResponseUDP :
   """Class for UDP responses to IPP requests."""
-  def __init__ (self, reqoid=None, requestid=None, requestidlength=None, pdutype=None) :
+  def __init__ (self, reqoid=None, requestid=None, requestidlength=None, pdutype=None, version=None) :
     self.reqoid = reqoid if reqoid != None else ""
     self.requestid = requestid if requestid != None else "1"
     self.pdutype = pdutype if pdutype != None else 0xA0
     self.requestidlength = requestidlength if requestidlength != None else "1"
+    self.version = version if version != None else 0x00
     
     self.ids = {"integer":0x02, 
                 "bit-string":0x03,
@@ -230,18 +231,27 @@ class IPPResponseUDP :
                 "timeticks":0x43,
                 "opaque":0x44,
                 "nsap-address":0x45,
-                "counter64":0x46,
-                "uinteger32":0x47,
                 "get-request":0xA0,
                 "get-next-request":0xA1, 
                 "get-response":0xA2, 
                 "set-request":0xA3,
-                "trap-pdu":0xA4,
-                "get-bulk-request":0xA5,
-                "inform-request":0xA6,
-                "snmpv2-trap":0xA7}
+                "trap-pdu":0xA4}
+    
+    self.idsv2 = {"counter32":0x41,
+                  "gauge32":0x42,
+                  "counter64":0x46,
+                  "uinteger32":0x47,
+                  "response-pdu":0xA2,
+                  "get-bulk-request":0xA5,
+                  "inform-request":0xA6,
+                  "snmpv2-trap":0xA7}
     
   def generateResponse(self) :
+    """ 
+      The if statements here don't really do anything at the moment,
+      but if further research reveals a difference between get-request
+      and get-next-request pdu types, it'll come in handy
+    """
     if int(self.pdutype, 16) == self.ids["get-request"] :
       packet = []
       head = []

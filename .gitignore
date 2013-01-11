@@ -152,6 +152,7 @@ os-test/results*
 scripts/WIP/*.pyc
 scripts/WIP/.project
 scripts/WIP/.pydevproject
+scripts/WIP/*.txt
 /pypcap/Makefile
 /pypcap/Makefile.in
 /regress/Makefile

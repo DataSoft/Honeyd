@@ -57,6 +57,7 @@ if __name__ == "__main__" :
   req = IPPResponseUDP(reqoid=snmpoid,
                        requestid=snmpreqid,
                        requestidlength=snmpreqidlength,
-                       pdutype=snmppdutype)
+                       pdutype=snmppdutype,
+                       version=snmpversion)
   response = req.generateResponse()
   print binascii.a2b_hex(response)
