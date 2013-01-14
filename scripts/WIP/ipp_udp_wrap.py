@@ -11,9 +11,6 @@ from ipp import *
 if __name__ == "__main__" :
   # get requisite SNMP data here by
   # parsing stdin for parameters we need
-  if len(sys.argv) != 2 :
-    sys.exit(1)
-  snmpdstip = sys.argv[1]
   snmpmessagelength = int(binascii.hexlify(sys.stdin.read(2)[1]), 16)
   snmpversionlength = int(binascii.hexlify(sys.stdin.read(2)[1]), 16)
   snmpversion = int(binascii.hexlify(sys.stdin.read(snmpversionlength)))
@@ -35,25 +32,24 @@ if __name__ == "__main__" :
   snmpoid = str(binascii.hexlify(sys.stdin.read(snmpvaluelength)))
   
   """
-  DEBUG FOR PARSED VALUES
-  sys.stderr.write("snmpmessagelength: " + str(snmpmessagelength) + "\n")
-  sys.stderr.write("snmpversionlength: " + str(snmpversionlength) + "\n")
-  sys.stderr.write("snmpversion: " + str(snmpversion) + "\n")
-  sys.stderr.write("snmpcommunitystringlength: " + str(snmpcommunitystringlength) + "\n")
-  sys.stderr.write("snmpcommunitystring: " + str(snmpcommunitystring) + "\n")
-  sys.stderr.write("snmppdutype: " + str(snmppdutype) + "\n")
-  sys.stderr.write("snmppdulength: " + str(snmppdulength) + "\n")
-  sys.stderr.write("snmpreqidlength: " + str(snmpreqidlength) + "\n")
-  sys.stderr.write("snmpreqid: " + str(snmpreqid) + "\n")
-  sys.stderr.write("snmperrorlength: " + str(snmperrorlength) + "\n")
-  sys.stderr.write("snmperror: " + str(snmperror) + "\n")
-  sys.stderr.write("snmperrindexlength: " + str(snmperrindexlength) + "\n")
-  sys.stderr.write("snmperrindex: " + str(snmperrindex) + "\n")
-  sys.stderr.write("snmpvarbindlistlength: " + str(snmpvarbindlistlength) + "\n")
-  sys.stderr.write("snmpvarbindlength: " + str(snmpvarbindlength) + "\n")
-  sys.stderr.write("snmpvaluetype: " + str(snmpvaluetype) + "\n")
-  sys.stderr.write("snmpvaluelength: " + str(snmpvaluelength) + "\n")
-  sys.stderr.write("snmpoid: " + str(snmpoid) + "\n")
+    sys.stderr.write("snmpmessagelength: " + str(snmpmessagelength) + "\n")
+    sys.stderr.write("snmpversionlength: " + str(snmpversionlength) + "\n")
+    sys.stderr.write("snmpversion: " + str(snmpversion) + "\n")
+    sys.stderr.write("snmpcommunitystringlength: " + str(snmpcommunitystringlength) + "\n")
+    sys.stderr.write("snmpcommunitystring: " + str(snmpcommunitystring) + "\n")
+    sys.stderr.write("snmppdutype: " + str(snmppdutype) + "\n")
+    sys.stderr.write("snmppdulength: " + str(snmppdulength) + "\n")
+    sys.stderr.write("snmpreqidlength: " + str(snmpreqidlength) + "\n")
+    sys.stderr.write("snmpreqid: " + str(snmpreqid) + "\n")
+    sys.stderr.write("snmperrorlength: " + str(snmperrorlength) + "\n")
+    sys.stderr.write("snmperror: " + str(snmperror) + "\n")
+    sys.stderr.write("snmperrindexlength: " + str(snmperrindexlength) + "\n")
+    sys.stderr.write("snmperrindex: " + str(snmperrindex) + "\n")
+    sys.stderr.write("snmpvarbindlistlength: " + str(snmpvarbindlistlength) + "\n")
+    sys.stderr.write("snmpvarbindlength: " + str(snmpvarbindlength) + "\n")
+    sys.stderr.write("snmpvaluetype: " + str(snmpvaluetype) + "\n")
+    sys.stderr.write("snmpvaluelength: " + str(snmpvaluelength) + "\n")
+    sys.stderr.write("snmpoid: " + str(snmpoid) + "\n")
   """
   
   # give paramaters to IPPResponseUDP constructor
@@ -61,7 +57,9 @@ if __name__ == "__main__" :
                        requestid=snmpreqid,
                        requestidlength=snmpreqidlength,
                        pdutype=snmppdutype,
-                       version=snmpversion,
-                       dstip=snmpdstip)
+                       version=snmpversion)
   response = req.generateResponse()
   print binascii.a2b_hex(response)
+  sys.stderr.write('sent one')
+  print binascii.a2b_hex(response)
+  sys.stderr.write('sent two')
