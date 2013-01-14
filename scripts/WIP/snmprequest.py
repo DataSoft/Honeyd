@@ -2,6 +2,7 @@
 
 import socket
 import sys
+import binascii
 
 ids = {'integer':0x02, 
        'bit-string':0x03,
@@ -107,8 +108,8 @@ def constructVarbind() :
   vb = []
   vboid = []
   vboid.append('{0:02X}'.format(ids['object-identifier']))
-  vboid.append('{0:02X}'.format(int(hex(len(oid) / 2), 16)))
-  vboid.append(oid)
+  vboid.append('{0:02X}'.format(int(hex(len(OID) / 2), 16)))
+  vboid.append(OID)
   vboid.append('{0:02X}'.format(ids['null']))
   vboid.append('{0:02X}'.format(int('0', 16)))
   vboid = ''.join(vboid)
@@ -118,10 +119,11 @@ def constructVarbind() :
   return ''.join(vb)
 
 if __name__ == "__main__" :
-  IPADDR = '10.10.2.20'
-  PORT = 161
-  
-  oid = convertDotsToHex(sys.argv[1])
+  if len(sys.argv) != 4 :
+    sys.exit(1)
+  IPADDR = sys.argv[1]
+  PORT = int(sys.argv[2], 10)
+  OID = convertDotsToHex(sys.argv[3])
   
   s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, 0)
   
@@ -131,6 +133,6 @@ if __name__ == "__main__" :
   
   print PACKETDATA
   
-  s.send(PACKETDATA)
+  s.send(binascii.a2b_hex(PACKETDATA))
   
   s.close()
