@@ -120,19 +120,23 @@ def constructVarbind() :
 
 if __name__ == "__main__" :
   if len(sys.argv) != 4 :
+    print 'args: IPADDR SPORT DPORT OID'
     sys.exit(1)
   IPADDR = sys.argv[1]
-  PORT = int(sys.argv[2], 10)
+  DPORT = int(sys.argv[2], 10)
   OID = convertDotsToHex(sys.argv[3])
   
   s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, 0)
-  
-  s.connect((IPADDR, PORT))
+
+  s.connect((IPADDR, DPORT))
   
   PACKETDATA = constructRequest()
   
-  print PACKETDATA
-  
   s.send(binascii.a2b_hex(PACKETDATA))
-  
+
+  while 1 :
+    data = s.recv(1024)
+    print data
+    break
+    
   s.close()

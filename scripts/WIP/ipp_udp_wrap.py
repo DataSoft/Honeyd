@@ -60,6 +60,3 @@ if __name__ == "__main__" :
                        version=snmpversion)
   response = req.generateResponse()
   print binascii.a2b_hex(response)
-  sys.stderr.write('sent one')
-  print binascii.a2b_hex(response)
-  sys.stderr.write('sent two')

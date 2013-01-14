@@ -344,7 +344,7 @@ class IPPResponseUDP :
     oid = ''.join(oid)
     value = []
     mib = self.generateMIB()
-    sys.stderr.write('mib : ' + mib + '\n')
+    # sys.stderr.write('mib : ' + mib + '\n')
     value.append(mib)
     value = ''.join(value)
     varbind = []
@@ -385,7 +385,7 @@ class IPPResponseUDP :
         filemax += 1
       except IOError :
         break
-    rand = random.randint(0, filemax - 1)
+    rand = random.randint(0, filemax)
     sys.stderr.write('rand == ' + str(rand))
     try :
       f = open('/home/addison/Code/Honeyd/scripts/WIP/printer' + str(rand) + '.txt', 'r')
