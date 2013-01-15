@@ -107,9 +107,15 @@ def constructVarbindList() :
 def constructVarbind() :
   vb = []
   vboid = []
-  vboid.append('{0:02X}'.format(ids['object-identifier']))
-  vboid.append('{0:02X}'.format(int(hex(len(OID) / 2), 16)))
-  vboid.append(OID)
+  if type(OID) is list :
+    for i in OID :
+      vboid.append('{0:02X}'.format(ids['object-identifier']))
+      vboid.append('{0:02X}'.format(int(hex(len(i) / 2), 16)))
+      vboid.append(i)
+  else :
+    vboid.append('{0:02X}'.format(ids['object-identifier']))
+    vboid.append('{0:02X}'.format(int(hex(len(OID) / 2), 16)))
+    vboid.append(OID)
   vboid.append('{0:02X}'.format(ids['null']))
   vboid.append('{0:02X}'.format(int('0', 16)))
   vboid = ''.join(vboid)
@@ -120,11 +126,17 @@ def constructVarbind() :
 
 if __name__ == "__main__" :
   if len(sys.argv) != 4 :
-    print 'args: IPADDR SPORT DPORT OID'
+    print 'args: IPADDR DPORT OIDS'
     sys.exit(1)
   IPADDR = sys.argv[1]
   DPORT = int(sys.argv[2], 10)
-  OID = convertDotsToHex(sys.argv[3])
+  try :
+    split = sys.argv[3].split(',')
+    for i in range(0, len(split)) :
+      split[i] = convertDotsToHex(split[i])
+    OID = split
+  except :
+    OID = convertDotsToHex(sys.argv[3])
   
   s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, 0)
 

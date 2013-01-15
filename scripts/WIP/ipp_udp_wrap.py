@@ -52,6 +52,13 @@ if __name__ == "__main__" :
     sys.stderr.write("snmpoid: " + str(snmpoid) + "\n")
   """
   
+  test = list(snmpoid)
+  
+  for i in range(0, len(test)) :
+    test[i] = test[i].upper()
+
+  snmpoid = ''.join(test)
+  
   # give paramaters to IPPResponseUDP constructor
   req = IPPResponseUDP(reqoid=snmpoid,
                        requestid=snmpreqid,
@@ -59,4 +66,16 @@ if __name__ == "__main__" :
                        pdutype=snmppdutype,
                        version=snmpversion)
   response = req.generateResponse()
+  
+  clean = list(response)
+  
+  hexrange = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 
+            'A', 'B', 'C', 'D', 'E', 'F', 'a', 'b', 'c', 'd', 'e', 'f']
+  
+  for c in range(0, len(clean)) :
+    if clean[c] not in hexrange :
+      del clean[c]
+    
+  response = ''.join(clean)
+    
   print binascii.a2b_hex(response)
