@@ -105,24 +105,32 @@ def constructVarbindList() :
   return ''.join(vblist)
 
 def constructVarbind() :
-  vb = []
-  vboid = []
+  retvb = []
   if type(OID) is list :
     for i in OID :
+      vb = []
+      vboid = []
       vboid.append('{0:02X}'.format(ids['object-identifier']))
       vboid.append('{0:02X}'.format(int(hex(len(i) / 2), 16)))
       vboid.append(i)
+      vb.append('{0:02X}'.format(ids['sequence']))
+      vb.append('{0:02X}'.format(int(hex(len(vboid) / 2), 16)))
+      vb.append(vboid)
+      retvb.append(''.join(vb))
   else :
+    vb = []
+    vboid = []
     vboid.append('{0:02X}'.format(ids['object-identifier']))
     vboid.append('{0:02X}'.format(int(hex(len(OID) / 2), 16)))
     vboid.append(OID)
-  vboid.append('{0:02X}'.format(ids['null']))
-  vboid.append('{0:02X}'.format(int('0', 16)))
-  vboid = ''.join(vboid)
-  vb.append('{0:02X}'.format(ids['sequence']))
-  vb.append('{0:02X}'.format(int(hex(len(vboid) / 2), 16)))
-  vb.append(vboid)
-  return ''.join(vb)
+    vboid.append('{0:02X}'.format(ids['null']))
+    vboid.append('{0:02X}'.format(int('0', 16)))
+    vboid = ''.join(vboid)
+    vb.append('{0:02X}'.format(ids['sequence']))
+    vb.append('{0:02X}'.format(int(hex(len(vboid) / 2), 16)))
+    vb.append(vboid)
+    retvb.append(vb)
+  return ''.join(retvb)
 
 if __name__ == "__main__" :
   if len(sys.argv) != 4 :
