@@ -146,7 +146,7 @@ if __name__ == "__main__" :
   except :
     OID = convertDotsToHex(sys.argv[3])
   
-  s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, 0)
+  s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
   s.connect((IPADDR, DPORT))
   

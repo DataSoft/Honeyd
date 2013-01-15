@@ -3,12 +3,20 @@
 import sys
 import os
 import urllib2
+import httplib
 import socket
 import argparse
 import binascii
 from ipp import *
 
 if __name__ == "__main__" :
+  if len(sys.argv) != 5 :
+    pass
+  
+  SIPADDR = sys.argv[1]
+  SRCPORT = int(sys.argv[2], 10)
+  DIPADDR = sys.argv[3]
+  DSTPORT = int(sys.argv[4], 10)
   # get requisite SNMP data here by
   # parsing stdin for parameters we need
   snmpmessagelength = int(binascii.hexlify(sys.stdin.read(2)[1]), 16)
@@ -26,10 +34,18 @@ if __name__ == "__main__" :
   snmperrindexlength = int(binascii.hexlify(sys.stdin.read(2)[1]), 16)
   snmperrindex = int(binascii.hexlify(sys.stdin.read(snmperrindexlength)), 16)
   snmpvarbindlistlength = int(binascii.hexlify(sys.stdin.read(2)[1]), 16)
-  snmpvarbindlength = int(binascii.hexlify(sys.stdin.read(2)[1]), 16)
-  snmpvaluetype = int(binascii.hexlify(sys.stdin.read(1)), 16) 
-  snmpvaluelength = int(binascii.hexlify(sys.stdin.read(1)), 16)
-  snmpoid = str(binascii.hexlify(sys.stdin.read(snmpvaluelength)))
+  snmpoid = []
+  togo = 0
+  while togo < snmpvarbindlistlength :
+    snmpvarbindlength = int(binascii.hexlify(sys.stdin.read(2)[1]), 16)
+    snmpvaluetype = int(binascii.hexlify(sys.stdin.read(1)), 16) 
+    snmpvaluelength = int(binascii.hexlify(sys.stdin.read(1)), 16)
+    snmpoid.append(str(binascii.hexlify(sys.stdin.read(snmpvaluelength))))
+    snmpnull = sys.stdin.read(2)
+    togo += 6 + snmpvaluelength
+  
+  if len(snmpoid) == 1 :
+    snmpoid = ''.join(snmpoid)
   
   """
     sys.stderr.write("snmpmessagelength: " + str(snmpmessagelength) + "\n")
@@ -52,30 +68,59 @@ if __name__ == "__main__" :
     sys.stderr.write("snmpoid: " + str(snmpoid) + "\n")
   """
   
-  test = list(snmpoid)
+  snmpdaddress = ('', DSTPORT)
+  snmpsaddress = (SIPADDR, SRCPORT)
   
-  for i in range(0, len(test)) :
-    test[i] = test[i].upper()
-
-  snmpoid = ''.join(test)
+  if type(snmpoid) is list :
+    for i in range(0, len(snmpoid)) :
+      test = list(snmpoid[i])
+      for j in range(0, len(test)) :
+        test[j] = test[j].upper()
+      snmpoid[i] = ''.join(test)
+  else :
+    test = list(snmpoid)
+    for i in range(0, len(test)) :
+      test[i] = test[i].upper()
+    snmpoid = ''.join(test)
   
   # give paramaters to IPPResponseUDP constructor
-  req = IPPResponseUDP(reqoid=snmpoid,
-                       requestid=snmpreqid,
-                       requestidlength=snmpreqidlength,
-                       pdutype=snmppdutype,
-                       version=snmpversion)
-  response = req.generateResponse()
-  
-  clean = list(response)
-  
-  hexrange = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 
-            'A', 'B', 'C', 'D', 'E', 'F', 'a', 'b', 'c', 'd', 'e', 'f']
-  
-  for c in range(0, len(clean)) :
-    if clean[c] not in hexrange :
-      del clean[c]
+  if type(snmpoid) is list :
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s.bind(snmpdaddress)
+    s.connect(snmpsaddress)
+    for i in range(0, len(snmpoid)) :
+      req = IPPResponseUDP(reqoid=snmpoid[i],
+                           requestid=snmpreqid,
+                           requestidlength=snmpreqidlength,
+                           pdutype=snmppdutype,
+                           version=snmpversion)
+      response = req.generateResponse()
+      clean = list(response)
+      hexrange = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 
+                  'A', 'B', 'C', 'D', 'E', 'F', 'a', 'b', 'c', 'd', 
+                  'e', 'f']
+      for c in range(0, len(clean)) :
+        if clean[c] not in hexrange :
+          del clean[c]
+      response = ''.join(clean)
+      s.send(binascii.a2b_hex(response))
+      #sys.stdout.write(binascii.a2b_hex(response))
+    s.close()
+  else :
+    req = IPPResponseUDP(reqoid=snmpoid,
+                         requestid=snmpreqid,
+                         requestidlength=snmpreqidlength,
+                         pdutype=snmppdutype,
+                         version=snmpversion)
+    response = req.generateResponse()
+    clean = list(response)
+    hexrange = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 
+                'A', 'B', 'C', 'D', 'E', 'F', 'a', 'b', 'c', 'd', 
+                'e', 'f']
+    for c in range(0, len(clean)) :
+      if clean[c] not in hexrange :
+        del clean[c]
+    response = ''.join(clean)
+    sys.stdout.write(binascii.a2b_hex(response))
     
-  response = ''.join(clean)
     
-  print binascii.a2b_hex(response)
