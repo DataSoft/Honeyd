@@ -110,9 +110,13 @@ def constructVarbind() :
     for i in OID :
       vb = []
       vboid = []
+      print 'i == ' + i
       vboid.append('{0:02X}'.format(ids['object-identifier']))
       vboid.append('{0:02X}'.format(int(hex(len(i) / 2), 16)))
       vboid.append(i)
+      vboid.append('{0:02X}'.format(ids['null']))
+      vboid.append('{0:02X}'.format(int('0', 16)))
+      vboid = ''.join(vboid)
       vb.append('{0:02X}'.format(ids['sequence']))
       vb.append('{0:02X}'.format(int(hex(len(vboid) / 2), 16)))
       vb.append(vboid)
@@ -129,7 +133,7 @@ def constructVarbind() :
     vb.append('{0:02X}'.format(ids['sequence']))
     vb.append('{0:02X}'.format(int(hex(len(vboid) / 2), 16)))
     vb.append(vboid)
-    retvb.append(vb)
+    retvb.append(''.join(vb))
   return ''.join(retvb)
 
 if __name__ == "__main__" :
