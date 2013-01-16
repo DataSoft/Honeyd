@@ -337,29 +337,47 @@ class IPPResponseUDP :
     return ''.join(varbindlist)
     
   def generateVarbind(self) :
-    oid = []
-    oid.append('{0:02X}'.format(self.ids['object-identifier']))
-    oid.append('{0:02x}'.format(int(hex((len(self.reqoid) / 2)), 16)))
-    oid.append(self.reqoid)
-    oid = ''.join(oid)
-    value = []
-    mib = self.generateMIB()
-    value.append(mib)
-    value = ''.join(value)
     varbind = []
-    varbind.append('{0:02X}'.format(self.ids['sequence']))
-    varbindlength = len(oid) + len(value)
-    varbind.append('{0:02X}'.format(int(hex(varbindlength / 2), 16)))
-    varbind.append(oid)
-    varbind.append(value)
+    if type(self.reqoid) is list :
+      for i in range(0, len(self.reqoid)) :
+        oid = []
+        value = []
+        oid.append('{0:02X}'.format(self.ids['object-identifier']))
+        oid.append('{0:02x}'.format(int(hex((len(self.reqoid[i]) / 2)), 16)))
+        oid.append(self.reqoid[i])
+        oid = ''.join(oid)
+        mib = self.generateMIB(self.reqoid[i])
+        value.append(mib)
+        value = ''.join(value)
+        varbindlength = len(oid) + len(value)
+        varbind.append('{0:02X}'.format(self.ids['sequence']))
+        varbind.append('{0:02X}'.format(int(hex(varbindlength / 2), 16)))
+        varbind.append(oid)
+        varbind.append(value)
+        pass
+    else :
+      oid = []
+      value = []
+      oid.append('{0:02X}'.format(self.ids['object-identifier']))
+      oid.append('{0:02x}'.format(int(hex((len(self.reqoid) / 2)), 16)))
+      oid.append(self.reqoid)
+      oid = ''.join(oid)
+      mib = self.generateMIB(self.reqoid)
+      value.append(mib)
+      value = ''.join(value)
+      varbindlength = len(oid) + len(value)
+      varbind.append('{0:02X}'.format(self.ids['sequence']))
+      varbind.append('{0:02X}'.format(int(hex(varbindlength / 2), 16)))
+      varbind.append(oid)
+      varbind.append(value)
     return ''.join(varbind)
   
-  def generateMIB(self) :
+  def generateMIB(self, oid) :
     # This method is going to require a refactor
     # Essentially, depending on the structure of the reqoid 
     # the script is going to have to determine what values are 
     # being request, and then proffer them in the correct format
-    construct = self.matchOidToResponse()
+    construct = self.matchOidToResponse(oid)
     mib = []
     if not construct :
       mib.append('{0:02X}'.format(self.ids['object-identifier']))
@@ -371,7 +389,7 @@ class IPPResponseUDP :
       mib.append(construct[1])
     return ''.join(mib)
   
-  def matchOidToResponse(self) :
+  def matchOidToResponse(self, oid) :
     res = 2 * [0]
     random.seed()
     filemax = 0    
@@ -396,7 +414,7 @@ class IPPResponseUDP :
     match = f.readlines()
     for line in match :
       check = line.split(':')
-      if check[0] == self.reqoid :
+      if check[0] == oid :
         res[0] = check[1]
         res[1] = check[2]
         break
