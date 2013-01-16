@@ -4,6 +4,7 @@ import binascii
 import sys
 import os
 import re
+import math
 import subprocess
 
 def modtype(type, line) :
@@ -34,7 +35,8 @@ def modtype(type, line) :
   elif type == 'Timeticks' :
     retType = 'timeticks'
   else :
-    retType = 'null'
+    retType = 'octet-string'
+    #retType = 'null'
     
   return line.replace(type, retType)
 
@@ -62,10 +64,13 @@ def convertDotsToHex(oid) :
   oidBER.append('{0:02X}'.format(0x2B))
   split = oid.split('.')
   for j in range(2, len(split)) :
-    if int(split[j], 10) > 255 :
+    if int(split[j], 10) > 126 :
       oidBER.append(getLongFormEncoding(int(split[j], 10)))
     else :
-      oidBER.append('{0:02X}'.format(int(split[j], 16)))
+      hexchar = hex(int(split[j], 10))[2:]
+      if len(hexchar) % 2 == 1 :
+        hexchar = '0' + hexchar
+      oidBER.append(hexchar)
   return ''.join(oidBER)
 
 if __name__ == '__main__' :
@@ -80,6 +85,16 @@ if __name__ == '__main__' :
   f.close()
   f = open(path, 'r')
   restructure = f.readlines()
+  fileappend = 0
+  if len(sys.argv) == 3 and sys.argv[2] == '--clean' :
+    while True :
+      try :
+        replf = 'printer' + str(fileappend) + '.txt'
+        replacement = open(replf, 'r')
+        os.remove(replf)
+        fileappend += 1
+      except IOError :
+        break
   fileappend = 0
   # search for a printer#*.txt that isn't taken, then write to it
   while True :
@@ -109,11 +124,13 @@ if __name__ == '__main__' :
       splitline[2] = split[0].replace('(', '').replace(')', '')
       while len(splitline) > 3 :
         del splitline[-1]
-      splitline[2] = hex(int(splitline[2], 10))
+      splitline[2] = hex(int(splitline[2], 10))[2:]
       hexrange = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 
                   'A', 'B', 'C', 'D', 'E', 'F', 'a', 'b', 'c', 'd', 'e', 'f']
       if splitline[2][-1] not in hexrange :
         splitline[2] = splitline[2][0:-1]
+      if len(splitline[2]) % 2 == 1 :
+        splitline[2] = '0' + splitline[2]
     # Since OID BER encoding is a bit mathematically heavy-handed,
     # do it here. This will take an OID in the format 1.3.6.1.{...}
     # and turn it into a hex string of 2B{...}.
@@ -142,13 +159,24 @@ if __name__ == '__main__' :
     elif splitline[1] == 'Hex-STRING' :
       split = ''.join(splitline[2].split(' '))
       splitline[2] = split
+    elif (splitline[1] == 'INTEGER' or splitline[1] == 'Gauge' or splitline[1] == 'Gauge32'
+         or splitline[1] == 'Counter' or splitline[1] == 'Counter32') :
+      if int(splitline[2], 10) < 0 :
+        splitline[2] = hex(0xff - int(hex(math.trunc(math.fabs(int(splitline[2], 10) + 1))), 16))[2:]
+      else :
+        splitline[2] = hex(int(splitline[2], 10))[2:]
+      hexrange = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 
+                  'A', 'B', 'C', 'D', 'E', 'F', 'a', 'b', 'c', 'd', 'e', 'f']
+      if splitline[2][-1] not in hexrange :
+        splitline[2] = splitline[2][0:-1]
+      if len(splitline[2]) % 2 == 1 :
+        splitline[2] = '0' + splitline[2]
     # There are some OIDs that return nothing, shown in the 
     # snmpwalk return text as "". For this return value, wireshark
     # shows the packet as having a varbind id of 0x04 (octet-string)
     # and a length of 0x00. 
-    elif splitline[1] == "" :
+    elif splitline[1] == "\"\"" :
       splitline[1] = 'octet-string'
-      splitline[2] = ' '
     writeline = ':'.join(splitline) + '\n'
     writeline = modtype(splitline[1], writeline)
     replacement.write(writeline)

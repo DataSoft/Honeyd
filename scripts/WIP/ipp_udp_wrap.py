@@ -70,8 +70,6 @@ if __name__ == "__main__" :
   snmpdaddress = (DIPADDR, DSTPORT)
   snmpsaddress = (SIPADDR, SRCPORT)
   
-  sys.stderr.write('in script\n')
-  
   if type(snmpoid) is list :
     for i in range(0, len(snmpoid)) :
       test = list(snmpoid[i])
@@ -83,32 +81,34 @@ if __name__ == "__main__" :
     for i in range(0, len(test)) :
       test[i] = test[i].upper()
     snmpoid = ''.join(test)
+    
   """
-  # give paramaters to IPPResponseUDP constructor
-  if type(snmpoid) is list :
-    #s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    #s.bind(snmpdaddress)
-    #s.connect(snmpsaddress)
-    for i in range(0, len(snmpoid)) :
-      req = IPPResponseUDP(reqoid=snmpoid[i],
-                           requestid=snmpreqid,
-                           requestidlength=snmpreqidlength,
-                           pdutype=snmppdutype,
-                           version=snmpversion)
-      response = req.generateResponse()
-      clean = list(response)
-      hexrange = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 
-                  'A', 'B', 'C', 'D', 'E', 'F', 'a', 'b', 'c', 'd', 
-                  'e', 'f']
-      for c in range(0, len(clean)) :
-        if clean[c] not in hexrange :
-          del clean[c]
-      response = ''.join(clean)
-      #s.send(binascii.a2b_hex(response))
-      sys.stdout.write(binascii.a2b_hex(response))
-    #s.close()
-  else :
+    # give paramaters to IPPResponseUDP constructor
+    if type(snmpoid) is list :
+      #s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+      #s.bind(snmpdaddress)
+      #s.connect(snmpsaddress)
+      for i in range(0, len(snmpoid)) :
+        req = IPPResponseUDP(reqoid=snmpoid[i],
+                             requestid=snmpreqid,
+                             requestidlength=snmpreqidlength,
+                             pdutype=snmppdutype,
+                             version=snmpversion)
+        response = req.generateResponse()
+        clean = list(response)
+        hexrange = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 
+                    'A', 'B', 'C', 'D', 'E', 'F', 'a', 'b', 'c', 'd', 
+                    'e', 'f']
+        for c in range(0, len(clean)) :
+          if clean[c] not in hexrange :
+            del clean[c]
+        response = ''.join(clean)
+        #s.send(binascii.a2b_hex(response))
+        sys.stdout.write(binascii.a2b_hex(response))
+      #s.close()
+    else :
   """
+  
   req = IPPResponseUDP(reqoid=snmpoid,
                        requestid=snmpreqid,
                        requestidlength=snmpreqidlength,
@@ -119,21 +119,20 @@ if __name__ == "__main__" :
   hexrange = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 
               'A', 'B', 'C', 'D', 'E', 'F', 'a', 'b', 'c', 'd', 
               'e', 'f']
-  """
   for c in range(0, len(clean)) :
     if clean[c] not in hexrange :
-      sys.stderr.write('c,clean[c] == ' + str(c) + ',' + clean[c] + ', not in hexrange')
+      sys.stderr.write('c,clean[c] == ' + str(c) + ',' + str(ord(clean[c])) + ' not in hexrange\n')
       del clean[c]
   """
-  length = len(clean)
-  c = 0
-  while c < length :
-    if clean[c] in hexrange :
-      sys.stderr.write('c == ' + str(c) + '\n')
-      c += 1
-    else :
-      sys.stderr.write('deleting element at ' + str(c))
-      del clean[c]
+    length = len(clean)
+    c = 0
+    while c < length :
+      if clean[c] in hexrange :
+        c += 1
+      else :
+        length -= 1
+        del clean[c]
+  """
   response = ''.join(clean)
   sys.stdout.write(binascii.a2b_hex(response))
     

@@ -272,7 +272,7 @@ class IPPResponseUDP :
       snmpcommstring.append('public'.encode('hex'))
       head.append(''.join(snmpcommstring))
       head = ''.join(head)
-      pdu = self.generatePDU()
+      pdu = self.generatePDU(0)
       packet.append('{0:02X}'.format(self.ids['sequence']))
       packet.append('{0:02X}'.format(int(hex((len(head) + len(pdu)) / 2), 16)))
       packet.append(head)
@@ -292,7 +292,7 @@ class IPPResponseUDP :
       snmpcommstring.append('public'.encode('hex'))
       head.append(''.join(snmpcommstring))
       head = ''.join(head)
-      pdu = self.generatePDU()
+      pdu = self.generatePDU(1)
       packet.append('{0:02X}'.format(self.ids['sequence']))
       packet.append('{0:02X}'.format(int(hex((len(head) + len(pdu)) / 2), 16)))
       packet.append(head)
@@ -301,7 +301,7 @@ class IPPResponseUDP :
     else :
       return '00'
 
-  def generatePDU(self) :
+  def generatePDU(self, getorgetnext) :
     pdu = []
     reqid = []
     reqid.append('{0:02X}'.format(self.ids['integer']))
@@ -319,7 +319,7 @@ class IPPResponseUDP :
     errindex.append('{0:02X}'.format(int('0', 16)))
     errindex = ''.join(errindex)
     pdu.append('{0:02X}'.format(self.ids['get-response']))
-    varbindlist = self.generateVarbindList()
+    varbindlist = self.generateVarbindList(getorgetnext)
     pdu.append('{0:02X}'.format(int(hex((len(reqid) + len(error) + len(errindex) + len(varbindlist)) / 2), 16)))
     pdu.append(reqid)
     pdu.append(error)
@@ -327,27 +327,33 @@ class IPPResponseUDP :
     pdu.append(varbindlist)    
     return ''.join(pdu)
     
-  def generateVarbindList(self) :
+  def generateVarbindList(self, getorgetnext) :
     #Need to find a fake MIB to copy and present attributes from
-    varbind = self.generateVarbind()
+    varbind = self.generateVarbind(getorgetnext)
     varbindlist = []
     varbindlist.append('{0:02X}'.format(self.ids['sequence']))
     varbindlist.append('{0:02X}'.format(int(hex(len(varbind) / 2), 16)))
     varbindlist.append(varbind)
     return ''.join(varbindlist)
     
-  def generateVarbind(self) :
+  def generateVarbind(self, getorgetnext) :
     varbind = []
     if type(self.reqoid) is list :
       for i in range(0, len(self.reqoid)) :
         oid = []
         value = []
-        oid.append('{0:02X}'.format(self.ids['object-identifier']))
-        oid.append('{0:02x}'.format(int(hex((len(self.reqoid[i]) / 2)), 16)))
-        oid.append(self.reqoid[i])
-        oid = ''.join(oid)
-        mib = self.generateMIB(self.reqoid[i])
-        value.append(mib)
+        mib = self.generateMIB(self.reqoid[i], getorgetnext)
+        if getorgetnext == 0 :
+          oid.append('{0:02X}'.format(self.ids['object-identifier']))
+          oid.append('{0:02x}'.format(int(hex((len(self.reqoid[i]) / 2)), 16)))
+          oid.append(self.reqoid[i])
+          oid = ''.join(oid)
+        elif getorgetnext == 1 :
+          oid.append('{0:02X}'.format(self.ids['object-identifier']))
+          oid.append('{0:02x}'.format(int(hex((len(mib[0]) / 2)), 16)))
+          oid.append(mib[0])
+          oid = ''.join(oid)
+        value.append(mib[1])
         value = ''.join(value)
         varbindlength = len(oid) + len(value)
         varbind.append('{0:02X}'.format(self.ids['sequence']))
@@ -358,12 +364,18 @@ class IPPResponseUDP :
     else :
       oid = []
       value = []
-      oid.append('{0:02X}'.format(self.ids['object-identifier']))
-      oid.append('{0:02x}'.format(int(hex((len(self.reqoid) / 2)), 16)))
-      oid.append(self.reqoid)
-      oid = ''.join(oid)
-      mib = self.generateMIB(self.reqoid)
-      value.append(mib)
+      mib = self.generateMIB(self.reqoid, getorgetnext)
+      if getorgetnext == 0 :
+        oid.append('{0:02X}'.format(self.ids['object-identifier']))
+        oid.append('{0:02x}'.format(int(hex((len(self.reqoid) / 2)), 16)))
+        oid.append(self.reqoid)
+        oid = ''.join(oid)
+      elif getorgetnext == 1 :
+        oid.append('{0:02X}'.format(self.ids['object-identifier']))
+        oid.append('{0:02x}'.format(int(hex((len(mib[0]) / 2)), 16)))
+        oid.append(mib[0])
+        oid = ''.join(oid)
+      value.append(mib[1])
       value = ''.join(value)
       varbindlength = len(oid) + len(value)
       varbind.append('{0:02X}'.format(self.ids['sequence']))
@@ -372,25 +384,27 @@ class IPPResponseUDP :
       varbind.append(value)
     return ''.join(varbind)
   
-  def generateMIB(self, oid) :
-    # This method is going to require a refactor
-    # Essentially, depending on the structure of the reqoid 
-    # the script is going to have to determine what values are 
-    # being request, and then proffer them in the correct format
-    construct = self.matchOidToResponse(oid)
+  def generateMIB(self, oid, getorgetnext) :
+    construct = self.matchOidToResponse(oid, getorgetnext)
     mib = []
-    if not construct :
-      mib.append('{0:02X}'.format(self.ids['object-identifier']))
-      mib.append('{0:02X}'.format(int('1', 16)))
+    ret = []
+    if not construct or (construct[0] == 0 and construct[1] == 0 and construct[2] == 0):
+      mib.append('{0:02X}'.format(self.ids['octet-string']))
       mib.append('{0:02X}'.format(int('0', 16)))
     else :
-      mib.append('{0:02X}'.format(self.ids[construct[0]]))
-      mib.append('{0:02X}'.format(int(hex(len(construct[1]) / 2), 16)))
-      mib.append(construct[1])
-    return ''.join(mib)
+      mib.append('{0:02X}'.format(self.ids[construct[1]]))
+      if construct[2] != 0 :
+        mib.append('{0:02X}'.format(int(hex(len(construct[2]) / 2), 16)))
+        mib.append(construct[2])
+      else :
+        mib.append('{0:02X}'.format(int('0', 15)))
+    mib = ''.join(mib)
+    ret.append(construct[0])
+    ret.append(mib)
+    return ret
   
-  def matchOidToResponse(self, oid) :
-    res = 2 * [0]
+  def matchOidToResponse(self, oid, getorgetnext) :
+    res = 3 * [0]
     random.seed()
     filemax = 0    
     # TODO: When this gets moved into /usr/share/honeyd/.../ the prepended
@@ -412,10 +426,39 @@ class IPPResponseUDP :
       sys.stderr.write('IOError: ' + str(e) + '\n')
       return res
     match = f.readlines()
-    for line in match :
-      check = line.split(':')
-      if check[0] == oid :
-        res[0] = check[1]
-        res[1] = check[2]
-        break
-    return res
+    if getorgetnext == 0 :
+      for line in match :
+        check = line.split(':')
+        if check[0] == oid :
+          if len(check) != 3 :
+            res[0] = check[0]
+            res[1] = check[1].rstrip()
+            return res
+          check[2] = check[2].rstrip()
+          return check
+      return res
+    elif getorgetnext == 1 :
+      #sys.stderr.write('in matchResponstToOID with getorgetnext == ' + str(getorgetnext) + '\n')
+      nextline = 0
+      # need to handle both parent OIDs and get-next-request increments
+      for line in range(0, len(match)) :
+        check = match[line].split(':')
+        if nextline == 1 :
+          sys.stderr.write('check[0] == ' + check[0] + '\n')
+          sys.stderr.write('check[1] == ' + check[1] + '\n')
+          if len(check) != 3 :
+            res[0] = check[0]
+            res[1] = check[1].rstrip()
+            return res
+          check[2] = check[2].rstrip()
+          return check
+        if check[0] == oid :
+          nextline = 1
+        elif re.match(oid, check[0]) :
+          if len(check) != 3 :
+            res[0] = check[0]
+            res[1] = check[1].rstrip()
+            return res
+          check[2] = check[2].rstrip()
+          return check
+      return res
