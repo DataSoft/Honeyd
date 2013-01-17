@@ -428,7 +428,7 @@ class IPPResponseUDP:
     match = f.readlines()
     if getorgetnext == 0:
       for line in match:
-        check = line.split(':')
+        check = line.split(',')
         if check[0] == oid:
           if len(check) != 3:
             res[0] = check[0]
@@ -441,7 +441,7 @@ class IPPResponseUDP:
       nextline = 0
       # need to handle both parent OIDs and get-next-request increments
       for line in range(0, len(match)):
-        check = match[line].split(':')
+        check = match[line].split(',')
         if nextline == 1:
           if len(check) != 3:
             res[0] = check[0]

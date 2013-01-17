@@ -132,7 +132,7 @@ if __name__ == '__main__':
       # TEMP find a way to get value at this node
       matchPrefix += startsub + appendForResponse
       matchPrefix = convertDotsToHex(matchPrefix)
-      matchPrefix += ':octet-string:'
+      matchPrefix += ',octet-string,'
     if splitline[0] == sysOIDValue:
       matchPrefix += splitline[2].replace('\"', '').encode('hex')
     # Timeticks has a special format in the returned info for snmpwalk.
@@ -184,7 +184,7 @@ if __name__ == '__main__':
       if int(splitline[2], 10) < 0:
         splitline[2] = hex(0xff - int(hex(math.trunc(math.fabs(int(splitline[2], 10) + 1))), 16))[2:]
       else:
-        splitline[2] = hex(int(splitline[2], 10))[2:]
+        splitline[2] = '00' + hex(int(splitline[2], 10))[2:]
       hexrange = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 
                   'A', 'B', 'C', 'D', 'E', 'F', 'a', 'b', 'c', 'd', 'e', 'f']
       if splitline[2][-1] not in hexrange:
@@ -197,7 +197,7 @@ if __name__ == '__main__':
     # and a length of 0x00. 
     elif splitline[1] == "\"\"":
       splitline[1] = 'octet-string'
-    writeline = ':'.join(splitline) + '\n'
+    writeline = ','.join(splitline) + '\n'
     writeline = modtype(splitline[1], writeline)
     replacement.write(writeline)
   replacement.write(matchPrefix + '\n')
