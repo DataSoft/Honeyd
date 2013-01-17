@@ -45,7 +45,7 @@ STATUS_CODES_SERVER_ERROR = {'0x0500': 'server-error-internal-error',
                              '0x0508': 'server-error-job-canceled', 
                              '0x0509': 'server-error-multiple-document-jobs-not-supported'}
 
-class IPPResponseTCP :
+class IPPResponseTCP:
   '''Class for TCP responses to IPP requests.'''
   #attributes_types = ('operation', 'job', 'printer', 'unsupported', \
   #                                 'subscription', 'event_notification')
@@ -53,7 +53,7 @@ class IPPResponseTCP :
                               status_code=None, \
                               request_id=None, \
                               printattr=False, \
-                              jobattr=False) :
+                              jobattr=False):
     self._data = data
     self.parsed = False
     self.setVersion(version)
@@ -63,7 +63,7 @@ class IPPResponseTCP :
     self.setJobAttr(jobattr)
     self.data = ''
 
-    #for attrtype in self.attributes_types :
+    #for attrtype in self.attributes_types:
     #   setattr(self, '_%s_attributes' % attrtype, [[]])
     
     # Initialize tags    
@@ -86,40 +86,40 @@ class IPPResponseTCP :
     
     # Reverse mapping to generate IPP messages
     self.tagvalues = {}
-    for i in range(len(self.tags)) :
+    for i in range(len(self.tags)):
        value = self.tags[i]
-       if value is not None :
+       if value is not None:
          self.tagvalues[value] = i
 
-  def setPrintAttr(self, newVal) :
+  def setPrintAttr(self, newVal):
     self.printAttr = newVal
     
-  def setJobAttr(self, newVal) :
+  def setJobAttr(self, newVal):
     self.jobAttr = newVal
 
-  def setVersion(self, version) :
+  def setVersion(self, version):
     '''Sets the request's operation id.'''
-    if version is not None :
-        try :
+    if version is not None:
+        try:
             self.version = [int(p) for p in version.split('.')]
-        except AttributeError :
-            if len(version) == 2 : # 2-tuple
+        except AttributeError:
+            if len(version) == 2: # 2-tuple
                 self.version = version
-            else :    
-                try :
+            else:    
+                try:
                     self.version = [int(p) for p in str(float(version)).split('.')]
-                except :
+                except:
                     self.version = [int(p) for p in IPP_VERSION.split('.')]
       
-  def setStatusCode(self, stcd) :        
+  def setStatusCode(self, stcd):        
     '''Sets the request's operation id.'''
     self.statusCode = stcd
       
-  def setRequestId(self, reqid) :        
+  def setRequestId(self, reqid):        
     '''Sets the request's request id.'''
     self.request_id = reqid.encode('hex')
     
-  def generateResponse(self) :
+  def generateResponse(self):
     httprn = '0d0a'
     http = []
     # HTTP response code
@@ -147,7 +147,7 @@ class IPPResponseTCP :
     # hex value -- i.e. it'll be 0x0041 but they'll want '30303431' 
     stringifylength = '{0:08X}'.format(int(hex(len(ipp) / 2), 16))
     chunklength = ''
-    for c in stringifylength :
+    for c in stringifylength:
         chunklength += ''.join('{0:02X}'.format(int(hex(ord(c)), 16)))
     http.append(chunklength)
     http.append(httprn)
@@ -158,11 +158,11 @@ class IPPResponseTCP :
     http.append(httprn)
     return ''.join(http)
     
-  def generateIPP(self) :
+  def generateIPP(self):
     '''Generates the hex for the response (WIP).'''
-    if self.statusCode in STATUS_CODES_SUCCESS :
+    if self.statusCode in STATUS_CODES_SUCCESS:
       return STATUS_CODES_SUCCESS[self.statusCode]
-    elif self.statusCode in STATUS_CODES_CLIENT_ERROR or self.statusCode in STATUS_CODES_SERVER_ERROR :
+    elif self.statusCode in STATUS_CODES_CLIENT_ERROR or self.statusCode in STATUS_CODES_SERVER_ERROR:
       packet = []
       '''All of the IPP Response REQUIRED attributes are constructed here'''
       packet.append('{0:02X}'.format(self.version[0]))
@@ -181,7 +181,7 @@ class IPPResponseTCP :
       packet.append('{0:04X}'.format(int(hex(len('en-us')), 16)))
       packet.append('en-us'.encode('hex'))
       '''If we're responding with the printer attributes data, construct here'''
-      if self.printAttr : 
+      if self.printAttr: 
         packet.append('{0:02X}'.format(self.tagvalues['printer-attributes-tag']))
         packet.append('{0:02X}'.format(self.tagvalues['enum'])) # Tag
         packet.append('{0:04X}'.format(int(hex(len('printer-state')), 16))) # Name length
@@ -202,23 +202,23 @@ class IPPResponseTCP :
         packet.append('{0:04X}'.format(int(hex(len('printer-is-accepting-jobs')), 16))) # Name length
         packet.append('printer-is-accepting-jobs'.encode('hex')) # Name
         packet.append('{0:04X}'.format(int('0x0001', 16))) # Value length
-        if self.statusCode == '0x0506' : 
+        if self.statusCode == '0x0506': 
           packet.append('{0:02X}'.format(int('0', 16))) # Value
-        else :
+        else:
           packet.append('{0:02X}'.format(int('1', 16)))
       packet.append('{0:02X}'.format(self.tagvalues['end-of-attributes-tag']))
       return ''.join(packet)
-    else :
+    else:
       return 'STATUS CODE NOT RECOGNIZED'
 
-class IPPResponseUDP :
+class IPPResponseUDP:
   '''Class for UDP responses to IPP requests.'''
   def __init__ (self, 
                 reqoid=None, 
                 requestid=None, 
                 requestidlength=None, 
                 pdutype=None, 
-                version=None) :
+                version=None):
     self.reqoid = reqoid if reqoid != None else ''
     self.requestid = requestid if requestid != None else '1'
     self.pdutype = pdutype if pdutype != None else 0xA0
@@ -252,13 +252,13 @@ class IPPResponseUDP :
                   'inform-request':0xA6,
                   'snmpv2-trap':0xA7}
     
-  def generateResponse(self) :
+  def generateResponse(self):
     ''' 
       The if statements here don't really do anything at the moment,
       but if further research reveals a difference between get-request
       and get-next-request pdu types, it'll come in handy
     '''
-    if int(self.pdutype, 16) == self.ids['get-request'] :
+    if int(self.pdutype, 16) == self.ids['get-request']:
       packet = []
       head = []
       snmpversion = []
@@ -278,7 +278,7 @@ class IPPResponseUDP :
       packet.append(head)
       packet.append(pdu)
       return ''.join(packet)
-    elif int(self.pdutype, 16) == self.ids['get-next-request'] :
+    elif int(self.pdutype, 16) == self.ids['get-next-request']:
       packet = []
       head = []
       snmpversion = []
@@ -298,10 +298,10 @@ class IPPResponseUDP :
       packet.append(head)
       packet.append(pdu)
       return ''.join(packet)
-    else :
+    else:
       return '00'
 
-  def generatePDU(self, getorgetnext) :
+  def generatePDU(self, getorgetnext):
     pdu = []
     reqid = []
     reqid.append('{0:02X}'.format(self.ids['integer']))
@@ -327,7 +327,7 @@ class IPPResponseUDP :
     pdu.append(varbindlist)    
     return ''.join(pdu)
     
-  def generateVarbindList(self, getorgetnext) :
+  def generateVarbindList(self, getorgetnext):
     #Need to find a fake MIB to copy and present attributes from
     varbind = self.generateVarbind(getorgetnext)
     varbindlist = []
@@ -336,19 +336,19 @@ class IPPResponseUDP :
     varbindlist.append(varbind)
     return ''.join(varbindlist)
     
-  def generateVarbind(self, getorgetnext) :
+  def generateVarbind(self, getorgetnext):
     varbind = []
-    if type(self.reqoid) is list :
-      for i in range(0, len(self.reqoid)) :
+    if type(self.reqoid) is list:
+      for i in range(0, len(self.reqoid)):
         oid = []
         value = []
         mib = self.generateMIB(self.reqoid[i], getorgetnext)
-        if getorgetnext == 0 :
+        if getorgetnext == 0:
           oid.append('{0:02X}'.format(self.ids['object-identifier']))
           oid.append('{0:02x}'.format(int(hex((len(self.reqoid[i]) / 2)), 16)))
           oid.append(self.reqoid[i])
           oid = ''.join(oid)
-        elif getorgetnext == 1 :
+        elif getorgetnext == 1:
           oid.append('{0:02X}'.format(self.ids['object-identifier']))
           oid.append('{0:02x}'.format(int(hex((len(mib[0]) / 2)), 16)))
           oid.append(mib[0])
@@ -361,16 +361,16 @@ class IPPResponseUDP :
         varbind.append(oid)
         varbind.append(value)
         pass
-    else :
+    else:
       oid = []
       value = []
       mib = self.generateMIB(self.reqoid, getorgetnext)
-      if getorgetnext == 0 :
+      if getorgetnext == 0:
         oid.append('{0:02X}'.format(self.ids['object-identifier']))
         oid.append('{0:02x}'.format(int(hex((len(self.reqoid) / 2)), 16)))
         oid.append(self.reqoid)
         oid = ''.join(oid)
-      elif getorgetnext == 1 :
+      elif getorgetnext == 1:
         oid.append('{0:02X}'.format(self.ids['object-identifier']))
         oid.append('{0:02x}'.format(int(hex((len(mib[0]) / 2)), 16)))
         oid.append(mib[0])
@@ -384,78 +384,75 @@ class IPPResponseUDP :
       varbind.append(value)
     return ''.join(varbind)
   
-  def generateMIB(self, oid, getorgetnext) :
+  def generateMIB(self, oid, getorgetnext):
     construct = self.matchOidToResponse(oid, getorgetnext)
     mib = []
     ret = []
     if not construct or (construct[0] == 0 and construct[1] == 0 and construct[2] == 0):
       mib.append('{0:02X}'.format(self.ids['octet-string']))
       mib.append('{0:02X}'.format(int('0', 16)))
-    else :
+    else:
       mib.append('{0:02X}'.format(self.ids[construct[1]]))
-      if construct[2] != 0 :
+      if construct[2] != 0:
         mib.append('{0:02X}'.format(int(hex(len(construct[2]) / 2), 16)))
         mib.append(construct[2])
-      else :
+      else:
         mib.append('{0:02X}'.format(int('0', 15)))
     mib = ''.join(mib)
     ret.append(construct[0])
     ret.append(mib)
     return ret
   
-  def matchOidToResponse(self, oid, getorgetnext) :
+  def matchOidToResponse(self, oid, getorgetnext):
     res = 3 * [0]
     random.seed()
     filemax = 0    
     # TODO: When this gets moved into /usr/share/honeyd/.../ the prepended
     # path information is going to have to change to reflect this.
-    while True :
-      try :
+    while True:
+      try:
         replf = '/home/addison/Code/Honeyd/scripts/WIP/printer' + str(filemax) + '.txt'
         replacement = open(replf, 'r')
         filemax += 1
-      except IOError :
+      except IOError:
         break
-    if filemax > 1 :
+    if filemax > 1:
       rand = random.randint(0, filemax - 1)
-    else :
+    else:
       rand = 0
-    try :
+    try:
       f = open('/home/addison/Code/Honeyd/scripts/WIP/printer' + str(rand) + '.txt', 'r')
-    except IOError as e :
+    except IOError as e:
       sys.stderr.write('IOError: ' + str(e) + '\n')
       return res
     match = f.readlines()
-    if getorgetnext == 0 :
-      for line in match :
+    if getorgetnext == 0:
+      for line in match:
         check = line.split(':')
-        if check[0] == oid :
-          if len(check) != 3 :
+        if check[0] == oid:
+          if len(check) != 3:
             res[0] = check[0]
             res[1] = check[1].rstrip()
             return res
           check[2] = check[2].rstrip()
           return check
       return res
-    elif getorgetnext == 1 :
-      #sys.stderr.write('in matchResponstToOID with getorgetnext == ' + str(getorgetnext) + '\n')
+    elif getorgetnext == 1:
       nextline = 0
       # need to handle both parent OIDs and get-next-request increments
-      for line in range(0, len(match)) :
+      for line in range(0, len(match)):
         check = match[line].split(':')
-        if nextline == 1 :
-          sys.stderr.write('check[0] == ' + check[0] + '\n')
-          sys.stderr.write('check[1] == ' + check[1] + '\n')
-          if len(check) != 3 :
+        if nextline == 1:
+          if len(check) != 3:
             res[0] = check[0]
             res[1] = check[1].rstrip()
             return res
           check[2] = check[2].rstrip()
           return check
-        if check[0] == oid :
+        if check[0] == oid:
           nextline = 1
-        elif re.match(oid, check[0]) :
-          if len(check) != 3 :
+        elif re.match(oid, check[0]):
+          if len(check) != 3:
             res[0] = check[0]
             res[1] = check[1].rstrip()
             return res

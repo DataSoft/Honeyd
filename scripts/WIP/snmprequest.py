@@ -22,29 +22,29 @@ ids = {'integer':0x02,
        'set-request':0xA3,
        'trap-pdu':0xA4}
 
-def convertDotsToHex(oid) :
+def convertDotsToHex(oid):
   oidBER = []
   oidBER.append('{0:02X}'.format(0x2B))
   split = oid.split('.')
-  for j in range(2, len(split)) :
-    if int(split[j], 10) > 255 :
+  for j in range(2, len(split)):
+    if int(split[j], 10) > 255:
       oidBER.append(getLongFormEncoding(int(split[j], 10)))
-    else :
+    else:
       oidBER.append('{0:02X}'.format(int(split[j], 16)))
   return ''.join(oidBER)
 
-def getLongFormEncoding(value) :
+def getLongFormEncoding(value):
   retlist = []
   i = 1
-  while (2 ** (7 * i)) < value :
+  while (2 ** (7 * i)) < value:
     i += 1
   bytenum = i
-  for i in reversed(range(0, bytenum)) :
+  for i in reversed(range(0, bytenum)):
     test = 0x00
     mult = 128 * i if i > 0 else 1
-    while True :
+    while True:
       test += 0x01
-      if (test * mult) > value :
+      if (test * mult) > value:
         test -= 0x01
         break
     add = 0x80 if i > 0 else 0x00
@@ -52,7 +52,7 @@ def getLongFormEncoding(value) :
     value -= test * mult
   return ''.join(retlist)
 
-def constructRequest() :
+def constructRequest():
   snmpmessage = []
   snmpmessage.append('{0:02X}'.format(ids['sequence']))
   snmpversion = []
@@ -70,7 +70,7 @@ def constructRequest() :
   snmpmessage.append(snmppdu)
   return ''.join(snmpmessage)
 
-def constructPDU() :
+def constructPDU():
   pdu = []
   pdu.append('{0:02X}'.format(ids['get-request']))
   reqid = []
@@ -96,7 +96,7 @@ def constructPDU() :
   pdu.append(varbindlist) 
   return ''.join(pdu)
 
-def constructVarbindList() :
+def constructVarbindList():
   vblist = []
   vblist.append('{0:02X}'.format(ids['sequence']))
   vb = constructVarbind()
@@ -104,10 +104,10 @@ def constructVarbindList() :
   vblist.append(vb)
   return ''.join(vblist)
 
-def constructVarbind() :
+def constructVarbind():
   retvb = []
-  if type(OID) is list :
-    for i in OID :
+  if type(OID) is list:
+    for i in OID:
       vb = []
       vboid = []
       print 'i == ' + i
@@ -121,7 +121,7 @@ def constructVarbind() :
       vb.append('{0:02X}'.format(int(hex(len(vboid) / 2), 16)))
       vb.append(vboid)
       retvb.append(''.join(vb))
-  else :
+  else:
     vb = []
     vboid = []
     vboid.append('{0:02X}'.format(ids['object-identifier']))
@@ -136,18 +136,18 @@ def constructVarbind() :
     retvb.append(''.join(vb))
   return ''.join(retvb)
 
-if __name__ == "__main__" :
-  if len(sys.argv) != 4 :
+if __name__ == "__main__":
+  if len(sys.argv) != 4:
     print 'args: IPADDR DPORT OIDS'
     sys.exit(1)
   IPADDR = sys.argv[1]
   DPORT = int(sys.argv[2], 10)
-  try :
+  try:
     split = sys.argv[3].split(',')
-    for i in range(0, len(split)) :
+    for i in range(0, len(split)):
       split[i] = convertDotsToHex(split[i])
     OID = split
-  except :
+  except:
     OID = convertDotsToHex(sys.argv[3])
   
   s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -158,7 +158,7 @@ if __name__ == "__main__" :
   
   s.send(binascii.a2b_hex(PACKETDATA))
 
-  while 1 :
+  while 1:
     data = s.recv(1024)
     print data
     break

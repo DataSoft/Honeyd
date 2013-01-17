@@ -5,17 +5,15 @@ import os
 import urllib2
 import socket
 import binascii
-import time
 from ipp import *
 
-if __name__ == "__main__" :
-  if len(sys.argv) != 5 :
-    pass
+if __name__ == "__main__":
+  if len(sys.argv) > 5:
+    exit(1)
   
   SIPADDR = sys.argv[1]
   SRCPORT = int(sys.argv[2], 10)
-  DIPADDR = sys.argv[3]
-  DSTPORT = int(sys.argv[4], 10)
+  
   # get requisite SNMP data here by
   # parsing stdin for parameters we need
   snmpmessagelength = int(binascii.hexlify(sys.stdin.read(2)[1]), 16)
@@ -35,7 +33,7 @@ if __name__ == "__main__" :
   snmpvarbindlistlength = int(binascii.hexlify(sys.stdin.read(2)[1]), 16)
   snmpoid = []
   togo = 0
-  while togo < snmpvarbindlistlength :
+  while togo < snmpvarbindlistlength:
     snmpvarbindlength = int(binascii.hexlify(sys.stdin.read(2)[1]), 16)
     snmpvaluetype = int(binascii.hexlify(sys.stdin.read(1)), 16) 
     snmpvaluelength = int(binascii.hexlify(sys.stdin.read(1)), 16)
@@ -43,7 +41,7 @@ if __name__ == "__main__" :
     snmpnull = sys.stdin.read(2)
     togo += 6 + snmpvaluelength
   
-  if len(snmpoid) == 1 :
+  if len(snmpoid) == 1:
     snmpoid = ''.join(snmpoid)
   
   """
@@ -67,47 +65,19 @@ if __name__ == "__main__" :
     sys.stderr.write("snmpoid: " + str(snmpoid) + "\n")
   """
   
-  snmpdaddress = (DIPADDR, DSTPORT)
   snmpsaddress = (SIPADDR, SRCPORT)
   
-  if type(snmpoid) is list :
-    for i in range(0, len(snmpoid)) :
+  if type(snmpoid) is list:
+    for i in range(0, len(snmpoid)):
       test = list(snmpoid[i])
-      for j in range(0, len(test)) :
+      for j in range(0, len(test)):
         test[j] = test[j].upper()
       snmpoid[i] = ''.join(test)
-  else :
+  else:
     test = list(snmpoid)
-    for i in range(0, len(test)) :
+    for i in range(0, len(test)):
       test[i] = test[i].upper()
     snmpoid = ''.join(test)
-    
-  """
-    # give paramaters to IPPResponseUDP constructor
-    if type(snmpoid) is list :
-      #s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-      #s.bind(snmpdaddress)
-      #s.connect(snmpsaddress)
-      for i in range(0, len(snmpoid)) :
-        req = IPPResponseUDP(reqoid=snmpoid[i],
-                             requestid=snmpreqid,
-                             requestidlength=snmpreqidlength,
-                             pdutype=snmppdutype,
-                             version=snmpversion)
-        response = req.generateResponse()
-        clean = list(response)
-        hexrange = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 
-                    'A', 'B', 'C', 'D', 'E', 'F', 'a', 'b', 'c', 'd', 
-                    'e', 'f']
-        for c in range(0, len(clean)) :
-          if clean[c] not in hexrange :
-            del clean[c]
-        response = ''.join(clean)
-        #s.send(binascii.a2b_hex(response))
-        sys.stdout.write(binascii.a2b_hex(response))
-      #s.close()
-    else :
-  """
   
   req = IPPResponseUDP(reqoid=snmpoid,
                        requestid=snmpreqid,
@@ -119,20 +89,10 @@ if __name__ == "__main__" :
   hexrange = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 
               'A', 'B', 'C', 'D', 'E', 'F', 'a', 'b', 'c', 'd', 
               'e', 'f']
-  for c in range(0, len(clean)) :
-    if clean[c] not in hexrange :
-      sys.stderr.write('c,clean[c] == ' + str(c) + ',' + str(ord(clean[c])) + ' not in hexrange\n')
+  for c in range(0, len(clean)):
+    if clean[c] not in hexrange:
       del clean[c]
-  """
-    length = len(clean)
-    c = 0
-    while c < length :
-      if clean[c] in hexrange :
-        c += 1
-      else :
-        length -= 1
-        del clean[c]
-  """
+
   response = ''.join(clean)
   sys.stdout.write(binascii.a2b_hex(response))
     

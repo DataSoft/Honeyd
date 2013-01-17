@@ -7,17 +7,17 @@ import re
 import math
 import subprocess
 
-def modtype(type, line) :
+def modtype(type, line):
   retType = ''
   if type == 'STRING' or type == 'Hex-STRING':
     retType = 'octet-string'
-  elif type == 'INTEGER' :
+  elif type == 'INTEGER':
     retType = 'integer'
-  elif type == 'IpAddress' :
+  elif type == 'IpAddress':
     retType = 'ip-address'
-  elif type == 'OID' :
+  elif type == 'OID':
     retType = 'object-identifier'
-  elif type == 'Gauge32' :
+  elif type == 'Gauge32':
     '''
       The Gauge32 and Counter32 variable types are the SNMP v2
       versions of Gauge and Counter. Currently, the two sets are 
@@ -26,58 +26,61 @@ def modtype(type, line) :
       variable types, both are going to return the SNMP v1 types.
     '''
     retType = 'gauge'
-  elif type == 'Gauge' :
+  elif type == 'Gauge':
     retType = 'gauge'
-  elif type == 'Counter32' :
+  elif type == 'Counter32':
     retType = 'counter'
-  elif type == 'Counter' :
+  elif type == 'Counter':
     retType = 'counter'
-  elif type == 'Timeticks' :
+  elif type == 'Timeticks':
     retType = 'timeticks'
-  else :
+  else:
     retType = 'octet-string'
     #retType = 'null'
     
   return line.replace(type, retType)
 
-def getLongFormEncoding(value) :
+def getLongFormEncoding(value):
   retlist = []
-  i = 1
-  while (2 ** (7 * i)) < value :
-    i += 1
-  bytenum = i
-  for i in reversed(range(0, bytenum)) :
+  j = 1
+  while (2 ** (7 * j)) < value:
+    j += 1
+  bytenum = j
+  for i in reversed(range(0, bytenum)):
     test = 0x00
-    mult = 128 * i if i > 0 else 1
-    while True :
+    mult = (2 ** (7 * i)) if i > 0 else 1
+    while True:
       test += 0x01
-      if (test * mult) > value :
+      if (test * mult) > value:
         test -= 0x01
         break
     add = 0x80 if i > 0 else 0x00
-    retlist.append('{0:02X}'.format(int(hex(test), 16) + add))
+    retlist.append('{0:02X}'.format(int(hex(test), 16) | add))
     value -= test * mult
   return ''.join(retlist)
 
-def convertDotsToHex(oid) :
+def convertDotsToHex(oid):
   oidBER = []
   oidBER.append('{0:02X}'.format(0x2B))
   split = oid.split('.')
-  for j in range(2, len(split)) :
-    if int(split[j], 10) > 126 :
+  upperlimit = 126
+  for j in range(2, len(split)):
+    if int(split[j], 10) > upperlimit:
       oidBER.append(getLongFormEncoding(int(split[j], 10)))
-    else :
+    else:
       hexchar = hex(int(split[j], 10))[2:]
-      if len(hexchar) % 2 == 1 :
+      if len(hexchar) % 2 == 1:
         hexchar = '0' + hexchar
       oidBER.append(hexchar)
-  return ''.join(oidBER)
+  return ''.join(oidBER).upper()
 
-if __name__ == '__main__' :
-  if len(sys.argv) < 2 :
+if __name__ == '__main__':
+  if len(sys.argv) < 2:
     sys.exit(1)
 
   ip = sys.argv[1]
+  sysOID = convertDotsToHex('1.3.6.1.2.1.1.2.0')
+  sysOIDValue = convertDotsToHex('1.3.6.1.2.1.13.8.1.1.2.1')
   path = 'temp.' + ip + '.txt'
   f = open(path,'w+')
   f.write(subprocess.check_output(['snmpwalk','-Cc','-Os','-c','public','-v','1',str(ip)],
@@ -86,101 +89,118 @@ if __name__ == '__main__' :
   f = open(path, 'r')
   restructure = f.readlines()
   fileappend = 0
-  if len(sys.argv) == 3 and sys.argv[2] == '--clean' :
-    while True :
-      try :
+  if len(sys.argv) == 3 and sys.argv[2] == '--clean':
+    while True:
+      try:
         replf = 'printer' + str(fileappend) + '.txt'
         replacement = open(replf, 'r')
         os.remove(replf)
         fileappend += 1
-      except IOError :
+      except IOError:
         break
   fileappend = 0
   # search for a printer#*.txt that isn't taken, then write to it
-  while True :
-    try :
+  while True:
+    try:
       replf = 'printer' + str(fileappend) + '.txt'
       replacement = open(replf, 'r')
       fileappend += 1
-    except IOError :
+    except IOError:
       replacement = open(replf, 'w')
       break
   # In this block, we're restructuring the lines returned from snmpwalk 
   # to be consistent with the values and names used in the ipp.py script
-  for line in restructure :
+  for line in restructure:
     writeline = line.replace('iso', '1')
     writeline = writeline.replace('=', ':')
     splitline = writeline.split(':')
-    for i in range(0, len(splitline)) :
+    for i in range(0, len(splitline)):
       splitline[i] = splitline[i].strip()
       
     splitline[0] = convertDotsToHex(splitline[0])
+    # These two conditionals are to construct the final line in the 
+    # output file. snmpwalk completes its walk of the MIB tree upon 
+    # reaching a private subtree, which is generally the proprietary 
+    # tree created by the vendor; all the information to construct 
+    # the required response node is contained within the public OIDs,
+    # thus the seemingly magic strings use below. 
+    if splitline[0] == sysOID:
+      matchPrefix = '1.3.6.1.4.1.'
+      appendForResponse = '.1.1.1.1.0'
+      pickapart = splitline[2][len(matchPrefix):]
+      startsub = pickapart.split('.')[0]
+      # TEMP find a way to get value at this node
+      matchPrefix += startsub + appendForResponse
+      matchPrefix = convertDotsToHex(matchPrefix)
+      matchPrefix += ':octet-string:'
+    if splitline[0] == sysOIDValue:
+      matchPrefix += splitline[2].replace('\"', '').encode('hex')
     # Timeticks has a special format in the returned info for snmpwalk.
     # Something like (#########) Date Conversion
     # However, the only information being sent within the packet is 
     # the value within the parens.
-    if splitline[1] == 'Timeticks' :
+    if splitline[1] == 'Timeticks':
       split = splitline[2].split(' ')
       splitline[2] = split[0].replace('(', '').replace(')', '')
-      while len(splitline) > 3 :
+      while len(splitline) > 3:
         del splitline[-1]
       splitline[2] = hex(int(splitline[2], 10))[2:]
       hexrange = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 
                   'A', 'B', 'C', 'D', 'E', 'F', 'a', 'b', 'c', 'd', 'e', 'f']
-      if splitline[2][-1] not in hexrange :
+      if splitline[2][-1] not in hexrange:
         splitline[2] = splitline[2][0:-1]
-      if len(splitline[2]) % 2 == 1 :
+      if len(splitline[2]) % 2 == 1:
         splitline[2] = '0' + splitline[2]
     # Since OID BER encoding is a bit mathematically heavy-handed,
     # do it here. This will take an OID in the format 1.3.6.1.{...}
     # and turn it into a hex string of 2B{...}.
-    elif splitline[1] == 'OID' :
-      if splitline[2] == 'ccitt.0' :
+    elif splitline[1] == 'OID':
+      if splitline[2] == 'ccitt.0':
         splitline[2] = '00'
-      else :
+      else:
         splitline[2] = convertDotsToHex(splitline[2])
     # We want to convert an IpAddress in dot-decimal format into
     # four hex pairs in one string
-    elif splitline[1] == 'IpAddress' :
+    elif splitline[1] == 'IpAddress':
       split = splitline[2].split('.')
       ipBER = []
-      for i in range(0, len(split)) :
+      for i in range(0, len(split)):
         ipBER.append('{0:02X}'.format(int(hex(int(split[i], 10)), 16)))
       splitline[2] = ''.join(ipBER)
     # STRINGs take the form "some-string", we want to take the value
     # inside the quotes and encode it into hex.
-    elif splitline[1] == 'STRING' :
+    elif splitline[1] == 'STRING':
       split = splitline[2].split('"')
       splitline[2] = split[1].encode('hex')
     # For hex strings, the values are going to be stored
     # as a string representation of the hex. Just need to use 
     # binascii.a2b_hex(hexstring) to get the binary values for
     # the response packet
-    elif splitline[1] == 'Hex-STRING' :
+    elif splitline[1] == 'Hex-STRING':
       split = ''.join(splitline[2].split(' '))
       splitline[2] = split
     elif (splitline[1] == 'INTEGER' or splitline[1] == 'Gauge' or splitline[1] == 'Gauge32'
-         or splitline[1] == 'Counter' or splitline[1] == 'Counter32') :
-      if int(splitline[2], 10) < 0 :
+         or splitline[1] == 'Counter' or splitline[1] == 'Counter32'):
+      if int(splitline[2], 10) < 0:
         splitline[2] = hex(0xff - int(hex(math.trunc(math.fabs(int(splitline[2], 10) + 1))), 16))[2:]
-      else :
+      else:
         splitline[2] = hex(int(splitline[2], 10))[2:]
       hexrange = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 
                   'A', 'B', 'C', 'D', 'E', 'F', 'a', 'b', 'c', 'd', 'e', 'f']
-      if splitline[2][-1] not in hexrange :
+      if splitline[2][-1] not in hexrange:
         splitline[2] = splitline[2][0:-1]
-      if len(splitline[2]) % 2 == 1 :
+      if len(splitline[2]) % 2 == 1:
         splitline[2] = '0' + splitline[2]
     # There are some OIDs that return nothing, shown in the 
     # snmpwalk return text as "". For this return value, wireshark
     # shows the packet as having a varbind id of 0x04 (octet-string)
     # and a length of 0x00. 
-    elif splitline[1] == "\"\"" :
+    elif splitline[1] == "\"\"":
       splitline[1] = 'octet-string'
     writeline = ':'.join(splitline) + '\n'
     writeline = modtype(splitline[1], writeline)
     replacement.write(writeline)
-    
+  replacement.write(matchPrefix + '\n')
   f.close()
   replacement.close()
   #os.remove(path)
