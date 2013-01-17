@@ -83,11 +83,15 @@ if __name__ == '__main__':
   sysOIDValue = convertDotsToHex('1.3.6.1.2.1.13.8.1.1.2.1')
   path = 'temp.' + ip + '.txt'
   f = open(path,'w+')
-  f.write(subprocess.check_output(['snmpwalk','-Cc','-Os','-c','public','-v','1',str(ip)],
+  f.write(subprocess.check_output(['snmpwalk','-Cc','-Os','-c','public','-v','1',str(ip),'1.3.6.1.2'],
+                          stderr=subprocess.STDOUT))
+  f.flush()
+  f.write(subprocess.check_output(['snmpwalk','-Cc','-Os','-c','public','-v','1',str(ip),'1.3.6.1.4'],
                           stderr=subprocess.STDOUT))
   f.close()
   f = open(path, 'r')
   restructure = f.readlines()
+  del restructure[-1]
   fileappend = 0
   if len(sys.argv) == 3 and sys.argv[2] == '--clean':
     while True:
@@ -118,23 +122,6 @@ if __name__ == '__main__':
       splitline[i] = splitline[i].strip()
       
     splitline[0] = convertDotsToHex(splitline[0])
-    # These two conditionals are to construct the final line in the 
-    # output file. snmpwalk completes its walk of the MIB tree upon 
-    # reaching a private subtree, which is generally the proprietary 
-    # tree created by the vendor; all the information to construct 
-    # the required response node is contained within the public OIDs,
-    # thus the seemingly magic strings use below. 
-    if splitline[0] == sysOID:
-      matchPrefix = '1.3.6.1.4.1.'
-      appendForResponse = '.1.1.1.1.0'
-      pickapart = splitline[2][len(matchPrefix):]
-      startsub = pickapart.split('.')[0]
-      # TEMP find a way to get value at this node
-      matchPrefix += startsub + appendForResponse
-      matchPrefix = convertDotsToHex(matchPrefix)
-      matchPrefix += ',octet-string,'
-    if splitline[0] == sysOIDValue:
-      matchPrefix += splitline[2].replace('\"', '').encode('hex')
     # Timeticks has a special format in the returned info for snmpwalk.
     # Something like (#########) Date Conversion
     # However, the only information being sent within the packet is 
@@ -200,7 +187,7 @@ if __name__ == '__main__':
     writeline = ','.join(splitline) + '\n'
     writeline = modtype(splitline[1], writeline)
     replacement.write(writeline)
-  replacement.write(matchPrefix + '\n')
+    
   f.close()
   replacement.close()
   #os.remove(path)
