@@ -1,4 +1,0 @@
-err.c:err(int eval, const char *fmt, ...)
-interface.c:		syslog(LOG_ERR, "bad pcap filter: %s", pcap_geterr(inter->if_pcap));
-interface.c:		    pcap_geterr(inter->if_pcap));
-lex.c:			clearerr(hydin); \
