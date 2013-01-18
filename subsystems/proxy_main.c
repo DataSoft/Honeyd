@@ -107,8 +107,6 @@ main(int argc, char **argv)
 				syslog(LOG_ERR, "%s: failed to reopen stderr", __func__);
 				exit(EXIT_FAILURE);
 			}
-				//err(1, "%s: failed to reopen stderr",
-				  //  __func__);
 			setvbuf(stderr, NULL, _IOLBF, 0);
 			break;
 		case 'v':
@@ -129,8 +127,6 @@ main(int argc, char **argv)
 				syslog(LOG_ERR, "Bad directory specification: %s", log_datadir);
 				exit(EXIT_FAILURE);
 			}
-				//errx(1, "Bad directory specification: %s",
-				  //  log_datadir);
 			break;
 		}
 		default:
@@ -145,7 +141,6 @@ main(int argc, char **argv)
 			syslog(LOG_ERR, "%s: fopen(%s)", __func__,logfile);
 			exit(EXIT_FAILURE);
 		}
-			//err(1, "%s: fopen(%s)", __func__, logfile);
 		fprintf(stderr, "Logging to %s\n", logfile);
 	}
 
@@ -156,7 +151,6 @@ main(int argc, char **argv)
 			syslog(LOG_ERR, "%s: fopen(%s)", __func__,mail_logfile);
 			exit(EXIT_FAILURE);
 		}
-			//err(1, "%s: fopen(%s)", __func__, mail_logfile);
 		fprintf(stderr, "Logging SMTP to %s\n", mail_logfile);
 	}
 
@@ -181,14 +175,12 @@ main(int argc, char **argv)
 				syslog(LOG_ERR, "Bad port number: %s", p);
 				exit(EXIT_FAILURE);
 			}
-				//errx(1, "Bad port number: %s", p);
 			event = malloc(sizeof(struct event));
 			if (event == NULL)
 			{
 				syslog(LOG_ERR, "%s: malloc", __func__);
 				exit(EXIT_FAILURE);
 			}
-				//err(1, "%s: malloc", __func__);
 			proxy_bind_socket(event, port);
 		}
 	}

@@ -25,6 +25,7 @@
 
 #include <sys/param.h>
 #include <sys/types.h>
+#include <stdlib.h>
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -154,14 +155,16 @@ receive_fd(int socket, void *base, size_t *len)
 	cmsg = CMSG_FIRSTHDR(&msg);
 	if (cmsg->cmsg_type != SCM_RIGHTS)
 	{
-		syslog(LOG_ERR,"%s: expected type %d got %d", __func__, SCM_RIGHT, cmsg->cmsg_type);
+		syslog(LOG_ERR,"%s: expected type %d got %d", __func__, SCM_RIGHTS, cmsg->cmsg_type);
 		exit(EXIT_FAILURE);
 	}
 	memcpy(&fd, CMSG_DATA(cmsg), sizeof(fd));
 #endif
 	return fd;
 #else
+	{
 	syslog(LOG_ERR, "%s: subsystems not supported due to lack of fd pasing", __func__);
-			exit(EXIT_FAILURE);
+	exit(EXIT_FAILURE);
+	}
 #endif
 }

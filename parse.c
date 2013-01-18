@@ -85,6 +85,7 @@
 #include <string.h>
 #include <errno.h>
 #include <time.h>
+#include <syslog.h>
 
 #include <pcap.h>
 #include <dnet.h>
