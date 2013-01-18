@@ -1,19 +1,10 @@
 #!/usr/bin/python
 
 import sys
-import os
-import urllib2
-import socket
 import binascii
-from ipp import *
+import ipp
 
 if __name__ == "__main__":
-  if len(sys.argv) > 5:
-    exit(1)
-  
-  SIPADDR = sys.argv[1]
-  SRCPORT = int(sys.argv[2], 10)
-  
   # get requisite SNMP data here by
   # parsing stdin for parameters we need
   snmpmessagelength = int(binascii.hexlify(sys.stdin.read(2)[1]), 16)
@@ -64,8 +55,6 @@ if __name__ == "__main__":
     sys.stderr.write("snmpvaluelength: " + str(snmpvaluelength) + "\n")
     sys.stderr.write("snmpoid: " + str(snmpoid) + "\n")
   """
-  
-  snmpsaddress = (SIPADDR, SRCPORT)
   
   if type(snmpoid) is list:
     for i in range(0, len(snmpoid)):

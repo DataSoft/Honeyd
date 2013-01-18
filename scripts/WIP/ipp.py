@@ -1,11 +1,8 @@
 #!/usr/bin/python
 
-import binascii
 import sys
-import os
 import re
 import random
-from struct import pack, unpack
 
 IPP_VERSION = '1.1'
 IPP_PORT = 631
@@ -21,7 +18,7 @@ STATUS_CODES_CLIENT_ERROR = {'0x0400': 'client-error-bad-request',
                              '0x0404': 'client-error-not-possible', 
                              '0x0405': 'client-error-timeout', 
                              '0x0406': 'client-error-not-found', 
-                             '0x0407': 'client-error-gone',
+                             '0x0407': 'client-error-gone', 
                              '0x0408': 'client-error-request-entity-too-large', 
                              '0x0409': 'client-error-request-value-too-long', 
                              '0x040A': 'client-error-document-format-not-supported', 
@@ -389,7 +386,7 @@ class IPPResponseUDP:
     mib = []
     ret = []
     if not construct or (construct[0] == 0 and construct[1] == 0 and construct[2] == 0):
-      mib.append('{0:02X}'.format(self.ids['octet-string']))
+      mib.append('{0:02X}'.format(self.ids['null']))
       mib.append('{0:02X}'.format(int('0', 16)))
     else:
       mib.append('{0:02X}'.format(self.ids[construct[1]]))
