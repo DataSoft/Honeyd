@@ -324,7 +324,10 @@ count_test(void)
 	
 	count_internal_increment(count, &tv, 3);
 	if (count_get_sum(&count->seconds) != 3)
-	errx(1, "second count should be 1");
+	{
+		syslog(LOG_ERR,"second count should be 1");
+		exit(EXIT_FAILURE);
+	}
 
 	tv.tv_sec += 61;
 
@@ -332,19 +335,34 @@ count_test(void)
 	count_internal_increment(count, &tv, 0);
 
 	if (count_get_sum(&count->seconds) != 2)
-	errx(1, "second count should be 1");
+	{
+		syslog(LOG_ERR,"second count should be 1");
+		exit(EXIT_FAILURE);
+	}
 	if (count_get_sum(&count->minutes) != 3)
-	errx(1, "minute count should be 1");
+	{
+		syslog(LOG_ERR,"minute count should be 1");
+		exit(EXIT_FAILURE);
+	}
 
 	tv.tv_sec += 3540;
 	count_internal_increment(count, &tv, 1);
 
 	if (count_get_sum(&count->seconds) != 1)
-	errx(1, "second count should be 1");
+	{
+		syslog(LOG_ERR,"second coutn should be 1");
+		exit(EXIT_FAILURE);
+	}
 	if (count_get_sum(&count->minutes) != 2)
-		errx(1, "minute count should be 1");
+	{
+		syslog(LOG_ERR,"minute count should be 1");
+		exit(EXIT_FAILURE);
+	}
 	if (count_get_sum(&count->hours) != 3)
-	errx(1, "hour count should be 1");
+	{
+		syslog(LOG_ERR,"hour count should be 1");
+		exit(EXIT_FAILURE);
+	}
 
 	count_internal_print(stderr, count, "test-count");
 	for (i = 0; i < 24; i++) {
@@ -355,7 +373,10 @@ count_test(void)
 	if (count_get_sum(&count->seconds) ||
 	    count_get_sum(&count->minutes) ||
 	    count_get_sum(&count->hours))
-		errx(1, "all counts should be zero");
+	{
+		syslog(LOG_ERR,"Decompressed failed");
+		exit(EXIT_FAILURE);
+	}
 
 	fprintf(stderr, "\t%s: OK\n", __func__);
 }

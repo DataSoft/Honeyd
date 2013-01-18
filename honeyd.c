@@ -488,14 +488,12 @@ honeyd_init(void)
 			syslog(LOG_ERR, "getrlimit: NOFILE, failed at getting the files resources limit due to file not existing");
 			exit(EXIT_FAILURE);
 		}
-			//err(1, "getrlimit: NOFILE");
 		rl.rlim_cur = rl.rlim_max;
 		if (setrlimit(RLIMIT_NOFILE, &rl) == -1)
 		{
 			syslog(LOG_ERR, "setrlimit: NOFILE, failed to set resource limit due to file not existing");
 			exit(EXIT_FAILURE);
 		}
-			//err(1, "setrlimit: NOFILE");
 	}
 #ifdef RLIMIT_NPROC
 	if (getrlimit(RLIMIT_NPROC, &rl) == -1)
@@ -503,7 +501,6 @@ honeyd_init(void)
 		syslog(LOG_ERR, "getrlimit: NPROC, failed at getting the process' resource limit due to process not running");
 		exit(EXIT_FAILURE);
 	}
-		//err(1, "getrlimit: NPROC");
 	rl.rlim_max = rl.rlim_max/2;
 	rl.rlim_cur = rl.rlim_max;
 	if (setrlimit(RLIMIT_NPROC, &rl) == -1)
@@ -511,7 +508,6 @@ honeyd_init(void)
 		syslog(LOG_ERR, "setrlimit: NPROC, failed at setting the process' resource limit due to process not running");
 		exit(EXIT_FAILURE);
 	}
-		//err(1, "setrlimit: NPROC");
 #endif
 
 	stats_network.input_bytes = count_new();
@@ -3459,7 +3455,6 @@ main(int argc, char *argv[])
 				syslog(LOG_ERR, "Too many interfaces specified");
 				exit(EXIT_FAILURE);
 			}
-				//errx(1, "Too many interfaces specified");
 			dev[ninterfaces++] = optarg;
 			break;
 		case 'f':
@@ -3525,7 +3520,6 @@ main(int argc, char *argv[])
 		syslog(LOG_ERR, "rand_open");
 		exit(EXIT_FAILURE);
 	}
-		//err(1, "rand_open");
 	/* We need reproduceable random numbers for regression testing */
 	if (setrand)
 		rand_set(honeyd_rand, &setrand, sizeof(setrand));
@@ -3674,7 +3668,6 @@ main(int argc, char *argv[])
 	{
 		syslog(LOG_ERR, "parsing configuration file successful");
 		exit(EXIT_FAILURE);
-				//errx(0, "parsing configuration file successful");
 	}
 
 	//Start sending DHCP discoveries that have been queue'd up
@@ -3704,7 +3697,6 @@ main(int argc, char *argv[])
 		{
 		syslog(LOG_ERR, "fopen");
 		exit(EXIT_FAILURE);
-		//err(1, "fopen");
 		}
 
 	/* Start Honeyd in the background if necessary */
@@ -3715,7 +3707,6 @@ main(int argc, char *argv[])
 			unlink(PIDFILE);
 			syslog(LOG_ERR, "daemon");
 			exit(EXIT_FAILURE);
-			//err(1, "daemon");
 		}
 	}
 	

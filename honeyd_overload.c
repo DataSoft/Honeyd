@@ -179,7 +179,6 @@ ssize_t atomicio(ssize_t (*)(), int, void *, size_t);
 	exit(EXIT_FAILURE);\
 	}\
 } while (0);
-//errx(1, "[honeyd_overload] Failed to get " #x "() address");
 #define FD_UNBOUND	0x01
 #define FD_BOUND	0x02
 #define FD_CONNECTED	0x04
@@ -234,13 +233,15 @@ honeyd_init(void)
 		syslog(LOG_ERR, "[honeyd_overload] cannot find magic fd");
 		exit(EXIT_FAILURE);
 	}
-	//errx(1, "[honeyd_overload] cannot find magic fd");
 
 #ifdef NODLOPEN
 	dh = (void *) -1L;
 #else
  	if ((dh = dlopen(DLOPENLIBC, RTLD_LAZY)) == NULL)
- 	errx(1, "[honeyd_overload] Failed to open libc");
+ 	{
+ 		syslog(LOG_ERR, "[honeyd_overload] Failed to open libc");
+ 		exit(EXIT_FAILURE);
+ 	}
 #endif /* DLOPEN */
 
 	GETADDR(socket);

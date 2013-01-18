@@ -879,7 +879,10 @@ os_test()
 	}
 
 	if (SPLAY_ROOT(&oses) != NULL)
-	errx(1, "oses fingerprints should have been purged");
+	{
+		syslog(LOG_ERR,"oses fingerprints should have been purged");
+		exit(EXIT_FAILURE);
+	}
 
 	count_set_time(NULL);
 

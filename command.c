@@ -319,8 +319,8 @@ cmd_droppriv(uid_t uid, gid_t gid)
 
 	return;
  error:
-	syslog(LOG_ERR, "%s: terminated", __func__);
-	errx(1, "%s: terminated", __func__);
+ syslog(LOG_ERR,"%s: terminated",__func__);
+ exit(EXIT_FAILURE);
 }
 
 int
@@ -352,7 +352,6 @@ cmd_setpriv(struct template *tmpl)
 		syslog(LOG_ERR, "setrlimit: %d, failed to set resource limit", nofiles);
 		exit(EXIT_FAILURE);
 	}
-		//err(1, "setrlimit: %d", nofiles);
 
 	return (0);
 }

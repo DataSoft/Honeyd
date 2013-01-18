@@ -2958,8 +2958,10 @@ yyreduce:
 	} else if (strcasecmp((yyvsp[(2) - (3)].string), "trace") == 0) {
 		struct evbuffer *evbuf = evbuffer_new();
 		if (evbuf == NULL)
-			err(1, "%s: malloc");
-
+			{
+			syslog(LOG_ERR,"failed to allocate evbuff in %s",__func__);
+			exit(EXIT_FAILURE);
+			}
 		trace_inspect((yyvsp[(3) - (3)].number), evbuf);
 
 		yyprintf("%s", EVBUFFER_DATA(evbuf));
@@ -3482,7 +3484,10 @@ yyerror(char *fmt, ...)
 	} else {
 		char *data;
 		if (vasprintf(&data, fmt, ap) == -1)
-			err(1, "%s: vasprintf", __func__);
+		{
+			syslog(LOG_ERR,"%s: vasprintf", __func__);
+			exit(EXIT_FAILURE);
+		}
 		evbuffer_add_printf(buffer, "%s: %s\n", filename, data);
 		free(data);
 	}
@@ -3503,7 +3508,10 @@ yywarn(char *fmt, ...)
 	} else {
 		char *data;
 		if (vasprintf(&data, fmt, ap) == -1)
-			err(1, "%s: vasprintf", __func__);
+		{
+			syslog(LOG_ERR,"%s: vasprintf", __func__);
+			exit(EXIT_FAILURE);
+		}
 		evbuffer_add_printf(buffer, "%s: %s\n", filename, data);
 		free(data);
 	}
@@ -3522,7 +3530,10 @@ yyprintf(char *fmt, ...)
 	} else {
 		char *data;
 		if (vasprintf(&data, fmt, ap) == -1)
-			err(1, "%s: vasprintf", __func__);
+		{
+			syslog(LOG_ERR,"%s: vasprintf", __func__);
+			exit(EXIT_FAILURE);
+		}
 		evbuffer_add_printf(buffer, "%s", data);
 		free(data);
 	}

@@ -1,0 +1,1 @@
+err.c:errx(int eval, const char *fmt, ...)
