@@ -34,7 +34,7 @@
 %{
 #include <sys/types.h>
 #include <sys/tree.h>
-
+#include <syslog.h>
 #include "config.h"
 
 #include <sys/queue.h>
