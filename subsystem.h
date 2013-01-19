@@ -32,6 +32,10 @@
 #ifndef _SUBSYSTEM_H_
 #define _SUBSYSTEM_H_
 
+#define INITIATED_BY_EXTERNAL 0
+#define INITIATED_BY_SUBSYSTEM 1
+
+
 #ifndef HAVE_STRUCT_SOCKADDR_STORAGE
 struct sockaddr_storage {
         u_char iamasuckyoperatingsystem[256];

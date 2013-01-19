@@ -275,8 +275,15 @@ print_spoof(char *msg, struct spoof s) {
 		addr_ntop(&s.new_dst, buf3, sizeof(buf3));
 }
 
+/*
+ * Populates a new tcp_con structure, which holds the state of a TCP connection
+ * 		con    : connection structure to populate
+ * 		ip     : IP header of the initial packet
+ * 		tcp    : TCP header of the initial packet
+ * 		local  : source of this connection, INITIATED_BY_EXTERNAL or INITIATED_BY_SUBSYSTEM
+ */
 void
-honeyd_settcp(struct tcp_con *con, struct ip_hdr *ip, struct tcp_hdr *tcp,
+honeyd_settcp(struct tcp_con *con, const struct ip_hdr *ip, const struct tcp_hdr *tcp,
     int local)
 {
 	struct tuple *hdr = &con->conhdr;
@@ -293,8 +300,15 @@ honeyd_settcp(struct tcp_con *con, struct ip_hdr *ip, struct tcp_hdr *tcp,
 	con->cmd.perrfd = -1;
 }
 
+/*
+ * Populates a new udp_con structure, which holds the state of a UDP connection
+ * 		con    : connection structure to populate
+ * 		ip     : IP header of the initial packet
+ * 		tcp    : TCP header of the initial packet
+ * 		local  : source of this connection, INITIATED_BY_EXTERNAL or INITIATED_BY_SUBSYSTEM
+ */
 void
-honeyd_setudp(struct udp_con *con, struct ip_hdr *ip, struct udp_hdr *udp,
+honeyd_setudp(struct udp_con *con, const struct ip_hdr *ip, const struct udp_hdr *udp,
     int local)
 {
 	struct tuple *hdr = &con->conhdr;
@@ -551,9 +565,8 @@ honeyd_exit(int status)
 }
 
 /* Encapsulate a packet into Ethernet */
-
 void
-honeyd_ether_cb(struct arp_req *req, int success, void *arg)
+honeyd_ether_send_cb(struct arp_req *req, int success, void *arg)
 {
 
 	if((req == NULL) || (arg == NULL))
@@ -601,9 +614,8 @@ honeyd_ether_cb(struct arp_req *req, int success, void *arg)
  * Delivers an IP packet to a specific interface.
  * Generates ARP request if necessary.
  */
-
 void
-honeyd_deliver_ethernet(struct interface *inter,
+honeyd_send_ethernet(struct interface *inter,
     struct addr *src_pa, struct addr *src_ha,
     struct addr *dst_pa, struct ip_hdr *ip, u_int iplen)
 {
@@ -611,17 +623,21 @@ honeyd_deliver_ethernet(struct interface *inter,
 
 	ip_checksum(ip, iplen);
 
-	/* Ethernet delivery if possible */
+	// If we haven't done an ARP request yet
 	if ((req = arp_find(dst_pa)) == NULL) {
-		arp_request(inter, src_pa, src_ha, dst_pa, honeyd_ether_cb,ip);
-	} else if (req->cnt == -1) {
+		arp_request(inter, src_pa, src_ha, dst_pa, honeyd_ether_send_cb,ip);
+
+	// If the ARP request finished with success
+	} else if (req->cnt == ARP_REQUEST_SUCESS) {
 		/*
 		 * The source MAC of the original requestor does not help
 		 * us here, but we can overwrite it with the MAC of this
 		 * honeypot without causing any harm.
 		 */
 		req->src_ha = *src_ha;
-		honeyd_ether_cb(req, 1, ip);
+		honeyd_ether_send_cb(req, 1, ip);
+
+	// We couldn't figure out how to deliver this
 	} else {
 		/* 
 		 * Fall through in case that this packet needs
@@ -730,7 +746,7 @@ honeyd_delay_cb(int fd, short which, void *arg)
 			ip = honeyd_delay_own_memory(delay, ip, iplen);
 
 			/* This function computes the IP checksum for us */
-			honeyd_deliver_ethernet(tmpl->inter,
+			honeyd_send_ethernet(tmpl->inter,
 			    &src, tmpl->ethernet_addr,
 			    &dst, ip, iplen);
 		} else {
@@ -771,7 +787,7 @@ honeyd_delay_cb(int fd, short which, void *arg)
 		ip = honeyd_delay_own_memory(delay, ip, iplen);
 
 		/* This function computes the IP checksum for us */
-		honeyd_deliver_ethernet(inter,
+		honeyd_send_ethernet(inter,
 		    &router->addr, &inter->if_ent.intf_link_addr,
 		    &addr, ip, iplen);
 	} else {
@@ -882,7 +898,7 @@ honeyd_ip_send(u_char *pkt, u_int iplen, struct spoof spoof)
 	int delay = 0, flags = 0;
 	struct addr addr, src;
 
-print_spoof("honeyd_ip_send", spoof);
+	print_spoof("honeyd_ip_send", spoof);
 
 	if (iplen > HONEYD_MTU) {
 		u_short off = ntohs(ip->ip_off);
@@ -1168,6 +1184,7 @@ honeyd_protocol(struct template *tmpl, int proto)
 	}
 }
 
+/* Specifies if we should drop the packet or not */
 int
 honeyd_block(struct template *tmpl, int proto, int number)
 {
@@ -2036,7 +2053,7 @@ tcp_recv_cb(struct template *tmpl, u_char *pkt, u_short pktlen)
 	 * Check if we have a real connection header for this connection, so
 	 * that we can look at potential flags like local origination.
 	 */
-	honeyd_settcp(&honeyd_tmp, ip, tcp, 0);
+	honeyd_settcp(&honeyd_tmp, ip, tcp, INITIATED_BY_EXTERNAL);
 	con = (struct tcp_con *)SPLAY_FIND(tree, &tcpcons, &honeyd_tmp.conhdr);
 
 	hooks_dispatch(ip->ip_p, HD_INCOMING, 
@@ -2106,7 +2123,7 @@ tcp_recv_cb(struct template *tmpl, u_char *pkt, u_short pktlen)
 		}
 
 		/* Out of memory is dealt with by killing the connection */
-		if ((con = tcp_new(ip, tcp, 0)) == NULL) {
+		if ((con = tcp_new(ip, tcp, INITIATED_BY_EXTERNAL)) == NULL) {
 			goto kill;
 		}
 		con->rcv_flags = tiflags;
@@ -2394,7 +2411,7 @@ tcp_recv_cb(struct template *tmpl, u_char *pkt, u_short pktlen)
 	return;
 
  justlog:
-	honeyd_settcp(&honeyd_tmp, ip, tcp, 0);
+	honeyd_settcp(&honeyd_tmp, ip, tcp, INITIATED_BY_EXTERNAL);
 	honeyd_log_probe(honeyd_logfp, IP_PROTO_TCP,&honeyd_tmp.conhdr,
 	    pktlen, tcp->th_flags, comment);
 }
@@ -2470,7 +2487,7 @@ udp_recv_cb(struct template *tmpl, u_char *pkt, u_short pktlen)
 	 * Check if we have a real connection header for this connection, so
 	 * that we can look at potential flags like local origination.
 	 */
-	honeyd_setudp(&honeyd_udp, ip, udp, 0);
+	honeyd_setudp(&honeyd_udp, ip, udp, INITIATED_BY_EXTERNAL);
 	con = (struct udp_con *)SPLAY_FIND(tree, &udpcons, &honeyd_udp.conhdr);
 
 	hooks_dispatch(ip->ip_p, HD_INCOMING,
@@ -2507,7 +2524,7 @@ udp_recv_cb(struct template *tmpl, u_char *pkt, u_short pktlen)
 		    honeyd_contoa(&honeyd_udp.conhdr));
 
 		/* Out of memory is dealt by having the port closed */
-		if ((con = udp_new(ip, udp, 0)) == NULL) {
+		if ((con = udp_new(ip, udp, INITIATED_BY_EXTERNAL)) == NULL) {
 			goto closed;
 		}
 
@@ -2546,7 +2563,7 @@ print_spoof("udp_recv_cb after", spoof);
 	return;
 
  justlog:
-	honeyd_setudp(&honeyd_udp, ip, udp, 0);
+	honeyd_setudp(&honeyd_udp, ip, udp, INITIATED_BY_EXTERNAL);
 	honeyd_log_probe(honeyd_logfp, IP_PROTO_UDP, &honeyd_udp.conhdr,
 	    pktlen, 0, NULL);
 }
@@ -2756,7 +2773,7 @@ icmp_recv_cb(struct template *tmpl, u_char *pkt, u_short pktlen)
 			tmpip.ip_dst = rip->ip_src;
 			tmpudp.uh_sport = udp->uh_dport;
 			tmpudp.uh_dport = udp->uh_sport;
-			honeyd_setudp(&honeyd_udp, &tmpip, &tmpudp, 0);
+			honeyd_setudp(&honeyd_udp, &tmpip, &tmpudp, INITIATED_BY_EXTERNAL);
 
 			/* Find matching state */
 			con = (struct udp_con *)SPLAY_FIND(tree, &udpcons,
