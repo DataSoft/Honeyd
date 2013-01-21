@@ -321,7 +321,7 @@ tcp_drop_subsumed(struct tcp_track *con)
 		 * so we can stream its content out.
 		 */
 
-		syslog(LOG_NOTICE, "Streaming: %s %u: %d",
+		syslog(LOG_NOTICE, "Streaming: %s %u: %zd",
 		    honeyd_contoa(&con->conhdr), con->snd_una, seg->len);
 		hooks_dispatch(IP_PROTO_TCP, HD_INCOMING_STREAM,
 		    &con->conhdr, seg->data, seg->len);
@@ -402,7 +402,7 @@ tcp_recv_cb(u_char *pkt, u_short pktlen)
 
 	if (th_seq == con->snd_una) {
 		/* Inform our listener about the new data */
-		syslog(LOG_NOTICE, "Streaming: %s %u: %d",
+		syslog(LOG_NOTICE, "Streaming: %s %u: %zd",
 		    honeyd_contoa(&con->conhdr), con->snd_una, dlen);
 		hooks_dispatch(IP_PROTO_TCP, HD_INCOMING_STREAM, &con->conhdr,
 		    data, dlen);
