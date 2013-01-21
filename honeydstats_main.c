@@ -87,24 +87,23 @@ extern int checkpoint_fd;
 extern struct evbuffer *checkpoint_evbuf;
 extern struct usertree users;
 
-static struct event ev_recv;
 static int fd_recv;
 static struct evbuffer *evbuf_recv;
 static char *checkpoint_filename = NULL;
 static char *config_filename = "honeydstats.config";
 
 static void
-read_cb(int fd, short what, void *arg)
+read_cb(int fd, short what, void *unused)
 {
 	static u_char buf[4096];
-	struct event *ev = arg;
 	struct addr src;
 	struct sockaddr_storage from;
 	socklen_t fromsz = sizeof(from);
 	int nread;
 
 	/* Reschedule the event */
-	event_add(ev, NULL);
+	struct event *ev_recv = event_new(stats_libevent_base, fd_recv, EV_READ, read_cb, NULL);
+	event_add(ev_recv, NULL);
 
 	nread = recvfrom(fd, buf, sizeof(buf), MSG_WAITALL,
 	    (struct sockaddr *)&from, &fromsz);
@@ -118,7 +117,7 @@ read_cb(int fd, short what, void *arg)
 	syslog(LOG_INFO, "Received report from %s: %d",
 	    addr_ntoa(&src), nread);
 
-	evbuffer_drain(evbuf_recv, EVBUFFER_LENGTH(evbuf_recv));
+	evbuffer_drain(evbuf_recv, evbuffer_get_length(evbuf_recv));
 	evbuffer_add(evbuf_recv, buf, nread);
 
 	signature_process(evbuf_recv);
@@ -185,8 +184,8 @@ setup_socket(char *address, int port)
 
 	syslog(LOG_NOTICE, "Listening on %s:%d", address, port);
 
-	event_set(&ev_recv, fd_recv, EV_READ, read_cb, &ev_recv);
-	event_add(&ev_recv, NULL);
+	struct event *ev_recv = event_new(stats_libevent_base, fd_recv, EV_READ, read_cb, NULL);
+	event_add(ev_recv, NULL);
 }
 
 void
@@ -230,7 +229,6 @@ main(int argc, char *argv[])
 		{"country_report", required_argument, &report_country, 1},
 		{0, 0, 0, 0}
 	};
-	struct event sigterm_ev, sigint_ev, sighup_ev;
 	char *replay_filename = NULL;
 	char *address = "0.0.0.0";
 	char **orig_argv;
@@ -307,7 +305,7 @@ main(int argc, char *argv[])
 			break;
 		default:
 			usage();
-			/* not reached */
+			break;
 		}
 	}
 
@@ -343,7 +341,7 @@ main(int argc, char *argv[])
 			//err(1, "daemon");
 	}
 
-	event_init();
+	stats_libevent_base = event_base_new();
 
 	count_init();
 
@@ -390,14 +388,17 @@ main(int argc, char *argv[])
 
 	setup_socket(address, port);
 
-	signal_set(&sigint_ev, SIGINT, honeydstats_signal, NULL);
-	signal_add(&sigint_ev, NULL);
-	signal_set(&sigterm_ev, SIGTERM, honeydstats_signal, NULL);
-	signal_add(&sigterm_ev, NULL);
-	signal_set(&sighup_ev, SIGHUP, honeydstats_sighup, NULL);
-	signal_add(&sighup_ev, NULL);
+	struct event *sigterm_ev, *sigint_ev, *sighup_ev;
 
-	event_dispatch();
+	sigterm_ev = evsignal_new(stats_libevent_base, SIGTERM, honeydstats_signal, NULL);
+	sigint_ev = evsignal_new(stats_libevent_base, SIGINT, honeydstats_signal, NULL);
+	sighup_ev = evsignal_new(stats_libevent_base, SIGHUP, honeydstats_sighup, NULL);
+
+	event_add(sigterm_ev, NULL);
+	event_add(sigint_ev, NULL);
+	event_add(sighup_ev, NULL);
+
+	event_base_dispatch(stats_libevent_base);
 
 	syslog(LOG_ERR, "Kqueue does not recognize bpf filedescriptor.");
 

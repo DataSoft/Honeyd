@@ -243,7 +243,7 @@ proxy_remote_readcb(struct bufferevent *bev, void *arg)
 	struct proxy_ta *ta = arg;
 	struct evbuffer *buffer = EVBUFFER_INPUT(bev);
 	unsigned char *data = EVBUFFER_DATA(buffer);
-	size_t len = EVBUFFER_LENGTH(buffer);
+	size_t len = evbuffer_get_length(buffer);
 
 	bufferevent_write(ta->bev, data, len);
 	evbuffer_drain(buffer, len);
@@ -262,7 +262,7 @@ proxy_remote_errorcb(struct bufferevent *bev, short what, void *arg)
 	fprintf(stderr, "%s: called with %p, freeing\n", __func__, arg);
 
 	/* If we still have data to write; we just wait for the flush */
-	if (EVBUFFER_LENGTH(buffer)) {
+	if (evbuffer_get_length(buffer)) {
 		/* Shutdown this site at least - XXX: maybe call shutdown */
 		bufferevent_disable(bev, EV_READ|EV_WRITE);
 
@@ -603,7 +603,7 @@ proxy_readline(struct bufferevent *bev)
 {
 	struct evbuffer *buffer = EVBUFFER_INPUT(bev);
 	char *data = EVBUFFER_DATA(buffer);
-	size_t len = EVBUFFER_LENGTH(buffer);
+	size_t len = evbuffer_get_length(buffer);
 	char *line;
 	int i;
 
@@ -646,7 +646,7 @@ proxy_readcb(struct bufferevent *bev, void *arg)
 	if (ta->justforward) {
 		struct evbuffer *input = EVBUFFER_INPUT(bev);
 		char *data = EVBUFFER_DATA(input);
-		size_t len = EVBUFFER_LENGTH(input);
+		size_t len = evbuffer_get_length(input);
 		if (ta->corrupt) {
 			bufferevent_write(ta->remote_bev,
 			    proxy_corrupt(data, len), len);

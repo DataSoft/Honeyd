@@ -228,8 +228,8 @@ _dhcp_getconf(struct template *tmpl)
 
 	req->ntries = 0;
 
-	evtimer_set(&req->timeoutev, _dhcp_timeout_cb, tmpl);
-	evtimer_add(&req->timeoutev, &_timeout_tv);
+	req->timeoutev = evtimer_new(libevent_base, _dhcp_timeout_cb, tmpl);
+	evtimer_add(req->timeoutev, &_timeout_tv);
 
 	return (0);
 }
@@ -262,7 +262,7 @@ dhcp_abort(struct template *tmpl)
 	if (req->state == 0)
 		return;
 
-	event_del(&req->timeoutev);
+	event_del(req->timeoutev);
 
 	req->state = 0;
 }
@@ -299,7 +299,7 @@ _dhcp_timeout_cb(int fd, short ev, void *arg)
 		timeout_tv.tv_sec = 128;
 
 	timeout_tv.tv_usec = 0;
-	evtimer_add(&req->timeoutev, &timeout_tv);
+	evtimer_add(req->timeoutev, &timeout_tv);
 }
 
 static void
@@ -384,11 +384,11 @@ _dhcp_reply(struct template *tmpl, u_char *buf, size_t buflen)
 
 		switch(opt1) {
 		case DH_MSGTYPE:
-			if (req->state & DHREQ_STATE_WAITANS &&
-			    *opt1p == DH_MSGTYPE_OFFER)
+			if ((req->state & DHREQ_STATE_WAITANS) &&
+			    (*opt1p == DH_MSGTYPE_OFFER))
 				replyreq = 1;
-			if (req->state & DHREQ_STATE_WAITACK &&
-			    *opt1p == DH_MSGTYPE_ACK)
+			if ((req->state & DHREQ_STATE_WAITACK) &&
+			    (*opt1p == DH_MSGTYPE_ACK))
 				ack = 1;
 			break;
 		case DH_DOMAINNAME: {
@@ -408,7 +408,6 @@ _dhcp_reply(struct template *tmpl, u_char *buf, size_t buflen)
 				goto optdone;
 
 			memcpy(&addr, opt1p, sizeof(addr));
-			addr = /* ntohl( */addr/* ) */;
 			addr_pack(which, ADDR_TYPE_IP, IP_ADDR_BITS,
 			    &addr, sizeof(addr));
 			break;

@@ -41,8 +41,8 @@ struct arp_req {
 
 	int			cnt;
 
-	struct event		active;
-	struct event		discover;
+	struct event		*active;
+	struct event		*discover;
 
 	/* The address that we want to know about */
 	struct addr		pa;

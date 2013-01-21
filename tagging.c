@@ -64,7 +64,7 @@ tag_marshal_record(struct evbuffer *evbuf, uint8_t tag, struct record *record)
 	struct evbuffer *tmp = evbuffer_new();
 
 	record_marshal(tmp, record);
-	evtag_marshal(evbuf, tag, EVBUFFER_DATA(tmp), EVBUFFER_LENGTH(tmp));
+	evtag_marshal(evbuf, tag, evbuffer_pullup(tmp, -1), evbuffer_get_length(tmp));
 	evbuffer_free(tmp);
 }
 
@@ -107,7 +107,8 @@ addr_marshal(struct evbuffer *evbuf, struct addr *addr)
 void
 record_marshal(struct evbuffer *evbuf, struct record *record)
 {
-	struct evbuffer *addr = evbuffer_new();
+	struct evbuffer *src_addr_evbf = evbuffer_new();
+	struct evbuffer *dst_addr_evbf = evbuffer_new();
 	struct hash *hash;
 
 	if (timerisset(&record->tv_start))
@@ -116,13 +117,11 @@ record_marshal(struct evbuffer *evbuf, struct record *record)
 		evtag_marshal_timeval(evbuf, REC_TV_END, &record->tv_end);
 
 	/* Encode an address */
-	evbuffer_drain(addr, EVBUFFER_LENGTH(addr));
-	addr_marshal(addr, &record->src);
-	evtag_marshal(evbuf, REC_SRC, EVBUFFER_DATA(addr), EVBUFFER_LENGTH(addr));
+	addr_marshal(src_addr_evbf, &record->src);
+	evtag_marshal(evbuf, REC_SRC, evbuffer_pullup(src_addr_evbf, -1), evbuffer_get_length(src_addr_evbf));
 
-	evbuffer_drain(addr, EVBUFFER_LENGTH(addr));
-	addr_marshal(addr, &record->dst);
-	evtag_marshal(evbuf, REC_DST, EVBUFFER_DATA(addr), EVBUFFER_LENGTH(addr));
+	addr_marshal(dst_addr_evbf, &record->dst);
+	evtag_marshal(evbuf, REC_DST, evbuffer_pullup(dst_addr_evbf, -1), evbuffer_get_length(dst_addr_evbf));
 
 	evtag_marshal_int(evbuf, REC_SRC_PORT, record->src_port);
 	evtag_marshal_int(evbuf, REC_DST_PORT, record->dst_port);
@@ -140,5 +139,6 @@ record_marshal(struct evbuffer *evbuf, struct record *record)
 	if (record->flags)
 		evtag_marshal_int(evbuf, REC_FLAGS, record->flags);
 
-	evbuffer_free(addr);
+	evbuffer_free(src_addr_evbf);
+	evbuffer_free(dst_addr_evbf);
 }

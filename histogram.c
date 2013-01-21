@@ -55,10 +55,10 @@
 #include <event.h>
 
 #include "histogram.h"
+#include "honeyd.h"
 
 static struct timeval *tv_now;	/* used for unittesting */
 
-static struct event count_time_ev;
 static struct timeval tv_periodic;
 
 /*
@@ -68,15 +68,16 @@ static struct timeval tv_periodic;
  */
 
 static void
-count_time_evcb(int fd, short what, void *arg)
+count_time_evcb(int fd, short what, void *unused)
 {
-	struct event *ev = arg;
 	struct timeval tv;
 
 	gettimeofday(&tv_periodic, NULL);
 
 	timerclear(&tv);
 	tv.tv_sec = 1;
+
+	struct event *ev = evtimer_new(libevent_base, count_time_evcb, NULL);
 	evtimer_add(ev, &tv);
 }
 
@@ -84,8 +85,7 @@ void
 count_init(void)
 {
 	/* Start a timer that keeps track of the current system time */
-	evtimer_set(&count_time_ev, count_time_evcb, &count_time_ev);
-	count_time_evcb(-1, EV_TIMEOUT, &count_time_ev);
+	count_time_evcb(-1, EV_TIMEOUT, NULL);
 }
 
 void

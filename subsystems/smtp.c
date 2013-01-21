@@ -758,7 +758,7 @@ smtp_write_email(struct smtp_ta *ta, int count)
 		}
 
 		hash = smtp_hashed_store(log_datadir, 
-		    EVBUFFER_DATA(buffer), EVBUFFER_LENGTH(buffer));
+		    EVBUFFER_DATA(buffer), evbuffer_get_length(buffer));
 		evbuffer_drain(buffer, -1);
 
 		evbuffer_add_printf(buffer, "\n%s\n", hash);
@@ -809,7 +809,7 @@ smtp_readline(struct bufferevent *bev)
 {
 	struct evbuffer *buffer = EVBUFFER_INPUT(bev);
 	char *data = EVBUFFER_DATA(buffer);
-	size_t len = EVBUFFER_LENGTH(buffer);
+	size_t len = evbuffer_get_length(buffer);
 	char *line;
 	int i;
 
