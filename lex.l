@@ -101,6 +101,7 @@ drop		{ return DROP; }
 old		{ return OLD; }
 new		{ return NEW; }
 proxy		{ return PROXY; }
+broadcast {return BROADCAST;}
 uptime		{ return UPTIME; }
 droprate	{ return DROPRATE; }
 in		{ return IN; }

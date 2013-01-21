@@ -2463,27 +2463,55 @@ udp_send(struct udp_con *con, u_char *payload, u_int len)
 	return (len);
 }
 
+struct packet_wrapper {
+	u_char *pkt;
+	u_short pktlen;
+	u_char isBroadcast;
+};
+
 void
-udp_recv_cb(struct template *tmpl, u_char *pkt, u_short pktlen)
+handle_udp_packet(struct template *tmpl, void *wrapper)
 {
-	struct ip_hdr *ip = NULL;
-	struct udp_hdr *udp;
+	if (!tmpl->forward_broadcasts && ((struct packet_wrapper*)wrapper)->isBroadcast)
+		return;
+
+	if (!tmpl->honeypot_instance)
+		return;
+
+	u_char *pkt;
+	u_short pktlen;
 	struct udp_con *con, honeyd_udp;
 	struct addr addr;
 	struct spoof spoof;
+	char isBroadcast;
 	
 	uint16_t uh_sum;
 	u_char *data;
 	u_int dlen;
 	u_short portnum;
 
+	struct packet_wrapper *pwrapper = (struct packet_wrapper*)wrapper;
+	pkt = pwrapper->pkt;
+	pktlen = pwrapper->pktlen;
+	isBroadcast = pwrapper->isBroadcast;
+
+	struct ip_hdr *ip = NULL;
+	struct udp_hdr *udp;
 	ip = (struct ip_hdr *)pkt;
 	udp = (struct udp_hdr *)(pkt + (ip->ip_hl << 2));
 
 	if (pktlen < (ip->ip_hl << 2) + UDP_HDR_LEN)
 		return;
 
-	/* 
+	/* Replace the broadcast address with our template address */
+	if (isBroadcast) {
+		int res = inet_pton(AF_INET, tmpl->name, &(ip->ip_dst));
+
+		if (res != 1)
+			return;
+	}
+
+	/*
 	 * Check if we have a real connection header for this connection, so
 	 * that we can look at potential flags like local origination.
 	 */
@@ -2491,13 +2519,13 @@ udp_recv_cb(struct template *tmpl, u_char *pkt, u_short pktlen)
 	con = (struct udp_con *)SPLAY_FIND(tree, &udpcons, &honeyd_udp.conhdr);
 
 	hooks_dispatch(ip->ip_p, HD_INCOMING,
-	    con != NULL ? &con->conhdr : &honeyd_udp.conhdr, pkt, pktlen);
+		con != NULL ? &con->conhdr : &honeyd_udp.conhdr, pkt, pktlen);
 
 	data = (u_char *)(pkt + (ip->ip_hl*4) + UDP_HDR_LEN);
 	dlen = ntohs(ip->ip_len) - (ip->ip_hl << 2) - UDP_HDR_LEN;
 	if (dlen != (ntohs(udp->uh_ulen) - UDP_HDR_LEN))
 		return;
-	
+
 	portnum = ntohs(udp->uh_dport);
 	if (honeyd_block(tmpl, IP_PROTO_UDP, portnum))
 		goto justlog;
@@ -2514,18 +2542,25 @@ udp_recv_cb(struct template *tmpl, u_char *pkt, u_short pktlen)
 
 		/* Send unreachable on closed port */
 		if (action == NULL || !PORT_ISOPEN(action)) {
-			syslog(LOG_DEBUG, "Connection to closed port: udp %s",
-			    honeyd_contoa(&honeyd_udp.conhdr));
-			goto closed;
+			if (!isBroadcast) {
+				syslog(LOG_DEBUG, "Connection to closed port: udp %s",
+						honeyd_contoa(&honeyd_udp.conhdr));
+				goto closed;
+			} else {
+				return;
+			}
 		}
 
 		/* Otherwise create a new udp connection */
 		syslog(LOG_DEBUG, "Connection: udp %s",
-		    honeyd_contoa(&honeyd_udp.conhdr));
+			honeyd_contoa(&honeyd_udp.conhdr));
 
 		/* Out of memory is dealt by having the port closed */
 		if ((con = udp_new(ip, udp, INITIATED_BY_EXTERNAL)) == NULL) {
-			goto closed;
+			if (!isBroadcast)
+				goto closed;
+			else
+				return;
 		}
 
 		con->tmpl = template_ref(tmpl);
@@ -2545,7 +2580,7 @@ udp_recv_cb(struct template *tmpl, u_char *pkt, u_short pktlen)
 
  closed:
 	honeyd_log_probe(honeyd_logfp, IP_PROTO_UDP, &honeyd_udp.conhdr,
-	    pktlen, 0, NULL);
+		pktlen, 0, NULL);
 
 	addr_pack(&addr, ADDR_TYPE_IP, IP_ADDR_BITS, &ip->ip_dst, IP_ADDR_LEN);
 
@@ -2557,15 +2592,40 @@ udp_recv_cb(struct template *tmpl, u_char *pkt, u_short pktlen)
 	else
 		spoof = no_spoof;
 	// compute_spoof(&spoof, tmpl, &tmpl->spoof, ip->ip_src, ip->ip_dst);
-print_spoof("udp_recv_cb after", spoof);
+	print_spoof("udp_recv_cb after", spoof);
 
-	icmp_error_send(tmpl, &addr, ICMP_UNREACH, ICMP_UNREACH_PORT, ip, spoof); 
+	icmp_error_send(tmpl, &addr, ICMP_UNREACH, ICMP_UNREACH_PORT, ip, spoof);
 	return;
 
  justlog:
 	honeyd_setudp(&honeyd_udp, ip, udp, INITIATED_BY_EXTERNAL);
 	honeyd_log_probe(honeyd_logfp, IP_PROTO_UDP, &honeyd_udp.conhdr,
-	    pktlen, 0, NULL);
+		pktlen, 0, NULL);
+}
+
+
+void
+udp_recv_cb(struct template *tmpl, u_char *pkt, u_short pktlen)
+{
+	struct ip_hdr *ip = NULL;
+	struct udp_hdr *udp;
+	ip = (struct ip_hdr *)pkt;
+	udp = (struct udp_hdr *)(pkt + (ip->ip_hl << 2));
+
+	if (pktlen < (ip->ip_hl << 2) + UDP_HDR_LEN)
+		return;
+
+	struct packet_wrapper wrapper;
+	wrapper.pkt = pkt;
+	wrapper.pktlen = pktlen;
+
+	if (ip->ip_dst == 0xFFFFFFFF) {
+		wrapper.isBroadcast = 1;
+		template_iterate(&handle_udp_packet, (void*)&wrapper);
+	} else {
+		wrapper.isBroadcast = 0;
+		handle_udp_packet(tmpl, (void*)&wrapper);
+	}
 }
 
 void

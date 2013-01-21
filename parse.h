@@ -84,34 +84,35 @@
      SPOOF = 302,
      FROM = 303,
      TEMPLATE = 304,
-     TUNNEL = 305,
-     TARPIT = 306,
-     DYNAMIC = 307,
-     USE = 308,
-     IF = 309,
-     OTHERWISE = 310,
-     EQUAL = 311,
-     SOURCE = 312,
-     OS = 313,
-     IP = 314,
-     BETWEEN = 315,
-     DELETE = 316,
-     LIST = 317,
-     ETHERNET = 318,
-     DHCP = 319,
-     ON = 320,
-     MAXFDS = 321,
-     RESTART = 322,
-     DEBUG = 323,
-     DASH = 324,
-     TIME = 325,
-     INTERNAL = 326,
-     STRING = 327,
-     CMDSTRING = 328,
-     IPSTRING = 329,
-     NUMBER = 330,
-     PROTO = 331,
-     FLOAT = 332
+     BROADCAST = 305,
+     TUNNEL = 306,
+     TARPIT = 307,
+     DYNAMIC = 308,
+     USE = 309,
+     IF = 310,
+     OTHERWISE = 311,
+     EQUAL = 312,
+     SOURCE = 313,
+     OS = 314,
+     IP = 315,
+     BETWEEN = 316,
+     DELETE = 317,
+     LIST = 318,
+     ETHERNET = 319,
+     DHCP = 320,
+     ON = 321,
+     MAXFDS = 322,
+     RESTART = 323,
+     DEBUG = 324,
+     DASH = 325,
+     TIME = 326,
+     INTERNAL = 327,
+     STRING = 328,
+     CMDSTRING = 329,
+     IPSTRING = 330,
+     NUMBER = 331,
+     PROTO = 332,
+     FLOAT = 333
    };
 #endif
 /* Tokens.  */
@@ -162,34 +163,35 @@
 #define SPOOF 302
 #define FROM 303
 #define TEMPLATE 304
-#define TUNNEL 305
-#define TARPIT 306
-#define DYNAMIC 307
-#define USE 308
-#define IF 309
-#define OTHERWISE 310
-#define EQUAL 311
-#define SOURCE 312
-#define OS 313
-#define IP 314
-#define BETWEEN 315
-#define DELETE 316
-#define LIST 317
-#define ETHERNET 318
-#define DHCP 319
-#define ON 320
-#define MAXFDS 321
-#define RESTART 322
-#define DEBUG 323
-#define DASH 324
-#define TIME 325
-#define INTERNAL 326
-#define STRING 327
-#define CMDSTRING 328
-#define IPSTRING 329
-#define NUMBER 330
-#define PROTO 331
-#define FLOAT 332
+#define BROADCAST 305
+#define TUNNEL 306
+#define TARPIT 307
+#define DYNAMIC 308
+#define USE 309
+#define IF 310
+#define OTHERWISE 311
+#define EQUAL 312
+#define SOURCE 313
+#define OS 314
+#define IP 315
+#define BETWEEN 316
+#define DELETE 317
+#define LIST 318
+#define ETHERNET 319
+#define DHCP 320
+#define ON 321
+#define MAXFDS 322
+#define RESTART 323
+#define DEBUG 324
+#define DASH 325
+#define TIME 326
+#define INTERNAL 327
+#define STRING 328
+#define CMDSTRING 329
+#define IPSTRING 330
+#define NUMBER 331
+#define PROTO 332
+#define FLOAT 333
 
 
 
@@ -218,7 +220,7 @@ typedef union YYSTYPE
 
 
 /* Line 2068 of yacc.c  */
-#line 222 "parse.h"
+#line 224 "parse.h"
 } YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */
