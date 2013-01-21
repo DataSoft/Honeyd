@@ -4,9 +4,27 @@ import binascii
 import sys
 import os
 import re
+import argparse
 import math
 import subprocess
+import xml.etree.ElementTree as xmlm
+from os.path import expanduser
 
+def indent(elem, level=0):
+  i = '\n' + (level * '\t')
+  if len(elem):
+      if not elem.text or not elem.text.strip():
+          elem.text = i + '\t'
+      if not elem.tail or not elem.tail.strip():
+          elem.tail = i
+      for elem in elem:
+          indent(elem, level + 1)
+      if not elem.tail or not elem.tail.strip():
+          elem.tail = i
+  else:
+      if level and (not elem.tail or not elem.tail.strip()):
+          elem.tail = i
+          
 def modtype(type, line):
   retType = ''
   if type == 'STRING' or type == 'Hex-STRING':
@@ -75,12 +93,36 @@ def convertDotsToHex(oid):
   return ''.join(oidBER).upper()
 
 if __name__ == '__main__':
-  if len(sys.argv) < 2:
-    sys.exit(1)
+  ip = ''
+  ofilename = ''
+  matchname = ''
+  scriptname = ''
+  keep = False
 
-  ip = sys.argv[1]
-  sysOID = convertDotsToHex('1.3.6.1.2.1.1.2.0')
-  sysOIDValue = convertDotsToHex('1.3.6.1.2.1.13.8.1.1.2.1')
+  temp = expanduser('~') + '/.config/nova/config/templates/scripts.xml'
+
+  parser = argparse.ArgumentParser(description='snmpwalk an IP address for its MIB data within the 1.3.6.1.2 and 1.3.6.1.4 subtrees, and create a CSV file for honeyd scripts to use.')
+  parser.add_argument('-i', '--ip', help='The IP Address for snmpscrape to get MIB data from', required=True)
+  parser.add_argument('-o', '--ofile', help='The name of the output file for the CSV MIB data. snmpscrape adds ".txt" to the end automatically', required=True)
+  parser.add_argument('-n', '--name', help='Name of the script in $NOVA_HOME/config/templates/scripts.xml to make the results of snmpscrape available to', nargs='*')
+  parser.add_argument('-r', '--results-name', help='Required in conjunction with -n. The value for this argument will be the name of the device placed in the scripts file', nargs='*')
+  parser.add_argument('-p', '--script-path', help='Used in confunction with -n and -r. Path to Nova scripts.xml file (defaults to $HOME/.config/nova/config/templates/scripts.xml', default=temp)
+  parser.add_argument('-k', '--keep', help='Keep the results of snmpwalk in addition to the restructured output. Takes no value', action='store_true')
+
+  args = parser.parse_args(sys.argv[1:])
+
+  ip = args.ip
+  ofilename = args.ofile
+  if args.keep:
+    keep = True
+  if args.name and args.results_name:
+    matchname = ' '.join(args.name)
+    scriptname = ' '.join(args.results_name)
+  else:
+    parser.error('If -n is used, -r RESULTS_NAME must be supplied as well')
+  if args.script_path:
+    scriptpath = args.script_path
+    
   path = 'temp.' + ip + '.txt'
   f = open(path,'w+')
   f.write(subprocess.check_output(['snmpwalk','-Cc','-Os','-c','public','-v','1',str(ip),'1.3.6.1.2'],
@@ -92,26 +134,9 @@ if __name__ == '__main__':
   f = open(path, 'r')
   restructure = f.readlines()
   del restructure[-1]
-  fileappend = 0
-  if len(sys.argv) == 3 and sys.argv[2] == '--clean':
-    while True:
-      try:
-        replf = 'printer' + str(fileappend) + '.txt'
-        replacement = open(replf, 'r')
-        os.remove(replf)
-        fileappend += 1
-      except IOError:
-        break
-  fileappend = 0
-  # search for a printer#*.txt that isn't taken, then write to it
-  while True:
-    try:
-      replf = 'printer' + str(fileappend) + '.txt'
-      replacement = open(replf, 'r')
-      fileappend += 1
-    except IOError:
-      replacement = open(replf, 'w')
-      break
+  
+  replacement = open(ofilename + '.txt', 'w+')
+    
   # In this block, we're restructuring the lines returned from snmpwalk 
   # to be consistent with the values and names used in the ipp.py script
   for line in restructure:
@@ -190,7 +215,54 @@ if __name__ == '__main__':
     
   f.close()
   replacement.close()
-  #os.remove(path)
+  if keep == False:
+    os.remove(path)
+    
+  # This block of code is for adding an option, key, and/or value to 
+  # the scripts XML for the designated script. Essentially, given the
+  # -r (results name) and -n (script name) flags, create an option 
+  # if there isn't one, create a key if there isn't one, and add a 
+  # value for the given arg. If the value exists (i.e. all the information
+  # the user passed is in place) it'll do nothing. 
+  if matchname != '' and scriptname != '':
+    audit = list(scriptname)
+    for c in range(0, len(audit)):
+      if re.match('[0-9a-zA-Z ]', audit[c]) == None:
+        audit[c] = '_'
+    scriptname = ''.join(audit)
+    tree = xmlm.parse(scriptpath)
+    root = tree.getroot()
+    found = False
+    option = ''
+    key = ''
+    value = ''
+    for child in root.findall('script'):
+      if child[0].text == matchname:
+        configurable = child.find('configurable')
+        if configurable != None:
+          configurable.text = 'true'
+        if child.find('option') == None:       
+          option = xmlm.SubElement(child, 'option')
+        else:
+          option = child.find('option')
+        if option.find('key') == None:
+          key = xmlm.SubElement(option, 'key')
+          key.text = 'DEVICE_TYPE'
+        checknorepeats = option.findall('value')
+        addvalue = True
+        for elem in checknorepeats:
+          if elem.text == scriptname:
+            addvalue = False
+        if addvalue:
+          value = xmlm.SubElement(option, 'value')
+          value.text = scriptname
+        xmlm.dump(child)
+        indent(child, 1)
+        xmlm.dump(child)
+        tree.write(scriptpath)
+        found = True
+    if not found:
+      print 'The script name that you entered does not exist. Aborting...'
   
   
   
