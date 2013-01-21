@@ -32,6 +32,7 @@
 
 #include <sys/types.h>
 #include <sys/param.h>
+#include <syslog.h>
 
 #include "config.h"
 

@@ -602,7 +602,6 @@ main(int argc, char *argv[])
 				syslog(LOG_ERR, "Too many interfaces specified");
 				exit(EXIT_FAILURE);
 			}
-				//errx(1, "Too many interfaces specified");
 			dev[ninterfaces++] = optarg;
 			break;
 		case '0':
@@ -700,7 +699,6 @@ main(int argc, char *argv[])
 		syslog(LOG_ERR, "no username specified for stats reporting");
 		exit(EXIT_FAILURE);
 	}
-		//errx(1, "no username specified for stats reporting");
 
 	stats_init();
 	stats_init_collect(&stats_dst, stats_port,
@@ -712,7 +710,6 @@ main(int argc, char *argv[])
 		syslog(LOG_ERR, "failed to read OS fingerprints");
 		exit(EXIT_FAILURE);
 	}
-		//errx(1, "reading OS fingerprints failed");
 
 	/* Initialize the specified interfaces */
 	if (ninterfaces == 0)
@@ -729,7 +726,6 @@ main(int argc, char *argv[])
 		syslog(LOG_ERR, "fopen, failed to open file");
 		exit(EXIT_FAILURE);
 	}
-		//err(1, "fopen");
 
 	/* Start Hsniff in the background if necessary */
 	if (!honeyd_debug) {
@@ -740,7 +736,6 @@ main(int argc, char *argv[])
 			unlink(HSNIFF_PIDFILE);
 			syslog(LOG_ERR, "daemon");
 			exit(EXIT_FAILURE);
-			//err(1, "daemon");
 		}
 	}
 	

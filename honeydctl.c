@@ -159,7 +159,6 @@ receive(int fd, int display)
 			{
                   syslog(LOG_ERR, "Failed to write to file descriptor");
                   exit(EXIT_FAILURE);
-				//errx(EXIT_FAILURE, "Failed to write to file descriptor");
 			}
                 }
             }
@@ -184,7 +183,6 @@ receive(int fd, int display)
 		{
             syslog(LOG_ERR, "Failed to write to file descriptor");
             exit(EXIT_FAILURE);
-			//errx(EXIT_FAILURE, "Failed to write to file descriptor");
 		}
             strlcpy(Buffer, Buffer + flush, sizeof(Buffer));
             len -= flush;
@@ -217,7 +215,6 @@ check_fd(int sig)
 				{
 					syslog(LOG_ERR, "Failed to write to file descriptor");
 					exit(EXIT_FAILURE);
-					//errx(EXIT_FAILURE, "Failed to write to file descriptor");
 				}
 			}
 			else
@@ -299,7 +296,10 @@ main(int argc, char **argv)
 #ifdef HAVE_SUN_LEN
 	ifsun.sun_len = strlen(sockname);
 	if (ifsun.sun_len > sizeof (ifsun.sun_path) - 1)
-		errx(1, "%s: path too long", sockname);
+	{
+		syslog(LOG_ERR,"%s: path too long", sockname);
+		exit(EXIT_FAILURE);
+	}
 #endif /* HAVE_SUN_LEN */
 
 	ifsun.sun_family = AF_UNIX;
@@ -310,7 +310,6 @@ main(int argc, char **argv)
 		syslog(LOG_ERR, "Cannot create local domain socket");
 		exit(EXIT_FAILURE);
 	}
-		//errx(2, "cannot create local domain socket");
 
 	TimedOut = 0;
 	if (TimeoutVal) {

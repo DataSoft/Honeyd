@@ -62,7 +62,7 @@
 #include <getopt.h>
 #include <err.h>
 #include <sha1.h>
-
+#include <syslog.h>
 #include <event.h>
 #include <evdns.h>
 
@@ -1051,14 +1051,12 @@ smtp_bind_socket(struct event *ev, u_short port)
 		syslog(LOG_ERR, "%s: cannot bind socket: %d", __func__, port);
 		exit(EXIT_FAILURE);
 	}
-		//err(1, "%s: cannot bind socket: %d", __func__, port);
 
 	if (listen(fd, 10) == -1)
 	{
 		syslog(LOG_ERR, "%s: listen failed: %d", __func__, port);
 		exit(EXIT_FAILURE);
 	}
-		//err(1, "%s: listen failed: %d", __func__, port);
 
 	/* Schedule the socket for accepting */
 	event_set(ev, fd, EV_READ | EV_PERSIST, accept_socket, NULL);

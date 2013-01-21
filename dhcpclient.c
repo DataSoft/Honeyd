@@ -606,7 +606,6 @@ _bcast(struct template *tmpl,
 		syslog(LOG_ERR, "eth_send function call failed");
 		exit(EXIT_FAILURE);
 	}
-	//err(1, "eth_send");
 
 	return (0);
 }
@@ -664,7 +663,6 @@ _unicast(struct template *tmpl,
 		syslog(LOG_ERR, "eth_send function call failed");
 		exit(EXIT_FAILURE);
 	}
-		//err(1, "eth_send");
 
 	return (0);
 }

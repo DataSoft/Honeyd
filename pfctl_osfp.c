@@ -303,7 +303,6 @@ pfctl_get_fingerprint(const char *name)
 			syslog(LOG_ERR, "malloc");
 			exit(EXIT_FAILURE);
 		}
-			//err(1, "malloc");
 		if ((ptr = strchr(wr_name, ' ')) == NULL) {
 			free(wr_name);
 			return (PF_OSFP_NOMATCH);
@@ -471,7 +470,6 @@ add_fingerprint(int dev, int opts, struct pf_osfp_ioctl *fp)
 		syslog(LOG_ERR, "fingerprint class \"nomatch\" is reserved");
 		exit(EXIT_FAILURE);
 	}
-		//errx(1, "fingerprint class \"nomatch\" is reserved");
 
 	version = PF_OSFP_ANY;
 	subtype = PF_OSFP_ANY;
@@ -520,7 +518,6 @@ add_fingerprint(int dev, int opts, struct pf_osfp_ioctl *fp)
 		} else {
 			syslog(LOG_ERR, "DI0C0SFPADD FAKE_PF_KERNEL");
 			exit(EXIT_FAILURE);
-			//err(1, "DIOCOSFPADD");
 		}
 	}
 }
@@ -587,7 +584,6 @@ fingerprint_name_entry(struct name_list *list, char *name)
 			syslog(LOG_ERR, "calloc, failed to allocate new name entry");
 			exit(EXIT_FAILURE);
 		}
-			//err(1, "calloc");
 		LIST_INIT(&nm_entry->nm_sublist);
 		strlcpy(nm_entry->nm_name, name, sizeof(nm_entry->nm_name));
 	}

@@ -589,9 +589,15 @@ interface_test_insert_and_find(void)
 
 	addr_pton("10.0.0.1", &tmp);
 	if ( inter != interface_find_responsible(&tmp) )
-	errx(1, "interface_find_responsible failed");
+	{
+		syslog(LOG_ERR, "interface_find_responsibile failed");
+		exit(EXIT_FAILURE);
+	}
 	if ( inter != interface_find("fxp0") )
-	errx(1, "interface_find failed");
+	{
+		syslog(LOG_ERR, "interface_find failed");
+		exit(EXIT_FAILURE);
+	}
 
 	fprintf(stderr, "\t%s: OK\n", __func__);
 }
