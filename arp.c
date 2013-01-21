@@ -429,7 +429,7 @@ arp_recv_cb(u_char *u, const struct pcap_pkthdr *pkthdr, const u_char *pkt)
 			if ( !(req->flags & ARP_INTERNAL) ) {
 				/* Signal success */
 				req->flags |= ARP_EXTERNAL;
-				req->cnt = -1;
+				req->cnt = ARP_REQUEST_SUCESS;
 				assert(req->cb != NULL);
 				(*req->cb)(req, 1, req->arg);
 				evtimer_del(req->discover);

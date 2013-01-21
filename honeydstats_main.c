@@ -321,9 +321,14 @@ main(int argc, char *argv[])
 
 	if (user_read_config(config_filename) == -1) {
 		if (!want_unittest)
-			errx(1, "config file '%s' not found", config_filename);
+		{
+			syslog(LOG_ERR, "config file '%s' not found", config_filename);
+			exit(EXIT_FAILURE);
+		}
 		else
-			warnx("config file '%s' not found", config_filename);
+		{
+			syslog(LOG_WARNING, "config file '%s' not found", config_filename);
+		}
 	}
 
 	syslog_init(orig_argc, orig_argv);
@@ -338,7 +343,6 @@ main(int argc, char *argv[])
 			syslog(LOG_ERR, "daemon");
 			exit(EXIT_FAILURE);
 		}
-			//err(1, "daemon");
 	}
 
 	stats_libevent_base = event_base_new();

@@ -388,7 +388,7 @@ stats_ready_cb(int fd, short what, void *arg)
 	tmp = TAILQ_FIRST(&sc.send_queue);
 	TAILQ_REMOVE(&sc.send_queue, tmp, next);
 	if (what != EV_TIMEOUT) {
-		syslog(LOG_DEBUG, "writing stats of length %zd",
+		syslog(LOG_DEBUG, "writing stats of length %zu",
 		    evbuffer_get_length(tmp->evbuf));
 		if (evbuffer_write(tmp->evbuf, fd) == -1) {
 			syslog(LOG_WARNING,
@@ -920,7 +920,7 @@ stats_compress_test()
 		evbuffer_drain(buf, evbuffer_get_length(buf));
 		evbuffer_add(buf, something, sizeof(something));
 		stats_compress(buf);
-		fprintf(stderr, "\t\t Decompressed: %zd, Compressed: %zd\n",
+		fprintf(stderr, "\t\t Decompressed: %d, Compressed: %zd\n",
 		    sizeof(something), evbuffer_get_length(buf));
 
 		/* Simulate packet loss */
@@ -928,12 +928,20 @@ stats_compress_test()
 			continue;
 
 		if (stats_decompress(buf) == -1)
-		errx(1, "Decompress failed");
+		{
+			syslog(LOG_ERR,"Decompressed failed");
+			exit(EXIT_FAILURE);
+		}
 		if (evbuffer_get_length(buf) != sizeof(something))
-		errx(1, "Decompressed data has bad length: %d vs %d",
-				evbuffer_get_length(buf), sizeof(something));
+		{
+			syslog(LOG_ERR,"Decompressed data has bad length: %zd vs. %d", EVBUFFER_LENGTH(buf), sizeof(something));
+			exit(EXIT_FAILURE);
+		}
 		if (memcmp(something, evbuffer_pullup(buf, -1), sizeof(something)))
-		errx(1, "Decompressed data is corrupted");
+		{
+			syslog(LOG_ERR,"%s: Decompressed data is corrupted", __func__);
+			exit(EXIT_FAILURE);
+		}
 	}
 
 	evbuffer_free(buf);

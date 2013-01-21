@@ -609,7 +609,7 @@ subsystem_read(int fd, short what, void *arg)
 			tcp.th_sport = htons(port);
 			tcp.th_dport = htons(sub_port->number);
 
-			if ((con = tcp_new(&ip, &tcp, 1)) == NULL)
+			if ((con = tcp_new(&ip, &tcp, INITIATED_BY_SUBSYSTEM)) == NULL)
 				goto out;
 			con->tmpl = template_ref(tmpl);
 
@@ -651,7 +651,7 @@ subsystem_read(int fd, short what, void *arg)
 			udp.uh_sport = htons(port);
 			udp.uh_dport = htons(sub_port->number);
 
-			if ((con = udp_new(&ip, &udp, 1)) == NULL)
+			if ((con = udp_new(&ip, &udp, INITIATED_BY_SUBSYSTEM)) == NULL)
 				goto out;
 			con->tmpl = template_ref(tmpl);
 			

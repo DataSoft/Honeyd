@@ -953,7 +953,6 @@ pyextend_load_module(const char *name)
 		syslog(LOG_ERR, "calloc");
 		exit(EXIT_FAILURE);
 	}
-		//err(1, "calloc");
 
 	CHECK_FUNC(pye->pFuncInit, "honeyd_init");
 	CHECK_FUNC(pye->pFuncReadData, "honeyd_readdata");

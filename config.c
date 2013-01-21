@@ -692,7 +692,6 @@ template_clone(const char *newname, const struct template *tmpl,
 				{
 					syslog(LOG_ERR, "Cannot find interface");
 					exit(EXIT_FAILURE);
-					//errx(1, "Cannot find interface");
 				}
 			}
 			newtmpl->inter = inter;

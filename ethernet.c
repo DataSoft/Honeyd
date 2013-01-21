@@ -139,8 +139,8 @@ ethernetcode_index(struct ethertree *etherroot, struct ethernetcode *code)
 }
 
 void ethernetcode_init(FILE *in_file){
-	char s[300];
-	char c;
+	char currentLine[300];
+	char currentChar;
 	struct ethernetcode *currentCode;
 	struct ethernetcode *codes;
 	int counter = 0;
@@ -154,7 +154,7 @@ void ethernetcode_init(FILE *in_file){
 		exit(EXIT_FAILURE);
 	}
 
-	while(fgets( s, 300, in_file ) != NULL){
+	while(fgets( currentLine, 300, in_file ) != NULL){
 		numOfLine++;
 	}
 	if(numOfLine > 0){
@@ -168,19 +168,22 @@ void ethernetcode_init(FILE *in_file){
 	}
 	rewind(in_file);
 	do{
-		memset (s,'\0',300);
-		fgets( s, 300, in_file );
+		memset (currentLine,'\0',300);
+		if(fgets( currentLine, 300, in_file )==NULL)
+		{
+
+		}
 		counter++;
-	}while(s[0] == '#');
+	}while(currentLine[0] == '#');
 	SPLAY_INIT(&etherroot);
 		do{
 		char routerID[20];
 		char routerCompany[80];
 		int i;
 		for(i = 0; i < 20; i++)		{
-			c = s[i];
-			if(c != ' '){
-					routerID[i] = c;
+			currentChar = currentLine[i];
+			if(currentChar != ' '){
+					routerID[i] = currentChar;
 				}else{
 					routerID[i] = '\0';
 					break;
@@ -190,18 +193,18 @@ void ethernetcode_init(FILE *in_file){
 		int companyNameStart = 0;
 		int firstSpaceFound = 0;
 		for(j = 0; j < 300; j++){
-			c = s[j];
-			if(c >=65 && c <= 90){
-				c = c + 32;
+			currentChar = currentLine[j];
+			if(currentChar >=65 && currentChar <= 90){
+				currentChar = currentChar + 32;
 		    }
 			if(companyNameStart > 0){
-			routerCompany[j-companyNameStart] = c;
+			routerCompany[j-companyNameStart] = currentChar;
 			}
-			if(c == ' ' && firstSpaceFound == 0){
+			if(currentChar == ' ' && firstSpaceFound == 0){
 				firstSpaceFound = 1;
 				companyNameStart = j+1;
 			}
-			if(s[j] == '\0' || s[j] == '\n'){
+			if(currentLine[j] == '\0' || currentLine[j] == '\n'){
 				routerCompany[j-companyNameStart] = '\0';
 				break;
 			}
@@ -213,7 +216,7 @@ void ethernetcode_init(FILE *in_file){
 		currentCode->vendor = routerCompany;
 		ethernetcode_index(&etherroot, currentCode);
 		++currentCode;
-	}while (fgets( s, 300, in_file ) != NULL);
+	}while (fgets( currentLine, 300, in_file ) != NULL);
 	fclose(in_file);
 }
 
@@ -362,7 +365,10 @@ ethernetcode_clone(struct addr *src)
 
 #define TEST(x, y) do { \
 		if (ethernetcode_find_prefix(x, 0) != (y)) \
-		errx(1, "%s: %s does not match %.6x", __func__, x, y); \
+		{\
+			syslog(LOG_ERR,"%s: %s does not match %.6x", __func__, x, y);\
+			exit(EXIT_FAILURE);\
+		}\
 } while (0)
 
 void
@@ -382,6 +388,5 @@ ethernet_test(void)
 {
 	FILE *in_file  = fopen("/usr/share/honeyd/nmap-mac-prefixes", "r"); // read only
 	ethernetcode_init(in_file);
-
 	ethernetcode_test();
 }
