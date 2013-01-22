@@ -382,11 +382,10 @@ syslog_init(int argc, char *argv[])
  */
 
 void
-honeyd_rrd_cb(int fd, short what, void *arg)
+honeyd_rrd_cb(int fd, short what, void *unused)
 {
 	static int count;
 	char line[1024];
-	struct event *ev = arg;
 	struct timeval tv;
 
 	snprintf(line, sizeof(line), "%f:%f",
@@ -397,6 +396,7 @@ honeyd_rrd_cb(int fd, short what, void *arg)
 
 	timerclear(&tv);
 	tv.tv_sec = 60;
+	struct event *ev = evtimer_new(libevent_base, honeyd_rrd_cb, NULL);
 	evtimer_add(ev, &tv);
 
 	/* Create a graph every five minutes */
@@ -457,9 +457,7 @@ honeyd_rrd_start(const char *rrdtool_path)
 	rrdtool_db_commit(honeyd_traffic_db);
 
 	/* Start the periodic traffic update timer */
-	struct event *honeyd_rrd_ev = NULL;
-	honeyd_rrd_ev = evtimer_new(libevent_base, honeyd_rrd_cb, honeyd_rrd_ev);
-	honeyd_rrd_cb(-1, EV_TIMEOUT, honeyd_rrd_ev);
+	honeyd_rrd_cb(-1, EV_TIMEOUT, NULL);
 }
 
 /*
