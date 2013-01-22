@@ -188,7 +188,7 @@ pyrecord_test(void)
 	assert(tmp != NULL);
 
 	evbuffer_add(tmp, record_data, sizeof(record_data));
-	while (EVBUFFER_LENGTH(tmp)) {
+	while (evbuffer_get_length(tmp)) {
 		if ((record = calloc(1, sizeof(struct record))) == NULL)
 		{
 			syslog(LOG_ERR, "%s: calloc", __func__);

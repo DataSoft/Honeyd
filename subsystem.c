@@ -187,8 +187,7 @@ subsystem_cleanup(struct subsystem *sub)
 			
 			timerclear(&tv);
 			tv.tv_sec = 2 * SUBSYSTEM_RESTART_INTERVAL;
-			event_once(-1, EV_TIMEOUT,
-			    subsystem_restart, sub, &tv);
+			event_base_once(libevent_base, -1, EV_TIMEOUT, subsystem_restart, sub, &tv);
 		}
 		return;
 	}
@@ -641,7 +640,7 @@ subsystem_read(int fd, short what, void *arg)
 			con->snd_una++;
 
 			con->retrans_time = 1;
-			generic_timeout(&con->retrans_timeout, con->retrans_time);
+			generic_timeout(con->retrans_timeout, con->retrans_time);
 			goto reschedule;
 		} else if (proto == IP_PROTO_UDP) {
 			struct udp_con *con;
@@ -691,7 +690,7 @@ subsystem_read(int fd, short what, void *arg)
 	TRACE(fd, atomicio(write, fd, &res, 1));
  reschedule:
 	/* Reschedule read */
-	TRACE(sub->cmd.pread.ev_fd, event_add(&sub->cmd.pread, NULL));
+	TRACE(event_get_fd(sub->cmd.pread), event_add(sub->cmd.pread, NULL));
 }
 
 void

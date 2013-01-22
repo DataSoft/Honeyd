@@ -146,37 +146,36 @@ SPLAY_GENERATE(tree, tuple, node, conhdr_compare);
 
 struct rrdtool_drv	*honeyd_rrd_drv;
 struct rrdtool_db	*honeyd_traffic_db;
-struct event		 honeyd_rrd_ev;
-FILE			*honeyd_servicefp;
-struct timeval		 honeyd_uptime;
-static FILE		*honeyd_logfp;
-static ip_t		*honeyd_ip;
-struct pool		*pool_pkt;
-struct pool		*pool_delay;
-rand_t			*honeyd_rand;
-int			 honeyd_sig;
-int			 honeyd_nconnects;
-int			 honeyd_nchildren;
-int			 honeyd_ttl = HONEYD_DFL_TTL;
-struct tcp_con		 honeyd_tmp;
-int                      honeyd_show_include_dir;
-int                      honeyd_show_data_dir;
-int                      honeyd_show_version;
-int                      honeyd_show_usage;
-int			 honeyd_debug;
-uid_t			 honeyd_uid = 32767;
-gid_t			 honeyd_gid = 32767;
-char *templateDump = NULL;
-int			 honeyd_needsroot;	/* Need different IDs */
-int			 honeyd_disable_webserver = 0;
-int			 honeyd_ignore_parse_errors = 0;
-int			 honeyd_verify_config = 0;
-int			 honeyd_webserver_fix_permissions = 0;
-char			*honeyd_webserver_address = "127.0.0.1";
-int			 honeyd_webserver_port = 80;
-char			*honeyd_webserver_root = PATH_HONEYDDATA \
+FILE				*honeyd_servicefp;
+struct timeval		honeyd_uptime;
+static FILE			*honeyd_logfp;
+static ip_t			*honeyd_ip;
+struct pool			*pool_pkt;
+struct pool			*pool_delay;
+rand_t				*honeyd_rand;
+int					honeyd_sig;
+int					honeyd_nconnects;
+int					honeyd_nchildren;
+int					honeyd_ttl = HONEYD_DFL_TTL;
+struct tcp_con		honeyd_tmp;
+int					honeyd_show_include_dir;
+int					honeyd_show_data_dir;
+int					honeyd_show_version;
+int					honeyd_show_usage;
+int					honeyd_debug;
+uid_t				honeyd_uid = 32767;
+gid_t				honeyd_gid = 32767;
+char				*templateDump = NULL;
+int					honeyd_needsroot;	/* Need different IDs */
+int					honeyd_disable_webserver = 0;
+int					honeyd_ignore_parse_errors = 0;
+int					honeyd_verify_config = 0;
+int					honeyd_webserver_fix_permissions = 0;
+char				*honeyd_webserver_address = "127.0.0.1";
+int					honeyd_webserver_port = 80;
+char				*honeyd_webserver_root = PATH_HONEYDDATA \
 						"/webserver/htdocs";
-char			*honeyd_rrdtool_path = PATH_RRDTOOL;
+char				*honeyd_rrdtool_path = PATH_RRDTOOL;
 
 /* can be used by unittests to do bad stuff */
 void (*honeyd_delay_callback)(int, short, void *) = honeyd_delay_cb;
@@ -383,11 +382,10 @@ syslog_init(int argc, char *argv[])
  */
 
 void
-honeyd_rrd_cb(int fd, short what, void *arg)
+honeyd_rrd_cb(int fd, short what, void *unused)
 {
 	static int count;
 	char line[1024];
-	struct event *ev = arg;
 	struct timeval tv;
 
 	snprintf(line, sizeof(line), "%f:%f",
@@ -398,6 +396,7 @@ honeyd_rrd_cb(int fd, short what, void *arg)
 
 	timerclear(&tv);
 	tv.tv_sec = 60;
+	struct event *ev = evtimer_new(libevent_base, honeyd_rrd_cb, NULL);
 	evtimer_add(ev, &tv);
 
 	/* Create a graph every five minutes */
@@ -458,8 +457,7 @@ honeyd_rrd_start(const char *rrdtool_path)
 	rrdtool_db_commit(honeyd_traffic_db);
 
 	/* Start the periodic traffic update timer */
-	evtimer_set(&honeyd_rrd_ev, honeyd_rrd_cb, &honeyd_rrd_ev);
-	honeyd_rrd_cb(-1, EV_TIMEOUT, &honeyd_rrd_ev);
+	honeyd_rrd_cb(-1, EV_TIMEOUT, NULL);
 }
 
 /*
@@ -873,11 +871,11 @@ honeyd_delay_packet(struct template *tmpl, struct ip_hdr *ip, u_int iplen,
 	delay->spoof = spoof;
 
 	if (ms) {
-		evtimer_set(&delay->timeout, honeyd_delay_callback, delay);
+		delay->timeout = evtimer_new(libevent_base, honeyd_delay_callback, delay);
 		timerclear(&tv);
 		tv.tv_sec = ms / 1000;
 		tv.tv_usec = (ms % 1000) * 1000;
-		evtimer_add(&delay->timeout, &tv);
+		evtimer_add(delay->timeout, &tv);
 	} else
 		honeyd_delay_callback(-1, EV_TIMEOUT, delay);
 }
@@ -913,7 +911,7 @@ honeyd_ip_send(u_char *pkt, u_int iplen, struct spoof spoof)
 
 	/* Find the template for the external address */
 	tmpl = template_find_best(addr_ntoa(&addr), ip, iplen);
-	if (tmpl != NULL && tmpl->flags & TEMPLATE_EXTERNAL)
+	if ((tmpl != NULL) && (tmpl->flags & TEMPLATE_EXTERNAL))
 		flags |= DELAY_ETHERNET;
 
 	/* But all sending decisions are really based on the source template */
@@ -977,7 +975,7 @@ connection_remove(struct tree *tree, struct conlru *head, struct tuple *hdr)
 	SPLAY_REMOVE(tree, tree, hdr);
 	TAILQ_REMOVE(head, hdr, next);
 
-	evtimer_del(&hdr->timeout);
+	evtimer_del(hdr->timeout);
 }
 
 /* Called when a connection received data and has not been idle */
@@ -988,7 +986,7 @@ connection_update(struct conlru *head, struct tuple *hdr)
 	TAILQ_REMOVE(head, hdr, next);
 	TAILQ_INSERT_HEAD(head, hdr, next);
 
-	generic_timeout(&hdr->timeout, HONEYD_IDLE_TIMEOUT);
+	generic_timeout(hdr->timeout, HONEYD_IDLE_TIMEOUT);
 }
 
 struct tcp_con *
@@ -1012,8 +1010,8 @@ tcp_new(struct ip_hdr *ip, struct tcp_hdr *tcp, int local)
 
 	honeyd_nconnects++;
 	honeyd_settcp(con, ip, tcp, local);
-	evtimer_set(&con->conhdr.timeout, honeyd_tcp_timeout, con);
-	evtimer_set(&con->retrans_timeout, tcp_retrans_timeout, con);
+	con->conhdr.timeout = evtimer_new(libevent_base, honeyd_tcp_timeout, con);
+	con->retrans_timeout = evtimer_new(libevent_base, tcp_retrans_timeout, con);
 
 	connection_insert(&tcpcons, &tcplru, &con->conhdr);
 
@@ -1039,7 +1037,7 @@ tcp_free(struct tcp_con *con)
 	    NULL, 0);
 	honeyd_log_flowend(honeyd_logfp, IP_PROTO_TCP, &con->conhdr);
 
-	evtimer_del(&con->retrans_timeout);
+	evtimer_del(con->retrans_timeout);
 
 	if (con->cmd_pfd > 0)
 		cmd_free(&con->cmd);
@@ -1075,7 +1073,7 @@ tcp_retrans_timeout(int fd, short event, void *arg)
 		tcp_send(con, TH_SYN, NULL, 0);
 		con->snd_una++;
 		
-		generic_timeout(&con->retrans_timeout, con->retrans_time);
+		generic_timeout(con->retrans_timeout, con->retrans_time);
 		break;
 
 	case TCP_STATE_SYN_RECEIVED:
@@ -1083,7 +1081,7 @@ tcp_retrans_timeout(int fd, short event, void *arg)
 		tcp_send(con, TH_SYN|TH_ACK, NULL, 0);
 		con->snd_una++;
 		
-		generic_timeout(&con->retrans_timeout, con->retrans_time);
+		generic_timeout(con->retrans_timeout, con->retrans_time);
 		break;
 
 	default:
@@ -1107,7 +1105,7 @@ udp_new(struct ip_hdr *ip, struct udp_hdr *udp, int local)
 
 	connection_insert(&udpcons, &udplru, &con->conhdr);
 
-	evtimer_set(&con->conhdr.timeout, honeyd_udp_timeout, con);
+	con->conhdr.timeout = evtimer_new(libevent_base, honeyd_udp_timeout, con);
 
 	honeyd_log_flownew(honeyd_logfp, IP_PROTO_UDP, &con->conhdr);
 
@@ -1618,10 +1616,10 @@ tcp_senddata(struct tcp_con *con, uint8_t flags)
 	 */
 	needretrans = con->poff || (con->sentfin && !con->finacked);
 
-	if (needretrans && !evtimer_pending(&con->retrans_timeout, NULL)) {
+	if (needretrans && !evtimer_pending(con->retrans_timeout, NULL)) {
 		if (!con->retrans_time)
 			con->retrans_time = 1;
-		generic_timeout(&con->retrans_timeout, con->retrans_time);
+		generic_timeout(con->retrans_timeout, con->retrans_time);
 	}
 }
 
@@ -2022,7 +2020,7 @@ generic_timeout(struct event *ev, int seconds)
 			} \
 		} else if (acked) { \
 			con->retrans_time = 0; \
-			evtimer_del(&con->retrans_timeout); \
+			evtimer_del(con->retrans_timeout); \
 			con->dupacks=0; \
 		} \
 } while (0)
@@ -2146,11 +2144,11 @@ tcp_recv_cb(struct template *tmpl, u_char *pkt, u_short pktlen)
 		con->snd_una++;
 		con->state = TCP_STATE_SYN_RECEIVED;
 
-		generic_timeout(&con->conhdr.timeout, HONEYD_SYN_WAIT);
+		generic_timeout(con->conhdr.timeout, HONEYD_SYN_WAIT);
 
 		/* Get initial value from personality */
 		con->retrans_time = 3;
-		generic_timeout(&con->retrans_timeout, con->retrans_time);
+		generic_timeout(con->retrans_timeout, con->retrans_time);
 
 		return;
 	}
@@ -2224,7 +2222,7 @@ tcp_recv_cb(struct template *tmpl, u_char *pkt, u_short pktlen)
 
 			/* Clear retransmit timeout */
 			con->retrans_time = 0;
-			evtimer_del(&con->retrans_timeout);
+			evtimer_del(con->retrans_timeout);
 
 			connection_update(&tcplru, &con->conhdr);
 
@@ -2241,7 +2239,7 @@ tcp_recv_cb(struct template *tmpl, u_char *pkt, u_short pktlen)
 
 			connection_update(&tcplru, &con->conhdr);
 
-			if (tiflags & TH_FIN && !(con->flags & TCP_TARPIT))
+			if ((tiflags & TH_FIN) && !(con->flags & TCP_TARPIT))
 			{
 				if (con->cmd_pfd > 0)
 				{
@@ -2320,10 +2318,9 @@ tcp_recv_cb(struct template *tmpl, u_char *pkt, u_short pktlen)
 
 			tcp_do_options(con, tcp, 0);
 
-			if (tiflags & TH_FIN && !(con->flags & TCP_TARPIT)) {
+			if ((tiflags & TH_FIN) && !(con->flags & TCP_TARPIT)) {
 				con->state = TCP_STATE_CLOSING;
-				generic_timeout(&con->conhdr.timeout,
-					HONEYD_CLOSE_WAIT);
+				generic_timeout(con->conhdr.timeout, HONEYD_CLOSE_WAIT);
 				dlen++;
 			} else {
 				connection_update(&tcplru, &con->conhdr);
@@ -2458,7 +2455,7 @@ udp_send(struct udp_con *con, u_char *payload, u_int len)
 
 	honeyd_ip_send(pkt, iplen, spoof);
 
-	generic_timeout(&con->conhdr.timeout, HONEYD_UDP_WAIT);
+	generic_timeout(con->conhdr.timeout, HONEYD_UDP_WAIT);
 
 	return (len);
 }
@@ -2591,7 +2588,7 @@ handle_udp_packet(struct template *tmpl, void *wrapper)
 	}
 
 	/* Keep this state active */
-	generic_timeout(&con->conhdr.timeout, HONEYD_UDP_WAIT);
+	generic_timeout(con->conhdr.timeout, HONEYD_UDP_WAIT);
 	con->softerrors = 0;
 
 	/* Statistics */
@@ -3185,7 +3182,7 @@ honeyd_input(const struct interface *inter, struct ip_hdr *ip, u_short iplen)
 			if (value < tmpl->drop_inrate)
 				return;
 		}
-		if (tmpl != NULL && tmpl->flags & TEMPLATE_EXTERNAL)
+		if ((tmpl != NULL) && (tmpl->flags & TEMPLATE_EXTERNAL))
 			flags |= DELAY_ETHERNET;
 		honeyd_delay_packet(tmpl, ip, iplen, NULL, NULL, delay, flags, no_spoof);
 		return;
@@ -3264,7 +3261,7 @@ honeyd_input(const struct interface *inter, struct ip_hdr *ip, u_short iplen)
 	} else
 		tmpl = template_find_best(addr_ntoa(&addr), ip, iplen);
 
-	if (tmpl != NULL && tmpl->flags & TEMPLATE_EXTERNAL)
+	if ((tmpl != NULL) && (tmpl->flags & TEMPLATE_EXTERNAL))
 		flags |= DELAY_ETHERNET;
 
 	/* Delay the packet if necessary, otherwise deliver it directly */
@@ -3437,7 +3434,6 @@ int
 main(int argc, char *argv[])
 {
 	extern int interface_dopoll;
-	struct event sigterm_ev, sigint_ev, sighup_ev, sigchld_ev, sigusr_ev;
 	char *dev[HONEYD_MAX_INTERFACES];
 	char **orig_argv;
 	struct addr stats_dst;
@@ -3593,7 +3589,7 @@ main(int argc, char *argv[])
 			break;
 		default:
 			usage();
-			/* not reached */
+			break;
 		}
 	}
 
@@ -3631,10 +3627,10 @@ main(int argc, char *argv[])
 	interface_prevent_init();
 
 	/* Initalize libevent */
-	event_init();
+	libevent_base = event_base_new();
 
 	/* Three priorities - UI connections always get a better priority */
-	event_priority_init(3);
+	event_base_priority_init(libevent_base, 3);
 
 	/* Initalize pool allocator */
 	pool_pkt = pool_init(HONEYD_MTU);
@@ -3852,16 +3848,19 @@ main(int argc, char *argv[])
 		return (-1);
 	}
 
-	signal_set(&sigint_ev, SIGINT, honeyd_signal, NULL);
-	signal_add(&sigint_ev, NULL);
-	signal_set(&sigterm_ev, SIGTERM, honeyd_signal, NULL);
-	signal_add(&sigterm_ev, NULL);
-	signal_set(&sigchld_ev, SIGCHLD, honeyd_sigchld, NULL);
-	signal_add(&sigchld_ev, NULL);
-	signal_set(&sighup_ev, SIGHUP, honeyd_sighup, NULL);
-	signal_add(&sighup_ev, NULL);
-	signal_set(&sigusr_ev, SIGUSR1, honeyd_sigusr, NULL);
-	signal_add(&sigusr_ev, NULL);
+	struct event *sigterm_ev, *sigint_ev, *sighup_ev, *sigchld_ev, *sigusr_ev;
+
+	sigterm_ev = evsignal_new(libevent_base, SIGTERM, honeyd_signal, NULL);
+	sigint_ev = evsignal_new(libevent_base, SIGINT, honeyd_signal, NULL);
+	sighup_ev = evsignal_new(libevent_base, SIGHUP, honeyd_sighup, NULL);
+	sigchld_ev = evsignal_new(libevent_base, SIGCHLD, honeyd_sigchld, NULL);
+	sigusr_ev = evsignal_new(libevent_base, SIGUSR1, honeyd_sigusr, NULL);
+
+	event_add(sigterm_ev, NULL);
+	event_add(sigint_ev, NULL);
+	event_add(sighup_ev, NULL);
+	event_add(sigchld_ev, NULL);
+	event_add(sigusr_ev, NULL);
 
 	/* Start logging via rrd */
 	if (honeyd_rrdtool_path != NULL && strlen(honeyd_rrdtool_path))
@@ -3875,7 +3874,7 @@ main(int argc, char *argv[])
 	if (servicelog != NULL)
 		honeyd_servicefp = honeyd_logstart(servicelog);
 
-	event_dispatch();
+	event_base_dispatch(libevent_base);
 
 	syslog(LOG_ERR, "Kqueue does not recognize bpf filedescriptor.");
 

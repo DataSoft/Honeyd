@@ -38,7 +38,7 @@ struct interface {
 
 	struct intf_entry if_ent;
 	int if_addrbits;
-	struct event if_recvev;
+	struct event *if_recvev;
 	pcap_t *if_pcap;
 	eth_t *if_eth;
 	int if_dloff;

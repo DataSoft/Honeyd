@@ -36,6 +36,8 @@
 #define HSNIFF_MAX_INTERFACES		10
 #define HSNIFF_CON_EXPIRE		300
 
+struct event_base *hsniff_libevent_base;
+
 struct tcp_segment {
 	TAILQ_ENTRY(tcp_segment) next;
 	uint32_t seq;
@@ -50,7 +52,7 @@ struct tcp_track {
 
 	TAILQ_HEAD(tcpq, tcp_segment) segments;
 
-	struct event timeout;
+	struct event *timeout;
 };
 
 void hsniff_tcp_timeout(int, short, void *);

@@ -32,6 +32,8 @@
 #ifndef _HONEYDSTATS_H_
 #define _HONEYDSTATS_H_
 
+#include "stats.h"
+
 struct user {
 	SPLAY_ENTRY(user) node;
 	const char *name;
@@ -45,6 +47,8 @@ struct user {
 };
 
 SPLAY_HEAD(usertree, user);
+
+struct event_base *stats_libevent_base;
 
 int signature_process(struct evbuffer *evbuf);
 void checkpoint_replay(int fd);

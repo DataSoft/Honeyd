@@ -1137,17 +1137,17 @@ pyextend_evb_readcb(struct bufferevent *bev, void *parameter)
 		 * If we did not receive the complete request and we have
 		 * waited for too long already, then we drop the request.
 		 */
-		if (EVBUFFER_LENGTH(bev->input) > PYEXTEND_MAX_REQUEST_SIZE) {
+		if (evbuffer_get_length(bev->input) > PYEXTEND_MAX_REQUEST_SIZE) {
 			syslog(LOG_NOTICE,
 			    "Dropping request from %s with size %d",
-			    client_address, EVBUFFER_LENGTH(bev->input));
+			    client_address, evbuffer_get_length(bev->input));
 			pyextend_request_free(req);
 		}
 		return;
 	}
 
 	pArgs = Py_BuildValue("(O,s#,s#)", pWebServer,
-	    EVBUFFER_DATA(bev->input), EVBUFFER_LENGTH(bev->input),
+	    EVBUFFER_DATA(bev->input), evbuffer_get_length(bev->input),
 	    client_address, strlen(client_address));
 	if (pArgs == NULL)
 		goto error;

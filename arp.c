@@ -163,8 +163,8 @@ arp_free(struct arp_req *req)
 	if (SPLAY_FIND(haarptree, &ha_arp_reqs, req) != NULL)
 		SPLAY_REMOVE(haarptree, &ha_arp_reqs, req);
 
-	evtimer_del(&req->active);
-	evtimer_del(&req->discover);
+	evtimer_del(req->active);
+	evtimer_del(req->discover);
 	free(req);
 }
 
@@ -213,7 +213,7 @@ arp_discover(struct arp_req *req, struct addr *ha)
 		    &req->ha, &req->pa);
 
 		/* XXX - use reversemap on networks to find router ip */
-		evtimer_add(&req->discover, &tv);
+		evtimer_add(req->discover, &tv);
 	} else
 		(*req->cb)(req, 0, req->arg);
 	req->cnt++;
@@ -281,8 +281,8 @@ arp_new(struct interface *inter,
 		SPLAY_INSERT(haarptree, &ha_arp_reqs, req);
 	}
 
-	evtimer_set(&req->active, arp_timeout, req);
-	evtimer_set(&req->discover, arp_discovercb, req);
+	req->active = evtimer_new(libevent_base, arp_timeout, req);
+	req->discover = evtimer_new(libevent_base, arp_discovercb, req);
 			
 	return (req);
 }
@@ -308,7 +308,7 @@ arp_request(struct interface *inter,
 
 	timerclear(&tv);
 	tv.tv_sec = ARP_MAX_ACTIVE;
-	evtimer_add(&req->active, &tv);
+	evtimer_add(req->active, &tv);
 
 	addr_pack(&bcast, ADDR_TYPE_ETH, ETH_ADDR_BITS,
 	    ETH_ADDR_BROADCAST, ETH_ADDR_LEN);
@@ -432,7 +432,7 @@ arp_recv_cb(u_char *u, const struct pcap_pkthdr *pkthdr, const u_char *pkt)
 				req->cnt = ARP_REQUEST_SUCESS;
 				assert(req->cb != NULL);
 				(*req->cb)(req, 1, req->arg);
-				evtimer_del(&req->discover);
+				evtimer_del(req->discover);
 
 				syslog(LOG_DEBUG, "%s: %s at %s", __func__,
 				    addr_ntoa(&req->pa), addr_ntoa(&req->ha));

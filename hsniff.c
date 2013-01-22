@@ -216,7 +216,8 @@ tcp_track_new(struct ip_hdr *ip, struct tcp_hdr *tcp, int local)
 	}
 
 	hsniff_settcp(con, ip, tcp, local);
-	evtimer_set(&con->timeout, hsniff_tcp_timeout, con);
+
+	con->timeout = evtimer_new(libevent_base, hsniff_tcp_timeout, con);
 
 	SPLAY_INSERT(tree, &tcpcons, &con->conhdr);
 
@@ -238,7 +239,7 @@ tcp_track_free(struct tcp_track *con)
 	hooks_dispatch(IP_PROTO_TCP, HD_INCOMING_STREAM, &con->conhdr,
 	    NULL, 0);
 
-	evtimer_del(&con->timeout);
+	evtimer_del(con->timeout);
 
 	free(con);
 }
@@ -320,7 +321,7 @@ tcp_drop_subsumed(struct tcp_track *con)
 		 * so we can stream its content out.
 		 */
 
-		syslog(LOG_NOTICE, "Streaming: %s %u: %d",
+		syslog(LOG_NOTICE, "Streaming: %s %u: %zd",
 		    honeyd_contoa(&con->conhdr), con->snd_una, seg->len);
 		hooks_dispatch(IP_PROTO_TCP, HD_INCOMING_STREAM,
 		    &con->conhdr, seg->data, seg->len);
@@ -376,7 +377,7 @@ tcp_recv_cb(u_char *pkt, u_short pktlen)
 	 * We need to hear back from this connection every so often,
 	 * or we are going to time it out.
 	 */
-	generic_timeout(&con->timeout, HSNIFF_CON_EXPIRE);
+	generic_timeout(con->timeout, HSNIFF_CON_EXPIRE);
 
 	hooks_dispatch(ip->ip_p, HD_INCOMING, &tmp.conhdr, pkt, pktlen);
 	
@@ -401,7 +402,7 @@ tcp_recv_cb(u_char *pkt, u_short pktlen)
 
 	if (th_seq == con->snd_una) {
 		/* Inform our listener about the new data */
-		syslog(LOG_NOTICE, "Streaming: %s %u: %d",
+		syslog(LOG_NOTICE, "Streaming: %s %u: %zd",
 		    honeyd_contoa(&con->conhdr), con->snd_una, dlen);
 		hooks_dispatch(IP_PROTO_TCP, HD_INCOMING_STREAM, &con->conhdr,
 		    data, dlen);
@@ -517,7 +518,6 @@ int
 main(int argc, char *argv[])
 {
 	extern int interface_dopoll;
-	struct event sigterm_ev, sigint_ev;
 	char *dev[HSNIFF_MAX_INTERFACES];
 	char **orig_argv;
 	char *osfp = PATH_HONEYDDATA "/pf.os";
@@ -612,7 +612,7 @@ main(int argc, char *argv[])
 			break;
 		default:
 			usage();
-			/* not reached */
+			break;
 		}
 	}
 
@@ -685,7 +685,7 @@ main(int argc, char *argv[])
 	/* disabled event methods that don't work with bpf */
 	interface_prevent_init();
 
-	event_init();
+	hsniff_libevent_base = event_base_new();
 
 	syslog_init(orig_argc, orig_argv);
 
@@ -751,12 +751,15 @@ main(int argc, char *argv[])
 	    "Demoting process privileges to uid %u, gid %u",
 	    hsniff_uid, hsniff_gid);
 
-	signal_set(&sigint_ev, SIGINT, hsniff_signal, NULL);
-	signal_add(&sigint_ev, NULL);
-	signal_set(&sigterm_ev, SIGTERM, hsniff_signal, NULL);
-	signal_add(&sigterm_ev, NULL);
+	struct event *sigterm_ev, *sigint_ev;
 
-	event_dispatch();
+	sigterm_ev = evsignal_new(hsniff_libevent_base, SIGTERM, hsniff_signal, NULL);
+	sigint_ev = evsignal_new(hsniff_libevent_base, SIGINT, hsniff_signal, NULL);
+
+	event_add(sigterm_ev, NULL);
+	event_add(sigint_ev, NULL);
+
+	event_base_dispatch(hsniff_libevent_base);
 
 	syslog(LOG_ERR, "Kqueue does not recognize bpf filedescriptor.");
 

@@ -2980,7 +2980,7 @@ yyreduce:
 
 		trace_inspect((yyvsp[(3) - (3)].number), evbuf);
 
-		yyprintf("%s", EVBUFFER_DATA(evbuf));
+		yyprintf("%s", evbuffer_pullup(evbuf, -1));
 
 		evbuffer_free(evbuf);
 	} else {
