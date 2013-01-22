@@ -278,6 +278,8 @@ binding		: BIND ipaddr template
 				    "interface that can reach %s",
 				    $3->name, addr_ntoa(&$2));
 				break;
+			} else {
+				$3->addrbits = inter->if_addrbits;
 			}
 		}
 
@@ -1125,6 +1127,8 @@ dhcp_template(struct template *tmpl, char *interface, char *mac_addr)
 		yyerror("Binding to %s failed", addr_ntoa(&addr));
 		return;
 	}
+	
+	newtmpl->addrbits = inter->if_addrbits;
 
 	if (mac_addr != NULL) {
 		/*

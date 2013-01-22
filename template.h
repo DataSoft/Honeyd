@@ -54,6 +54,9 @@ struct template {
 
 	char *name;
 
+	/* Subnet mask, for example 24 for a /24 network */
+	uint32_t addrbits;
+
 	struct porttree ports;
 
 	struct action icmp;

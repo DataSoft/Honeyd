@@ -2466,24 +2466,20 @@ udp_send(struct udp_con *con, u_char *payload, u_int len)
 struct packet_wrapper {
 	u_char *pkt;
 	u_short pktlen;
-	u_char isBroadcast;
+	u_char unicast;
 };
 
 void
 handle_udp_packet(struct template *tmpl, void *wrapper)
 {
-	if (!tmpl->forward_broadcasts && ((struct packet_wrapper*)wrapper)->isBroadcast)
-		return;
-
-	if (!tmpl->honeypot_instance)
-		return;
-
 	u_char *pkt;
 	u_short pktlen;
 	struct udp_con *con, honeyd_udp;
 	struct addr addr;
 	struct spoof spoof;
+	char unicast;
 	char isBroadcast;
+	int i;
 	
 	uint16_t uh_sum;
 	u_char *data;
@@ -2493,7 +2489,7 @@ handle_udp_packet(struct template *tmpl, void *wrapper)
 	struct packet_wrapper *pwrapper = (struct packet_wrapper*)wrapper;
 	pkt = pwrapper->pkt;
 	pktlen = pwrapper->pktlen;
-	isBroadcast = pwrapper->isBroadcast;
+	unicast = pwrapper->unicast;
 
 	struct ip_hdr *ip = NULL;
 	struct udp_hdr *udp;
@@ -2503,13 +2499,40 @@ handle_udp_packet(struct template *tmpl, void *wrapper)
 	if (pktlen < (ip->ip_hl << 2) + UDP_HDR_LEN)
 		return;
 
-	/* Replace the broadcast address with our template address */
-	if (isBroadcast) {
-		int res = inet_pton(AF_INET, tmpl->name, &(ip->ip_dst));
+	ip_addr_t templateIp;
+	int res = inet_pton(AF_INET, tmpl->name, &(templateIp));
 
+	if (!unicast) {
+		/* If this isn't a template for a real honeypot instance, return */
 		if (res != 1)
 			return;
+
+		uint32_t bcastAddress = ntohl(templateIp);
+		for (i = 0; i < 32 - tmpl->addrbits; i++)
+			bcastAddress |= (0 | (1 << i));
+		bcastAddress = htonl(bcastAddress);
+
+		/* Is it to the global broadcast address? */
+		if (ip->ip_dst == 0xFFFFFFFF) {
+			isBroadcast = 1;
+		/* Is it to the honeypot interface's subnet broadcast address? */
+		} else if (ip->ip_dst == bcastAddress) {
+			isBroadcast = 1;
+		} else {
+			isBroadcast = 0;
+		}
+
+		if (!isBroadcast)
+			return;
+
+		/* Replace the broadcast address with our template address */
+		// TODO: This means scripts can't tell if the packet was to a bcast address or not. Does it matter for UDP?
+		if (isBroadcast) {
+			ip->ip_dst = templateIp;
+			printf("Got broadcast packet to UDP port %d!\n", ntohs(udp->uh_dport));
+		}
 	}
+
 
 	/*
 	 * Check if we have a real connection header for this connection, so
@@ -2619,11 +2642,13 @@ udp_recv_cb(struct template *tmpl, u_char *pkt, u_short pktlen)
 	wrapper.pkt = pkt;
 	wrapper.pktlen = pktlen;
 
-	if (ip->ip_dst == 0xFFFFFFFF) {
-		wrapper.isBroadcast = 1;
+	// Send the packet to all of the templates and let handle_udp_packet
+	// figure out if it's a match to a subnet
+	if (!strcmp("default", tmpl->name))  {
+		wrapper.unicast = 0;
 		template_iterate(&handle_udp_packet, (void*)&wrapper);
 	} else {
-		wrapper.isBroadcast = 0;
+		wrapper.unicast = 1;
 		handle_udp_packet(tmpl, (void*)&wrapper);
 	}
 }
