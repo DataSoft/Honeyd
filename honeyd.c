@@ -3407,7 +3407,7 @@ struct _unittest {
 	{ "pydataprocessing", pydataprocessing_test },
 	{ "pydatahoneyd", pydatahoneyd_test },
 #endif
-	{ "rrdtool", rrdtool_test },
+	//{ "rrdtool", rrdtool_test },
 	{ "ethernet", ethernet_test },
 	{ "interface", interface_test },
 	{ "network", network_test },
