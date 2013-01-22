@@ -14,11 +14,13 @@ if __name__ == "__main__":
     splitline = line.split(' ')
     mib = splitline[1].strip() + '.txt'
     try:
+      # This needs to be generated dynamically; might be easy if the
+      # fork of the script is running out of /usr/share/honeyd/scripts/*
       path = '/home/addison/Code/Honeyd/scripts/WIP/' + mib
       test = open(path, 'r')
       break
     except IOError:
-      print 'Could not find ' + mib
+      sys.stderr.write('Could not find ' + mib)
   
   snmpmessagelength = int(binascii.hexlify(sys.stdin.read(2)[1]), 16)
   snmpversionlength = int(binascii.hexlify(sys.stdin.read(2)[1]), 16)
@@ -29,7 +31,10 @@ if __name__ == "__main__":
   snmppdutype = binascii.hexlify(snmppdumetadata[0])
   snmppdulength = int(binascii.hexlify(snmppdumetadata[1]), 16)
   snmpreqidlength = int(binascii.hexlify(sys.stdin.read(2)[1]), 16)
-  snmpreqid = int(binascii.hexlify(sys.stdin.read(snmpreqidlength)), 16)
+  tempreq = binascii.hexlify(sys.stdin.read(snmpreqidlength))
+  if len(tempreq) % 2 == 1:
+    tempreq = '0' + tempreq
+  snmpreqid = int(tempreq, 16)
   snmperrorlength = int(binascii.hexlify(sys.stdin.read(2)[1]), 16)
   snmperror = int(binascii.hexlify(sys.stdin.read(snmperrorlength)), 16)
   snmperrindexlength = int(binascii.hexlify(sys.stdin.read(2)[1]), 16)

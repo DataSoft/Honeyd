@@ -408,6 +408,7 @@ class IPPResponseUDP:
     res = 3 * [0]
     random.seed()
     filemax = 0    
+    # Generate dynamically
     f = open('/home/addison/Code/Honeyd/scripts/WIP/' + self.file, 'r')
     match = f.readlines()
     if getorgetnext == 0:
