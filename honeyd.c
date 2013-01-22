@@ -2502,6 +2502,12 @@ handle_udp_packet(struct template *tmpl, void *wrapper)
 	ip_addr_t templateIp;
 	int res = inet_pton(AF_INET, tmpl->name, &(templateIp));
 
+	/* Check the packet checksum, if no uh_sum is set, we ignore it */
+	uh_sum = udp->uh_sum;
+	ip_checksum(ip, pktlen);
+	if ((uh_sum && uh_sum != udp->uh_sum))
+		goto justlog;
+
 	if (!unicast) {
 		/* If this isn't a template for a real honeypot instance, return */
 		if (res != 1)
@@ -2551,12 +2557,6 @@ handle_udp_packet(struct template *tmpl, void *wrapper)
 
 	portnum = ntohs(udp->uh_dport);
 	if (honeyd_block(tmpl, IP_PROTO_UDP, portnum))
-		goto justlog;
-
-	/* Check the packet checksum, if no uh_sum is set, we ignore it */
-	uh_sum = udp->uh_sum;
-	ip_checksum(ip, pktlen);
-	if ((uh_sum && uh_sum != udp->uh_sum))
 		goto justlog;
 
 	if (con == NULL) {
