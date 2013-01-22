@@ -16,7 +16,6 @@ def indent(elem, level=0, step=0):
     print function, we are forced to make do. 
   """
   i = '\n' + (level * '\t')
-  print elem.tag
   if len(elem):
       if not elem.text or not elem.text.strip():
           elem.text = i + '\t'
@@ -173,7 +172,7 @@ if __name__ == '__main__':
   f.close()
   f = open(path, 'r')
   restructure = f.readlines()
-  if restructure[-1] == 'End of MIB':
+  if restructure[-1] == 'End of MIB\n':
     del restructure[-1]
   
   replacement = open(ofilename + '.txt', 'w+')

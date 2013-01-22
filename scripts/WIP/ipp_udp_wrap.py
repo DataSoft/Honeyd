@@ -2,7 +2,7 @@
 
 import sys
 import binascii
-import ipp
+from ipp import *
 
 if __name__ == "__main__":
   snmpmessagelength = int(binascii.hexlify(sys.stdin.read(2)[1]), 16)
