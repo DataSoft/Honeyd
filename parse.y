@@ -437,12 +437,6 @@ set		: SET template DEFAULT PROTO ACTION action
 			break;
 		$2->timestamp = $4 * 2;
 	}
-		| SET template BROADCAST NUMBER
-	{
-		if ($2 == NULL)
-			break;
-		$2->forward_broadcasts = $4;
-	}
 		| SET template DROPRATE IN rate
 	{
 		if ($2 == NULL)

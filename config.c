@@ -717,7 +717,6 @@ template_clone(const char *newname, const struct template *tmpl,
 	newtmpl->drop_synrate = tmpl->drop_synrate;
 	newtmpl->flags = tmpl->flags;
 	newtmpl->spoof = tmpl->spoof;
-	newtmpl->forward_broadcasts = tmpl->forward_broadcasts;
 	newtmpl->addrbits = tmpl->addrbits;
 	newtmpl->honeypot_instance = tmpl->honeypot_instance;
 

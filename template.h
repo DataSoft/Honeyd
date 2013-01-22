@@ -98,9 +98,6 @@ struct template {
 	int flags;
 	struct interface *inter;
 
-	/* Nonzero will forward UDP broadcast packets to this template */
-	int forward_broadcasts;
-
 	/* Nonzero indicates this is an actual honeypot instance, not just a parent profile */
 	int honeypot_instance;
 

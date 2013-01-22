@@ -2529,10 +2529,9 @@ handle_udp_packet(struct template *tmpl, void *wrapper)
 			return;
 
 		/* Replace the broadcast address with our template address */
-		// TODO: This means scripts can't tell if the packet was to a bcast address or not. Does it matter for UDP?
+		// xxx: This means scripts can't tell if the packet was to a bcast address or not. Does it matter for UDP?
 		if (isBroadcast) {
 			ip->ip_dst = templateIp;
-			printf("Got broadcast packet to UDP port %d!\n", ntohs(udp->uh_dport));
 		}
 	}
 
