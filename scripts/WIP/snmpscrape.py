@@ -127,7 +127,7 @@ if __name__ == '__main__':
   ip = ''
   ofilename = ''
   matchname = ''
-  scriptname = ''
+  #scriptname = ''
   keep = False
 
   temp = expanduser('~') + '/.config/nova/config/templates/scripts.xml'
@@ -136,8 +136,8 @@ if __name__ == '__main__':
   parser.add_argument('-i', '--ip', help='The IP Address for snmpscrape to get MIB data from', required=True)
   parser.add_argument('-o', '--ofile', help='The name of the output file for the CSV MIB data. snmpscrape adds ".txt" to the end automatically', required=True)
   parser.add_argument('-n', '--name', help='Name of the script in $NOVA_HOME/config/templates/scripts.xml to make the results of snmpscrape available to', nargs='*')
-  parser.add_argument('-r', '--results-name', help='Required in conjunction with -n. The value for this argument will be the name of the device placed in the scripts file', nargs='*')
-  parser.add_argument('-p', '--script-path', help='Used in confunction with -n and -r. Path to Nova scripts.xml file (defaults to $HOME/.config/nova/config/templates/scripts.xml', default=temp)
+  #parser.add_argument('-r', '--results-name', help='Required in conjunction with -n. The value for this argument will be the name of the device placed in the scripts file', nargs='*')
+  parser.add_argument('-p', '--script-path', help='Used in confunction with -n. Path to Nova scripts.xml file (defaults to $HOME/.config/nova/config/templates/scripts.xml', default=temp)
   parser.add_argument('-k', '--keep', help='Keep the results of snmpwalk in addition to the restructured output. Takes no value', action='store_true')
 
   args = parser.parse_args(sys.argv[1:])
@@ -152,9 +152,9 @@ if __name__ == '__main__':
   ofilename = args.ofile
   if args.keep:
     keep = True
-  if args.name and args.results_name:
+  if args.name: # and args.results_name:
     matchname = ' '.join(args.name)
-    scriptname = ' '.join(args.results_name)
+    #scriptname = ' '.join(args.results_name)
   else:
     parser.error('If -n is used, -r RESULTS_NAME must be supplied as well')
   if args.script_path:
@@ -267,17 +267,19 @@ if __name__ == '__main__':
   
   # So, without further ado, the comments. If we were provided values for
   # the -r and -n flag
-  if matchname != '' and scriptname != '':
+  if matchname != '':# and scriptname != '':
     # Convert the scriptname into a list to audit for characters.
     # As I am not yet completely comfortable with the way python does
     # its regex stuff, I'm doing a character by character audit to ensure
     # there's no special characters that would cause a problem in the XML.
-    audit = list(scriptname)
-    for c in range(0, len(audit)):
-      # If it's not alphanumeric or a space, make it an underscore
-      if re.match('[0-9a-zA-Z ]', audit[c]) == None:
-        audit[c] = '_'
-    scriptname = ''.join(audit)
+    """
+      audit = list(scriptname)
+      for c in range(0, len(audit)):
+        # If it's not alphanumeric or a space, make it an underscore
+        if re.match('[0-9a-zA-Z ]', audit[c]) == None:
+          audit[c] = '_'
+      scriptname = ''.join(audit)
+    """
     # Parse the scripts.xml file
     tree = xmlm.parse(scriptpath)
     # and get the root node
@@ -322,11 +324,11 @@ if __name__ == '__main__':
         checknorepeats = option.findall('value')
         addvalue = True
         for elem in checknorepeats:
-          if elem.text == scriptname:
+          if elem.text == ofilename:
             addvalue = False
         if addvalue:
           value = xmlm.SubElement(option, 'value')
-          value.text = scriptname
+          value.text = ofilename
         #xmlm.dump(child)
         # Prettify the output to the file.
         indent(child, 1)

@@ -5,6 +5,21 @@ import binascii
 from ipp import *
 
 if __name__ == "__main__":
+  if len(sys.argv) != 2:
+    sys.exit(1)
+    
+  file = open(sys.argv[1], 'r')
+  getfilename = file.readlines()
+  for line in getfilename:
+    splitline = line.split(' ')
+    mib = splitline[1].strip() + '.txt'
+    try:
+      path = '/home/addison/Code/Honeyd/scripts/WIP/' + mib
+      test = open(path, 'r')
+      break
+    except IOError:
+      print 'Could not find ' + mib
+  
   snmpmessagelength = int(binascii.hexlify(sys.stdin.read(2)[1]), 16)
   snmpversionlength = int(binascii.hexlify(sys.stdin.read(2)[1]), 16)
   snmpversion = int(binascii.hexlify(sys.stdin.read(snmpversionlength)))
@@ -49,7 +64,8 @@ if __name__ == "__main__":
                        requestid=snmpreqid,
                        requestidlength=snmpreqidlength,
                        pdutype=snmppdutype,
-                       version=snmpversion)
+                       version=snmpversion,
+                       mibfile=mib)
   response = req.generateResponse()
   clean = list(response)
   hexrange = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 

@@ -217,12 +217,14 @@ class IPPResponseUDP:
                 requestid=None, 
                 requestidlength=None, 
                 pdutype=None, 
-                version=None):
+                version=None,
+                mibfile=None):
     self.reqoid = reqoid if reqoid != None else ''
     self.requestid = requestid if requestid != None else '1'
     self.pdutype = pdutype if pdutype != None else 0xA0
     self.requestidlength = requestidlength if requestidlength != None else '1'
     self.version = version if version != None else 0x00
+    self.file = mibfile.strip('\n') if mibfile != None else ''
     
     self.ids = {'integer':0x02, 
                 'bit-string':0x03,
@@ -406,24 +408,7 @@ class IPPResponseUDP:
     res = 3 * [0]
     random.seed()
     filemax = 0    
-    # TODO: When this gets moved into /usr/share/honeyd/.../ the prepended
-    # path information is going to have to change to reflect this.
-    while True:
-      try:
-        replf = '/home/addison/Code/Honeyd/scripts/WIP/printer' + str(filemax) + '.txt'
-        replacement = open(replf, 'r')
-        filemax += 1
-      except IOError:
-        break
-    if filemax > 1:
-      rand = random.randint(0, filemax - 1)
-    else:
-      rand = 0
-    try:
-      f = open('/home/addison/Code/Honeyd/scripts/WIP/printer' + str(rand) + '.txt', 'r')
-    except IOError as e:
-      sys.stderr.write('IOError: ' + str(e) + '\n')
-      return res
+    f = open('/home/addison/Code/Honeyd/scripts/WIP/' + self.file, 'r')
     match = f.readlines()
     if getorgetnext == 0:
       for line in match:
