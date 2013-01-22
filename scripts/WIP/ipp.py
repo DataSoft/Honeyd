@@ -210,6 +210,8 @@ class IPPResponseTCP:
 
 class IPPResponseUDP:
   '''Class for UDP responses to IPP requests.'''
+  # For notes as to how to structure SNMP Request/Respsonses, see
+  # http://www.rane.com/note161.html
   def __init__ (self, 
                 reqoid=None, 
                 requestid=None, 

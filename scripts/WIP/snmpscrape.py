@@ -10,15 +10,20 @@ import subprocess
 import xml.etree.ElementTree as xmlm
 from os.path import expanduser
 
-def indent(elem, level=0):
+def indent(elem, level=0, step=0):
+  """
+    As the xml.etree.ElementTree lib doesn't have a pretty 
+    print function, we are forced to make do. 
+  """
   i = '\n' + (level * '\t')
+  print elem.tag
   if len(elem):
       if not elem.text or not elem.text.strip():
           elem.text = i + '\t'
-      if not elem.tail or not elem.tail.strip():
+      if not elem.tail or not elem.tail.strip() and step != 0:
           elem.tail = i
       for elem in elem:
-          indent(elem, level + 1)
+          indent(elem, level + 1, step + 1)
       if not elem.tail or not elem.tail.strip():
           elem.tail = i
   else:
@@ -26,6 +31,10 @@ def indent(elem, level=0):
           elem.tail = i
           
 def modtype(type, line):
+  """
+    Convert the SNMP defined types into the values within the
+    self-tags array in ipp.py.
+  """
   retType = ''
   if type == 'STRING' or type == 'Hex-STRING':
     retType = 'octet-string'
@@ -59,6 +68,24 @@ def modtype(type, line):
   return line.replace(type, retType)
 
 def getLongFormEncoding(value):
+  """
+    This method will convert an integer to its long-form
+    encoding counterpart according to the SNMP BER. The 
+    rules for this are thus:
+    
+      - The MSB of a byte is used to indicate whether the 
+      parser at the other end is to read the next byte as 
+      another part of the integer or not.
+      
+      - Only 7 bits can be used to represent an integer.
+      
+      - For every byte that gets added on, the value of that
+      byte is multiplied by 2 ^ (7 * i), where 'i' is the
+      level of significance (i.e. if we have a two byte 
+      integer, the first byte will be multiplied by 128
+      and then get added to the next to calculate the 
+      result.
+  """
   retlist = []
   j = 1
   while (2 ** (7 * j)) < value:
@@ -78,6 +105,11 @@ def getLongFormEncoding(value):
   return ''.join(retlist)
 
 def convertDotsToHex(oid):
+  """
+    This function will convert a dot-decimal format string into its 
+    corresponding hex representation, using the long form encoding if
+    needed.
+  """
   oidBER = []
   oidBER.append('{0:02X}'.format(0x2B))
   split = oid.split('.')
@@ -111,6 +143,12 @@ if __name__ == '__main__':
 
   args = parser.parse_args(sys.argv[1:])
 
+  # Assign command line values to proper variables
+  # Also do some auditing to make sure that -n and -r are
+  # both there if one is found. If only one is present,
+  # there is an error. I thought there would be something 
+  # within the python argparse lib to help with dependent
+  # arguments, but they only consider mutually exclusive ones.
   ip = args.ip
   ofilename = args.ofile
   if args.keep:
@@ -123,6 +161,8 @@ if __name__ == '__main__':
   if args.script_path:
     scriptpath = args.script_path
     
+  # Write out the outputs of the 1.3.6.1.2 subtree and the 1.3.6.1.4
+  # subtree of the target ip address
   path = 'temp.' + ip + '.txt'
   f = open(path,'w+')
   f.write(subprocess.check_output(['snmpwalk','-Cc','-Os','-c','public','-v','1',str(ip),'1.3.6.1.2'],
@@ -133,7 +173,8 @@ if __name__ == '__main__':
   f.close()
   f = open(path, 'r')
   restructure = f.readlines()
-  del restructure[-1]
+  if restructure[-1] == 'End of MIB':
+    del restructure[-1]
   
   replacement = open(ofilename + '.txt', 'w+')
     
@@ -224,30 +265,61 @@ if __name__ == '__main__':
   # if there isn't one, create a key if there isn't one, and add a 
   # value for the given arg. If the value exists (i.e. all the information
   # the user passed is in place) it'll do nothing. 
+  
+  # So, without further ado, the comments. If we were provided values for
+  # the -r and -n flag
   if matchname != '' and scriptname != '':
+    # Convert the scriptname into a list to audit for characters.
+    # As I am not yet completely comfortable with the way python does
+    # its regex stuff, I'm doing a character by character audit to ensure
+    # there's no special characters that would cause a problem in the XML.
     audit = list(scriptname)
     for c in range(0, len(audit)):
+      # If it's not alphanumeric or a space, make it an underscore
       if re.match('[0-9a-zA-Z ]', audit[c]) == None:
         audit[c] = '_'
     scriptname = ''.join(audit)
+    # Parse the scripts.xml file
     tree = xmlm.parse(scriptpath)
+    # and get the root node
     root = tree.getroot()
+    # Initialize some variables that'll be used later
     found = False
     option = ''
     key = ''
     value = ''
+    # Iterate through all of the <script> tags in scripts.xml
     for child in root.findall('script'):
+      # If we find a script tag whose name is the name of the 
+      # script the user designated on the command line, continue.
+      # Otherwise, keep going.
       if child[0].text == matchname:
+        # Search for the configurable tag. Technically, the absense
+        # of this tag means that the scripts.xml is broken, but 
+        # error checking for that would be under the bailiwick of
+        # some auditing tool, not here. If it's not there, add it.
         configurable = child.find('configurable')
         if configurable != None:
           configurable.text = 'true'
+        else:
+          configurable = xmlm.SubElement(child, 'configurable')
+          configurable.text = 'true'
+        # If we don't find an option tag, then this script was
+        # not set to be configurable before snmpscrape ran. 
+        # Create it if it isn't there, or assign the node to 
+        # the variable option if it is
         if child.find('option') == None:       
           option = xmlm.SubElement(child, 'option')
         else:
           option = child.find('option')
+        # If there's no child <key> of option, add one
+        # and give it the tentative value 'DEVICE_TYPE'
         if option.find('key') == None:
           key = xmlm.SubElement(option, 'key')
           key.text = 'DEVICE_TYPE'
+        # Before we add the value, we need to check that it isn't
+        # already represented in the value list. If there aren't any 
+        # values, it will add after the for loop fails to iterate
         checknorepeats = option.findall('value')
         addvalue = True
         for elem in checknorepeats:
@@ -256,10 +328,14 @@ if __name__ == '__main__':
         if addvalue:
           value = xmlm.SubElement(option, 'value')
           value.text = scriptname
-        xmlm.dump(child)
+        #xmlm.dump(child)
+        # Prettify the output to the file.
         indent(child, 1)
-        xmlm.dump(child)
+        #xmlm.dump(child)
+        # Write out to scripts.xml
         tree.write(scriptpath)
+        # Set found to true so as not to trigger the warning below
+        # after successful execution.
         found = True
     if not found:
       print 'The script name that you entered does not exist. Aborting...'
