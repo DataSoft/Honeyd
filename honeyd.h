@@ -54,6 +54,10 @@
 
 #define HONEYD_ADDR_MASK        0xFFFFFF00 /* for ICMP address mask replies */
 
+#include "compat/sys/tree.h"
+
+struct event_base *libevent_base;
+
 struct config {
 	char *config;	 /* Name of configuration file */
 	char *pers;
@@ -77,7 +81,7 @@ struct spoof {
 extern struct spoof no_spoof;
 
 struct delay {
-	struct event timeout;
+	struct event *timeout;
 
 	struct addr src;
 	struct addr dst;
@@ -154,13 +158,13 @@ struct tuple {
 	uint16_t sport;
 	uint16_t dport;
 
-	int type;	/* Eiter SOCK_STREAM or SOCK_DGRAM */
+	int type;	/* Either SOCK_STREAM or SOCK_DGRAM */
 
 	/* Statistics */
 	uint32_t received;
 	uint32_t sent;
 
-	struct event timeout;
+	struct event *timeout;
 
 	int local;	/* locally initiated */
 
@@ -176,9 +180,9 @@ struct command {
 	int pfd;
 	int perrfd;
 
-	struct event pread;
-	struct event pwrite;
-	struct event peread;
+	struct event *pread;
+	struct event *pwrite;
+	struct event *peread;
 
 	uint8_t fdconnected:1,
 	        fdwantclose:1,
@@ -204,7 +208,7 @@ struct port_encapsulate {
 	struct port *port;
 	void *con;
 
-	struct event ev;
+	struct event *ev;
 };
 
 /* State about TCP connections */
@@ -253,7 +257,7 @@ struct tcp_con {
 
 	u_short retrans_time;
 
-	struct event retrans_timeout;
+	struct event *retrans_timeout;
 
 	struct port *port;		/* used if bound to sub system */
 

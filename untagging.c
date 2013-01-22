@@ -148,13 +148,13 @@ record_unmarshal(struct record *record, struct evbuffer *evbuf)
 			goto error;
 	}
 
-	evbuffer_drain(tmp, EVBUFFER_LENGTH(tmp));
+	evbuffer_drain(tmp, evbuffer_get_length(tmp));
 	if (evtag_unmarshal(evbuf, &tag, tmp) == -1 || tag != REC_SRC)
 		goto error;
 	if (addr_unmarshal(&record->src, tmp) == -1)
 		goto error;
 
-	evbuffer_drain(tmp, EVBUFFER_LENGTH(tmp));
+	evbuffer_drain(tmp, evbuffer_get_length(tmp));
 	if (evtag_unmarshal(evbuf, &tag, tmp) == -1 || tag != REC_DST)
 		goto error;
 	if (addr_unmarshal(&record->dst, tmp) == -1)

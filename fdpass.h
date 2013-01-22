@@ -29,6 +29,6 @@
 #define _FDPASS_H_
 
 int send_fd(int, int, void *, size_t);
-int receive_fd(int, void *, size_t *);
+int receive_fd(int, void *, socklen_t *);
 
 #endif /* _FDPASS_H_ */

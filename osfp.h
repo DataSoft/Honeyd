@@ -39,7 +39,7 @@
 
 struct osfp {
 	SPLAY_ENTRY(osfp) node;
-	struct event timeout;
+	struct event *timeout;
 
 	ip_addr_t	src;
 

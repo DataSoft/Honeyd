@@ -82,7 +82,7 @@ struct dhcpclient_req {
 	eth_addr_t      ea;		/* our own */
 	eth_addr_t	server_ea;	/* from the server */
 	uint32_t        xid;
-	struct event    timeoutev;
+	struct event    *timeoutev;
 	struct timeval  timer;
 	struct netconf  nc;
 	struct addr     servident;

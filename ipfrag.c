@@ -140,7 +140,7 @@ ip_fragment_free(struct fragment *tmp)
 {
 	struct fragent *ent;
 
-	evtimer_del(&tmp->timeout);
+	evtimer_del(tmp->timeout);
 
 	SPLAY_REMOVE(fragtree, &fragments, tmp);
 	TAILQ_REMOVE(&fraglru, tmp, next);
@@ -209,8 +209,8 @@ ip_fragment_new(ip_addr_t src, ip_addr_t dst, u_short id, u_char proto,
 	tmp->fragp = pl;
 
 	TAILQ_INIT(&tmp->fraglist);
-	evtimer_set(&tmp->timeout, ip_fragment_timeout, tmp);
-	evtimer_add(&tmp->timeout, &tv);
+	tmp->timeout = evtimer_new(libevent_base, ip_fragment_timeout, tmp);
+	evtimer_add(tmp->timeout, &tv);
 
 	SPLAY_INSERT(fragtree, &fragments, tmp);
 	TAILQ_INSERT_HEAD(&fraglru, tmp, next);
