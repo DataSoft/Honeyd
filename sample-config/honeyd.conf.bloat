@@ -1,0 +1,186 @@
+                #####  Honeyd Configuration File #####
+                 # Last Updated: 23 January, 2013 #
+
+###################################################################
+### Start with default template.  If you don't assign specifc   ###
+### behavior to a specific IP address, Honeyd defaults to the   ### 
+### 'default' template.  You must have a template with the name ### 
+### 'default'.                                                  ###
+###################################################################
+
+### Default Template
+create default
+# Set default behavior
+set default personality "Windows NT4 / Win95 / Win98"
+set default default tcp action closed
+set default default udp action closed
+set default default icmp action open
+# Add specific services
+add default tcp port 139 open
+add default tcp port 137 open
+add default udp port 137 open
+add default udp port 135 open
+
+###################################################################
+### We now have the rest of our templates and honeypot behavior ###
+###                                                             ###
+### Port Behavior                                               ###
+### TCP (default is Open)                                       ###
+###  - Open:   Respond with Syn/Ack, establish connection       ###
+###  - Block:  Drop packet and do not reply                     ###
+###  - Reset:  Respond with RST                                 ###
+###  - Tarpit: Sticky connection                                ###
+###                                                             ###
+### UDP (default is Closed)                                     ###
+###  - Open:  No response                                       ###
+###  - Block: Drop packet and do not reply                      ###
+###  - Reset: Respond with ICMP port error message              ###
+###                                                             ###
+### ICMP (default is Open)                                      ###
+###  - Open:  Reply to ICMP packets                             ###
+###  - Block: Drop packet and do not reply                      ###
+###################################################################
+
+### Tarpit Template
+### Insecure and open Mac box designed to tarpit worms/autorooters
+create sticky
+set sticky personality "Mac OS X 10.1 - 10.1.4"
+set sticky default tcp action tarpit open
+set sticky default udp action filtered
+bind 192.168.1.110 sticky
+
+### Solaris Spam Relay
+create relay
+set relay personality "Solaris 2.6 - 2.7"
+set relay default tcp action closed
+set relay default udp action closed
+add relay tcp port 25 "perl scripts/unix/general/smtp.pl"
+add relay tcp port 111"perl scripts/unix/general/rpc/bportmapd --proto tcp --host scripts/unix/general/rpc/hosts/solaris-2.7 --srcip $ipsrc --dstip $ipdst --srcport $srcport --dstport $dport --logfile /var/log/honeyd --logall"
+add relay tcp port 8080 "perl scripts/unix/general/proxy.pl"
+add relay udp port 111"perl scripts/unix/general/rpc/bportmapd --proto udp --host scripts/unix/general/rpc/hosts/solaris-2.7 --srcip $ipsrc --dstip $ipdst --srcport $srcport --dstport $dport --logfile /var/log/honeyd --logall"
+bind 192.168.1.120 relay
+
+### Standard Windows 2000 computer
+create win2k
+set win2k personality "Windows 2000 server SP2"
+set win2k default tcp action closed
+set win2k default udp action closed
+set win2k default icmp action filtered
+set win2k uptime 3567
+set win2k droprate in 13
+add win2k tcp port 21 "sh scripts/win32/win2k/msftp.sh $ipsrc $sport $ipdst $dport"
+add win2k tcp port 25 "sh scripts/win32/win2k/exchange-smtp.sh $ipsrc $sport $ipdst $dport"
+add win2k tcp port 80 "sh scripts/win32/win2k/iis.sh $ipsrc $sport $ipdst $dport"
+add win2k tcp port 110 "sh scripts/win32/win2k/exchange-pop3.sh $ipsrc $sport $ipdst $dport"
+add win2k tcp port 143 "sh scripts/win32/win2k/exchange-imap.sh $ipsrc $sport $ipdst $dport"
+add win2k tcp port 389 "sh scripts/win32/win2k/ldap.sh $ipsrc $sport $ipdst $dport"
+add win2k tcp port 5901 "sh scripts/win32/win2k/vnc.sh $ipsrc $sport $ipdst $dport"
+add win2k udp port 161 "perl scripts/unix/general/snmp/fake-snmp.pl public private --config=scripts/unix/general"
+# This will redirect incomming windows-filesharing back to the source
+add win2k udp port 137 proxy $ipsrc:137
+add win2k udp port 138 proxy $ipsrc:138
+add win2k udp port 445 proxy $ipsrc:445
+add win2k tcp port 137 proxy $ipsrc:137
+add win2k tcp port 138 proxy $ipsrc:138
+add win2k tcp port 139 proxy $ipsrc:139
+add win2k tcp port 445 proxy $ipsrc:445
+bind 192.168.1.130 win2k
+
+### Linux Suse 8.0 template
+create suse80
+set suse80 personality "Linux 2.4.7 (X86)"
+set suse80 default tcp action closed
+set suse80 default udp action filtered
+set suse80 default icmp action open
+set suse80 uptime 79239
+set suse80 droprate in 4
+add suse80 tcp port 21 "sh scripts/unix/linux/suse8.0/proftpd.sh $ipsrc $sport $ipdst $dport"
+add suse80 tcp port 22 "sh scripts/unix/linux/suse8.0/ssh.sh $ipsrc $sport $ipdst $dport"
+add suse80 tcp port 23 "sh scripts/unix/linux/suse8.0/telnetd.sh $ipsrc $sport $ipdst $dport"
+add suse80 tcp port 25 "sh scripts/unix/linux/suse8.0/sendmail.sh $ipsrc $sport $ipdst $dport"
+add suse80 tcp port 79 "sh scripts/unix/linux/suse8.0/fingerd.sh $ipsrc $sport $ipdst $dport"
+add suse80 tcp port 80 "sh scripts/unix/linux/suse8.0/apache.sh $ipsrc $sport $ipdst $dport"
+add suse80 tcp port 110 "sh scripts/unix/linux/suse8.0/qpop.sh $ipsrc $sport $ipdst $dport"
+add suse80 tcp port 111"perl scripts/unix/general/rpc/bportmapd --proto tcp --host scripts/unix/general/rpc/hosts/debian --srcip $ipsrc --dstip $ipdst --srcport $srcport --dstport $dport --logfile /var/log/honeyd --logall"
+add suse80 tcp port 143 "sh scripts/unix/linux/suse8.0/cyrus-imapd.sh $ipsrc $sport $ipdst $dport"
+add suse80 tcp port 515 "sh scripts/unix/linux/suse8.0/lpd.sh $ipsrc $sport $ipdst $dport"
+add suse80 tcp port 3128 "sh scripts/unix/linux/suse8.0/squid.sh $ipsrc $sport $ipdst $dport"
+add suse80 tcp port 8080 "sh scripts/unix/linux/suse8.0/squid.sh $ipsrc $sport $ipdst $dport"
+add suse80 tcp port 8081 "sh scripts/unix/linux/suse8.0/squid.sh $ipsrc $sport $ipdst $dport"
+add suse80 udp port 53 proxy 24.35.0.12:53
+add suse80 udp port 111"perl scripts/unix/general/rpc/bportmapd --proto udp --host scripts/unix/general/rpc/hosts/debian --srcip $ipsrc --dstip $ipdst --srcport $srcport --dstport $dport --logfile /var/log/honeyd --logall"
+add suse80 udp port 161 "perl scripts/unix/general/snmp/fake-snmp.pl public private --config=scripts/unix/general"
+add suse80 udp port 514 "sh scripts/unix/linux/suse8.0/syslogd.sh $ipsrc $sport $ipdst $dport"
+bind 192.168.1.135 suse80
+
+
+### Suse7.0 computer
+create suse70
+set suse70 personality "Linux 2.2.12 - 2.2.19"
+set suse70 default tcp action closed
+set suse70 default udp action filtered
+set suse70 default icmp action open
+set suse70 uptime 97239
+set suse70 droprate in 2
+add suse70 tcp port 21 "sh scripts/unix/linux/suse7.0/proftpd.sh $ipsrc $sport $ipdst $dport"
+add suse70 tcp port 22 "sh scripts/unix/linux/suse7.0/ssh.sh $ipsrc $sport $ipdst $dport"
+add suse70 tcp port 23 "sh scripts/unix/linux/suse7.0/telnetd.sh $ipsrc $sport $ipdst $dport"
+add suse70 tcp port 25 "sh scripts/unix/linux/suse7.0/sendmail.sh $ipsrc $sport $ipdst $dport"
+add suse70 tcp port 79 "sh scripts/unix/linux/suse7.0/fingerd.sh $ipsrc $sport $ipdst $dport"
+add suse70 tcp port 80 "sh scripts/unix/linux/suse7.0/apache.sh $ipsrc $sport $ipdst $dport"
+add suse70 tcp port 110 "sh scripts/unix/linux/suse7.0/qpop.sh $ipsrc $sport $ipdst $dport"
+add suse70 tcp port 143 "sh scripts/unix/linux/suse7.0/cyrus-imapd.sh $ipsrc $sport $ipdst $dport"
+add suse70 tcp port 515 "sh scripts/unix/linux/suse7.0/lpd.sh $ipsrc $sport $ipdst $dport"
+add suse70 tcp port 3128 "sh scripts/unix/linux/suse7.0/squid.sh $ipsrc $sport $ipdst $dport"
+add suse70 tcp port 8080 "sh scripts/unix/linux/suse7.0/squid.sh $ipsrc $sport $ipdst $dport"
+add suse70 tcp port 8081 "sh scripts/unix/linux/suse7.0/squid.sh $ipsrc $sport $ipdst $dport"
+add suse70 udp port 53 proxy 24.35.0.12:53
+add suse70 udp port 161 "perl scripts/unix/general/snmp/fake-snmp.pl public private --config=scripts/unix/general"
+add suse70 udp port 514 "sh scripts/unix/linux/suse7.0/syslogd.sh $ipsrc $sport $ipdst $dport"
+bind 192.168.1.140 suse70
+
+### Cray
+create cray
+set cray personality "Cray UNICOS 9.0.1ai - 10.0.0.2"
+set cray default tcp action closed
+set cray default udp action closed
+add cray tcp port 15 open
+bind 192.168.1.150 cray
+
+### Cisco router
+create router
+set router personality "Cisco IOS 12.1(5)-12.2(1)"
+set router default tcp action closed
+set router default udp action closed
+set router uid 32767 gid 32767
+set router uptime 1327650
+add router tcp port 23 "perl scripts/router/cisco/router-telnet.pl"
+add router tcp port 80 open
+add router udp port 161 "perl scripts/unix/general/snmp/fake-snmp.pl public private --config=scripts/unix/general"
+bind 192.168.1.254 router
+
+######################################################################
+### We now have our dynamic template, which creates different      ###
+### virtual honeypots based on the attacker, including OS.  Honeyd ###
+### has passive fingerprinting capabilities built into it.  You    ###
+### can see which OS types it can passively fingerprint in the     ###
+### file pf.os.                                                    ###
+###                                                                ###
+### NOTE: You can make the dynamic template your default template  ###
+###       with 'dynamic default'.  Also, the dynamic template must ###
+###       go after all the other templates it is using, as such    ###
+###       the dynamic template should go last.                     ###
+######################################################################
+
+### Dynamic honeypot
+dynamic magichost
+add magichost use sticky if source os = "windows"
+add magichost use suse70 if source ip = 192.168.1.0/28
+add magichost use router if time between 12:00am - 5:00am
+add magichost otherwise use default
+bind 192.168.1.100 magichost
+bind 192.168.1.101 magichost
+bind 192.168.1.102 magichost
+bind 192.168.1.103 magichost
+bind 192.168.1.104 magichost
+bind 192.168.1.105 magichost

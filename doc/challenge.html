@@ -1,0 +1,197 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+  <head>
+    <title>Honeyd Challenge</title>
+<style type="text/css">
+<!--
+body,p,b,i,ul,ol,li,td { font-family: arial, helvetica, sans-serif; }
+h1,h2,h3,h4,h5 { font-family: arial, helvetica, sans-serif;
+    font-weight: bold; }
+div.body { margin-left: 32px; }
+pre { font-family: monospace; }
+-->
+</style>
+  </head>
+
+  <body>
+  <body bgcolor="#ffffff">
+    <table noboder cellspacing="0" cellpadding="0" width="90%">
+      <tr>
+	  <td bgcolor="#0880b8" nowrap>
+	    <font size="-1" face="Arial,Helvetica" color="#30c0f0">
+		&nbsp;&nbsp;
+		Center for Information Technology Integration
+		&nbsp;&nbsp;
+	      <br>
+	      </font>
+	    <center>
+	      <font size="+3" face="Arial,Helvetica" color="#50d0ff">
+		Honeyd Challenge
+	      </font>
+	    </center>
+	  </td>
+	    <td bgcolor="#0880b8">
+	      &nbsp;&nbsp;
+	    </td>
+	</tr>
+	<tr>
+	  <td>
+	    &nbsp;
+	  </td>
+	</tr>
+	<tr>
+	  <td bgcolor="#eeeeee">
+	    <dl>
+	      <dd>
+<p>
+Feburary 17th, 2003<br>
+<h1>Honeyd Challenge</h1>
+<a href="index.html">Honeyd</a> is a very flexible tool to create virtual honeypots.  To
+improve its usefulness, the honeypot community is asked to
+participate in the following challenge:
+<dl><dd>
+<strong>Improve Honeyd by creating useful feature additions</strong>.
+</dd></dl>
+
+<h3>Scope</h3>
+<table noborder cellpadding="0" cellspacing="0">
+<tr><td valign="top" bgcolor="#eeeeaa">
+<font color="#aa1010">
+&nbsp;Feature additions and improvements are sought in the following areas:
+<ul>
+<li><strong>Service Emulations</strong>: Submit services with optional
+simulation of vulnerabilities that can be used with Honeyd: for
+example, web servers, ftp servers, p2p services, etc.
+</li>
+<li><strong>Source code features</strong>: Source code to improve the
+features that Honeyd supports: for example, improved service
+virtualization, improved topology generation, realistic internal
+routing simulation, passive fingerprinting, ability of honeypots to
+create network connections between each other, interactive
+reconfiguration via management console, further improvements to evade
+stack detection, etc.
+</li>
+<li><strong>Graphical user interface</strong>: Create a graphical user interface to configure, manage and query Honeyd.
+</li>
+<li><strong>Forensic Analysis</strong>: Create tools to analyze or visualize Honeyd log files.
+</ul>
+&nbsp;This is just a list of potential improvements.  You may have other and better ideas on how to improve <a href="index.html">Honeyd</a>.
+<p>
+&nbsp;Your improvements should be based on Honeyd 0.5.  Since the announcement of the challenge some bugs have been <a href="challenge.html#patch">patched</a>.
+</font>
+</td></tr>
+</table>
+<h3>Requirements</h3>
+Your submissions need to fulfill the following requirements:
+<ul>
+<li>Submissions need to be received by <strong>March 14th, 2003</strong>.</li>
+<li>All submissions should be sent to <a
+href="mailto:provos-honeyd@citi.umich.edu">provos-honeyd@citi.umich.edu</a>
+with "Honeyd Challenge" in the subject.</li>
+<li>Your feature additions need to be well documented so that the judges
+are able to evaluate your work.</li>
+<li>Your code needs to compile and run on a UNIX-like system.  However,
+this does not preclude code that also runs on other platforms.  The
+judges are using FreeBSD, GNU/Linux and NetBSD.
+<li>Submit a gzip compressed tar archive as email attachment with the following
+structure:
+  <ul>
+  <li>README - explain the contents of the tar archive, include your name, postal and email addresses.</li>
+  <li>Documentation - use ascii, postscript or pdf as data format.</li>
+  <li>Patches - please use diff against the released version of honeyd.</li>
+  <li>Other files and directories as suitable, please explain in README.</li>
+  </ul>
+</li>
+<li>
+Source code features to be integrated into Honeyd need to be covered by a BSD-like license.  Service emulations and graphical user interface may be either BSD-like or GPL.  BSD license is preferred though.</li>
+</li>
+</ul>
+<h3>Judges</h3>
+Submissions will be judged by experienced volunteers.  The winners
+will be selected and <a href="http://www.citi.umich.edu/u/provos/honeyd/ch01-results/">announced on March 21th 2003</a>.
+<p>
+The judges include but are not limited to:
+<ul>
+<li>Mike Clark</li>
+<li>Job de Haas</li>
+<li>Niels Provos</li>
+<li>Rain Forest Puppy</li>
+<li>Lance Spitzner</li>
+</ul>
+We are going to use the following scoring guidelines to determine the
+winners:
+<ul>
+<li> 0 - 5 points for documentation.  Did you include all necessary documentation? Is the documentation easy to read, follow and understand?</li>
+<li> 0 - 5 points for code style.  Is your code organized and logical?  You might want to look at the <a href="http://cvsweb.netbsd.org/bsdweb.cgi/src/share/misc/style?rev=HEAD&content-type=text/x-cvsweb-markup">NetBSD share/misc/style</a> for a guideline.</li>
+<li> 0 - 10 points for novelty of submission.  Are you solving an interesting problem?</li>
+<li> 0 - 10 points for completeness of submission.  Does your submission work correctly?
+</li>
+</ul>
+<h4>Prizes</h4>
+The ten best submissions are rewarded with Lance Spitzner's new book
+"<strong>Honeypots: Tracking Hackers</strong>,"
+signed by Lance Spitzner and Niels Provos.
+Additional prizes include a free pass to
+<a href="http://www.cansecwest.com/">CanSecWest/core03 conference</a> 
+including a free hotel (up to four nights) for
+the first place, a $200 gift certificate to amazon for the 2nd place,
+and a $100 gift certificate to amazon for the 3rd place.  Winners may
+trade their prizes.
+<font size="-1">
+(NB: You may join teams and submit as a team.  However, in that
+case, prizes are awarded to the team and not to each person.)
+</font>
+<p>
+However, the <strong>main goal</strong> of this challenge is to
+<strong>have fun</strong>, contribute good work to the community and
+allow you and others to learn about the usefulness of tools like Honeyd.
+<p>
+After the winners have been announced, the top 20 entries will be posted
+on the Honeyd contributions page.
+<p>
+Good luck, and have fun!
+<p>
+<a href="index.html">[Back]</a>
+<hr>
+<h4>Patches</h4>
+Since the challenge has been announced, the following bugs have been patched:
+<ul>
+	<li><a href="http://www.citi.umich.edu/u/provos/honeyd/patches/0.5/001-ipfrag.patch">001-ipfrag.patch</a> -
+	2003-02-18 - Fixes a crash in the fragment reassembly code.
+	Discovered by George Akimov.
+	</li>
+	<li><a href="http://www.citi.umich.edu/u/provos/honeyd/patches/0.5/002-proxy.patch">002-proxy.patch</a> -
+	2003-03-04 - Allows proxy connections again.
+	Discovered by Peter Balland.
+	</li>
+</ul>
+Using the patches above is not required to make a submission.  However,
+applying them may help you to run Honeyd more reliably.
+<p>
+&nbsp;
+</dd>
+</dl>
+</td>
+<td bgcolor="#eeeeee">
+&nbsp;
+</td></tr>
+</table>
+    <hr>
+<table noborder cellspacing="2" cellpadding="2" width="90%">
+<tr><td>
+    <address><a href="mailto:provos@citi.umich.edu">Niels Provos</a></address>
+<!-- Created: Mon Mar 11 12:43:06 EST 2002 -->
+<!-- hhmts start -->
+Last modified: Tue Apr 29 00:56:58 EDT 2003
+<!-- hhmts end -->
+</td><td>
+&nbsp;
+</td><td bgcolor="#ddffdd" align="middle">
+You can keep me happy while hacking by reducing my
+Wishlists:
+<a href="http://www.citi.umich.edu/u/provos/wishlists/amazon.html">Books</a>,
+<a href="http://www.citi.umich.edu/u/provos/wishlists/cdnow.html">Music</a><br>
+</td></tr>
+</table>
+  </body>
+</html>

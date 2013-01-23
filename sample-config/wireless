@@ -1,0 +1,109 @@
+route entry 10.0.0.1
+route 10.0.0.1 link 10.0.0.1/32
+route 10.0.0.1 link 10.0.0.5/32
+route 10.0.0.1 link 10.0.0.3/32
+route 10.0.0.1 link 4.2.2.2/32
+route 10.0.0.1 add net 0.0.0.0/5 16.23.166.1
+route 10.0.0.1 add net 9.0.0.0/8 16.23.166.1
+route 10.0.0.1 add net 11.0.0.0/8 16.23.166.1
+route 10.0.0.1 add net 12.0.0.0/8 16.23.166.1
+route 10.0.0.1 add net 13.0.0.0/8 16.23.166.1
+route 10.0.0.1 add net 14.0.0.0/8 16.23.166.1
+route 10.0.0.1 add net 15.0.0.0/8 16.23.166.1
+route 10.0.0.1 add net 16.0.0.0/4 16.23.166.1
+route 10.0.0.1 add net 32.0.0.0/3 16.23.166.1
+route 10.0.0.1 add net 64.0.0.0/8 57.98.7.32
+route 10.0.0.1 add net 65.0.0.0/8 57.98.7.32
+route 10.0.0.1 add net 66.0.0.0/8 57.98.7.32
+route 10.0.0.1 add net 67.0.0.0/8 57.98.7.32
+route 10.0.0.1 add net 68.0.0.0/8 57.98.7.32
+route 10.0.0.1 add net 69.0.0.0/8 57.98.7.32
+route 10.0.0.1 add net 70.0.0.0/8 57.98.7.32
+route 10.0.0.1 add net 71.0.0.0/8 57.98.7.32
+route 10.0.0.1 add net 72.0.0.0/8 57.98.7.32
+route 10.0.0.1 add net 73.0.0.0/8 57.98.7.32
+route 10.0.0.1 add net 74.0.0.0/8 57.98.7.32
+route 10.0.0.1 add net 75.0.0.0/8 57.98.7.32
+route 10.0.0.1 add net 76.0.0.0/8 57.98.7.32
+route 10.0.0.1 add net 77.0.0.0/8 57.98.7.32
+route 10.0.0.1 add net 78.0.0.0/8 57.98.7.32
+route 10.0.0.1 add net 79.0.0.0/8 57.98.7.32
+route 10.0.0.1 add net 80.0.0.0/8 57.98.7.32
+route 10.0.0.1 add net 81.0.0.0/8 57.98.7.32
+route 10.0.0.1 add net 82.0.0.0/8 57.98.7.32
+route 10.0.0.1 add net 83.0.0.0/8 57.98.7.32
+route 10.0.0.1 add net 84.0.0.0/8 57.98.7.32
+route 10.0.0.1 add net 85.0.0.0/8 57.98.7.32
+route 10.0.0.1 add net 86.0.0.0/8 57.98.7.32
+route 10.0.0.1 add net 87.0.0.0/8 57.98.7.32
+route 10.0.0.1 add net 88.0.0.0/8 57.98.7.32
+route 10.0.0.1 add net 89.0.0.0/8 57.98.7.32
+route 10.0.0.1 add net 90.0.0.0/8 57.98.7.32
+route 10.0.0.1 add net 91.0.0.0/8 57.98.7.32
+route 10.0.0.1 add net 92.0.0.0/8 57.98.7.32
+route 10.0.0.1 add net 93.0.0.0/8 57.98.7.32
+route 10.0.0.1 add net 94.0.0.0/8 57.98.7.32
+route 10.0.0.1 add net 95.0.0.0/8 57.98.7.32
+route 10.0.0.1 add net 96.0.0.0/8 57.98.7.32
+route 10.0.0.1 add net 97.0.0.0/8 57.98.7.32
+route 10.0.0.1 add net 98.0.0.0/8 57.98.7.32
+route 10.0.0.1 add net 99.0.0.0/8 57.98.7.32
+route 10.0.0.1 add net 100.0.0.0/8 57.98.7.32
+route 10.0.0.1 add net 101.0.0.0/8 57.98.7.32
+route 10.0.0.1 add net 102.0.0.0/8 57.98.7.32
+route 10.0.0.1 add net 103.0.0.0/8 57.98.7.32
+route 10.0.0.1 add net 104.0.0.0/8 57.98.7.32
+route 10.0.0.1 add net 105.0.0.0/8 57.98.7.32
+route 10.0.0.1 add net 106.0.0.0/8 57.98.7.32
+route 10.0.0.1 add net 107.0.0.0/8 57.98.7.32
+route 10.0.0.1 add net 108.0.0.0/8 57.98.7.32
+route 10.0.0.1 add net 109.0.0.0/8 57.98.7.32
+route 10.0.0.1 add net 110.0.0.0/8 57.98.7.32
+route 10.0.0.1 add net 111.0.0.0/8 57.98.7.32
+route 10.0.0.1 add net 112.0.0.0/8 57.98.7.32
+route 10.0.0.1 add net 113.0.0.0/8 57.98.7.32
+route 10.0.0.1 add net 114.0.0.0/8 57.98.7.32
+route 10.0.0.1 add net 115.0.0.0/8 57.98.7.32
+route 10.0.0.1 add net 116.0.0.0/8 57.98.7.32
+route 10.0.0.1 add net 117.0.0.0/8 57.98.7.32
+route 10.0.0.1 add net 118.0.0.0/8 57.98.7.32
+route 10.0.0.1 add net 119.0.0.0/8 57.98.7.32
+route 10.0.0.1 add net 120.0.0.0/8 57.98.7.32
+route 10.0.0.1 add net 121.0.0.0/8 57.98.7.32
+route 10.0.0.1 add net 122.0.0.0/8 57.98.7.32
+route 10.0.0.1 add net 123.0.0.0/8 57.98.7.32
+route 10.0.0.1 add net 124.0.0.0/8 57.98.7.32
+route 10.0.0.1 add net 125.0.0.0/8 57.98.7.32
+route 10.0.0.1 add net 126.0.0.0/8 57.98.7.32
+route 10.0.0.1 link 128.0.0.0/2
+route 10.0.0.1 link 192.0.0.0/3
+
+route 16.23.166.1 add net 0.0.0.0/3 4.123.42.3
+route 16.23.166.1 link 32.0.0.0/3
+route 16.23.166.1 unreach 32.0.0.0/3
+
+route 4.123.42.3 link 0.0.0.0/3
+
+route 57.98.7.32 add net 64.0.0.0/3 31.1.1.3
+route 57.98.7.32 link 96.0.0.0/4
+route 57.98.7.32 link 112.0.0.0/5
+route 57.98.7.32 link 120.0.0.0/6
+route 57.98.7.32 link 124.0.0.0/8
+route 57.98.7.32 link 125.0.0.0/8
+route 57.98.7.32 link 126.0.0.0/8
+
+route 31.1.1.3 link 64.0.0.0/3
+
+# One service doing all kinds of strange stuff
+create default
+set default personality "Linux 2.2.14"
+set default default tcp action filtered
+add default udp port 53 "./scripts/dnstool.py"
+add default tcp port 25 "scripts/smtp.pl -n <youremailaddresshere>"
+add default tcp port 80 "./scripts/iis5.net/main.pl"
+add default tcp port 110 "./scripts/popa3d"
+add default tcp port 8000 "scripts/proxy.py scripts/smtp.pl -n <youremailaddresshere>"
+add default tcp port 22 "./scripts/sshd -i -f scripts/ssh/sshd_config"
+add default tcp port 113 reset
+add default tcp port 1 reset
+add default udp port 3333 "sh -c 'while [ -z "" ]; do read name; /bin/echo $name; /bin/echo hi; done'"
