@@ -698,6 +698,10 @@ template_clone(const char *newname, const struct template *tmpl,
 
 			/* Register this mac address as our own */
 			template_post_arp(newtmpl, &addr);
+
+			newtmpl->honeypot_instance = 1;
+		} else {
+			newtmpl->honeypot_instance = 0;
 		}
 	}
 
@@ -713,6 +717,8 @@ template_clone(const char *newname, const struct template *tmpl,
 	newtmpl->drop_synrate = tmpl->drop_synrate;
 	newtmpl->flags = tmpl->flags;
 	newtmpl->spoof = tmpl->spoof;
+	newtmpl->addrbits = tmpl->addrbits;
+	newtmpl->honeypot_instance = tmpl->honeypot_instance;
 
 	/* We need to remove this when cloning */
 	newtmpl->flags &= ~TEMPLATE_DYNAMIC_CHILD;

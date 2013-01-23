@@ -107,7 +107,7 @@ int curtype = -1;	/* Lex sets it to SOCK_STREAM or _DGRAM */
 %token	PERSONALITY RANDOM ANNOTATE NO FINSCAN FRAGMENT DROP OLD NEW COLON
 %token	PROXY UPTIME DROPRATE IN SYN UID GID ROUTE ENTRY LINK NET UNREACH
 %token	SLASH LATENCY MS LOSS BANDWIDTH SUBSYSTEM OPTION TO SHARED NETWORK
-%token	SPOOF FROM TEMPLATE
+%token	SPOOF FROM TEMPLATE BROADCAST
 %token  TUNNEL TARPIT DYNAMIC USE IF OTHERWISE EQUAL SOURCE OS IP BETWEEN
 %token  DELETE LIST ETHERNET DHCP ON MAXFDS RESTART DEBUG
 %token	DASH TIME INTERNAL
@@ -278,6 +278,8 @@ binding		: BIND ipaddr template
 				    "interface that can reach %s",
 				    $3->name, addr_ntoa(&$2));
 				break;
+			} else {
+				$3->addrbits = inter->if_addrbits;
 			}
 		}
 
@@ -1119,6 +1121,8 @@ dhcp_template(struct template *tmpl, char *interface, char *mac_addr)
 		yyerror("Binding to %s failed", addr_ntoa(&addr));
 		return;
 	}
+	
+	newtmpl->addrbits = inter->if_addrbits;
 
 	if (mac_addr != NULL) {
 		/*

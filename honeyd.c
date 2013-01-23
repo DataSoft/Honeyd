@@ -2460,27 +2460,83 @@ udp_send(struct udp_con *con, u_char *payload, u_int len)
 	return (len);
 }
 
+struct packet_wrapper {
+	u_char *pkt;
+	u_short pktlen;
+	u_char unicast;
+};
+
 void
-udp_recv_cb(struct template *tmpl, u_char *pkt, u_short pktlen)
+handle_udp_packet(struct template *tmpl, void *wrapper)
 {
-	struct ip_hdr *ip = NULL;
-	struct udp_hdr *udp;
+	u_char *pkt;
+	u_short pktlen;
 	struct udp_con *con, honeyd_udp;
 	struct addr addr;
 	struct spoof spoof;
+	char unicast;
+	char isBroadcast;
+	int i;
 	
 	uint16_t uh_sum;
 	u_char *data;
 	u_int dlen;
 	u_short portnum;
 
+	struct packet_wrapper *pwrapper = (struct packet_wrapper*)wrapper;
+	pkt = pwrapper->pkt;
+	pktlen = pwrapper->pktlen;
+	unicast = pwrapper->unicast;
+
+	struct ip_hdr *ip = NULL;
+	struct udp_hdr *udp;
 	ip = (struct ip_hdr *)pkt;
 	udp = (struct udp_hdr *)(pkt + (ip->ip_hl << 2));
 
 	if (pktlen < (ip->ip_hl << 2) + UDP_HDR_LEN)
 		return;
 
-	/* 
+	ip_addr_t templateIp;
+	int res = inet_pton(AF_INET, tmpl->name, &(templateIp));
+
+	/* Check the packet checksum, if no uh_sum is set, we ignore it */
+	uh_sum = udp->uh_sum;
+	ip_checksum(ip, pktlen);
+	if ((uh_sum && uh_sum != udp->uh_sum))
+		goto justlog;
+
+	if (!unicast) {
+		/* If this isn't a template for a real honeypot instance, return */
+		if (res != 1)
+			return;
+
+		uint32_t bcastAddress = ntohl(templateIp);
+		for (i = 0; i < 32 - tmpl->addrbits; i++)
+			bcastAddress |= (0 | (1 << i));
+		bcastAddress = htonl(bcastAddress);
+
+		/* Is it to the global broadcast address? */
+		if (ip->ip_dst == 0xFFFFFFFF) {
+			isBroadcast = 1;
+		/* Is it to the honeypot interface's subnet broadcast address? */
+		} else if (ip->ip_dst == bcastAddress) {
+			isBroadcast = 1;
+		} else {
+			isBroadcast = 0;
+		}
+
+		if (!isBroadcast)
+			return;
+
+		/* Replace the broadcast address with our template address */
+		// xxx: This means scripts can't tell if the packet was to a bcast address or not. Does it matter for UDP?
+		if (isBroadcast) {
+			ip->ip_dst = templateIp;
+		}
+	}
+
+
+	/*
 	 * Check if we have a real connection header for this connection, so
 	 * that we can look at potential flags like local origination.
 	 */
@@ -2488,21 +2544,15 @@ udp_recv_cb(struct template *tmpl, u_char *pkt, u_short pktlen)
 	con = (struct udp_con *)SPLAY_FIND(tree, &udpcons, &honeyd_udp.conhdr);
 
 	hooks_dispatch(ip->ip_p, HD_INCOMING,
-	    con != NULL ? &con->conhdr : &honeyd_udp.conhdr, pkt, pktlen);
+		con != NULL ? &con->conhdr : &honeyd_udp.conhdr, pkt, pktlen);
 
 	data = (u_char *)(pkt + (ip->ip_hl*4) + UDP_HDR_LEN);
 	dlen = ntohs(ip->ip_len) - (ip->ip_hl << 2) - UDP_HDR_LEN;
 	if (dlen != (ntohs(udp->uh_ulen) - UDP_HDR_LEN))
 		return;
-	
+
 	portnum = ntohs(udp->uh_dport);
 	if (honeyd_block(tmpl, IP_PROTO_UDP, portnum))
-		goto justlog;
-
-	/* Check the packet checksum, if no uh_sum is set, we ignore it */
-	uh_sum = udp->uh_sum;
-	ip_checksum(ip, pktlen);
-	if ((uh_sum && uh_sum != udp->uh_sum))
 		goto justlog;
 
 	if (con == NULL) {
@@ -2511,18 +2561,25 @@ udp_recv_cb(struct template *tmpl, u_char *pkt, u_short pktlen)
 
 		/* Send unreachable on closed port */
 		if (action == NULL || !PORT_ISOPEN(action)) {
-			syslog(LOG_DEBUG, "Connection to closed port: udp %s",
-			    honeyd_contoa(&honeyd_udp.conhdr));
-			goto closed;
+			if (!isBroadcast) {
+				syslog(LOG_DEBUG, "Connection to closed port: udp %s",
+						honeyd_contoa(&honeyd_udp.conhdr));
+				goto closed;
+			} else {
+				return;
+			}
 		}
 
 		/* Otherwise create a new udp connection */
 		syslog(LOG_DEBUG, "Connection: udp %s",
-		    honeyd_contoa(&honeyd_udp.conhdr));
+			honeyd_contoa(&honeyd_udp.conhdr));
 
 		/* Out of memory is dealt by having the port closed */
 		if ((con = udp_new(ip, udp, INITIATED_BY_EXTERNAL)) == NULL) {
-			goto closed;
+			if (!isBroadcast)
+				goto closed;
+			else
+				return;
 		}
 
 		con->tmpl = template_ref(tmpl);
@@ -2542,7 +2599,7 @@ udp_recv_cb(struct template *tmpl, u_char *pkt, u_short pktlen)
 
  closed:
 	honeyd_log_probe(honeyd_logfp, IP_PROTO_UDP, &honeyd_udp.conhdr,
-	    pktlen, 0, NULL);
+		pktlen, 0, NULL);
 
 	addr_pack(&addr, ADDR_TYPE_IP, IP_ADDR_BITS, &ip->ip_dst, IP_ADDR_LEN);
 
@@ -2554,15 +2611,42 @@ udp_recv_cb(struct template *tmpl, u_char *pkt, u_short pktlen)
 	else
 		spoof = no_spoof;
 	// compute_spoof(&spoof, tmpl, &tmpl->spoof, ip->ip_src, ip->ip_dst);
-print_spoof("udp_recv_cb after", spoof);
+	print_spoof("udp_recv_cb after", spoof);
 
-	icmp_error_send(tmpl, &addr, ICMP_UNREACH, ICMP_UNREACH_PORT, ip, spoof); 
+	icmp_error_send(tmpl, &addr, ICMP_UNREACH, ICMP_UNREACH_PORT, ip, spoof);
 	return;
 
  justlog:
 	honeyd_setudp(&honeyd_udp, ip, udp, INITIATED_BY_EXTERNAL);
 	honeyd_log_probe(honeyd_logfp, IP_PROTO_UDP, &honeyd_udp.conhdr,
-	    pktlen, 0, NULL);
+		pktlen, 0, NULL);
+}
+
+
+void
+udp_recv_cb(struct template *tmpl, u_char *pkt, u_short pktlen)
+{
+	struct ip_hdr *ip = NULL;
+	struct udp_hdr *udp;
+	ip = (struct ip_hdr *)pkt;
+	udp = (struct udp_hdr *)(pkt + (ip->ip_hl << 2));
+
+	if (pktlen < (ip->ip_hl << 2) + UDP_HDR_LEN)
+		return;
+
+	struct packet_wrapper wrapper;
+	wrapper.pkt = pkt;
+	wrapper.pktlen = pktlen;
+
+	// Send the packet to all of the templates and let handle_udp_packet
+	// figure out if it's a match to a subnet
+	if (!strcmp("default", tmpl->name))  {
+		wrapper.unicast = 0;
+		template_iterate(&handle_udp_packet, (void*)&wrapper);
+	} else {
+		wrapper.unicast = 1;
+		handle_udp_packet(tmpl, (void*)&wrapper);
+	}
 }
 
 void
@@ -3323,7 +3407,7 @@ struct _unittest {
 	{ "pydataprocessing", pydataprocessing_test },
 	{ "pydatahoneyd", pydatahoneyd_test },
 #endif
-	{ "rrdtool", rrdtool_test },
+	//{ "rrdtool", rrdtool_test },
 	{ "ethernet", ethernet_test },
 	{ "interface", interface_test },
 	{ "network", network_test },

@@ -54,6 +54,9 @@ struct template {
 
 	char *name;
 
+	/* Subnet mask, for example 24 for a /24 network */
+	uint32_t addrbits;
+
 	struct porttree ports;
 
 	struct action icmp;
@@ -94,6 +97,9 @@ struct template {
 	/* Special handling for templates */
 	int flags;
 	struct interface *inter;
+
+	/* Nonzero indicates this is an actual honeypot instance, not just a parent profile */
+	int honeypot_instance;
 
 	/* Set when we are to use this ethernet_address */
 	struct addr *ethernet_addr;
