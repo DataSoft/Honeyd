@@ -5,8 +5,12 @@ import binascii
 from ipp import *
 
 if __name__ == "__main__":
-  if len(sys.argv) != 2:
+  if len(sys.argv) < 2:
     sys.exit(1)
+  debug = False
+  
+  if len(sys.argv) == 3:
+    debug = True if sys.argv[2] == '--debug' or sys.argv[2] == '-d' else False
     
   file = open(sys.argv[1], 'r')
   getfilename = file.readlines()
@@ -81,6 +85,9 @@ if __name__ == "__main__":
       del clean[c]
 
   response = ''.join(clean)
+  # Fix the parseResponse method s.t. it works. Need a debugging tool for this.
+  if debug:
+    req.parseResponse(response)
   sys.stdout.write(binascii.a2b_hex(response))
     
     

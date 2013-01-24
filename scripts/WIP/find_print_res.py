@@ -6,13 +6,23 @@ from socket import *
 from ipp import *
 
 if __name__ == "__main__":
+  if len(sys.argv) < 2:
+    print 'find_print_res.py MIB_NAME [BIN_FILE]'
+    sys.exit(1)
+    
   mib = sys.argv[1] + '.txt'
   address = ('10.10.1.2', 161)
   listen_socket = socket(AF_INET, SOCK_DGRAM)
   listen_socket.bind(address)
   
+  if len(sys.argv) == 3:
+    filename = sys.argv[2]
+  
   while(1):
+    f = open(filename, 'w')
     recv_data, addr = listen_socket.recvfrom(4096)
+    f.write(recv_data)
+    
     # use addr arg for return send
     parse = binascii.hexlify(recv_data)
     i = 2
@@ -26,7 +36,7 @@ if __name__ == "__main__":
     snmpcommunitystring = binascii.unhexlify(parse[i:i + snmpcommunitystringlength * 2])
     i += snmpcommunitystringlength * 2
     snmppdumetadata = []
-    temp= parse[i:i + 4]
+    temp = parse[i:i + 4]
     snmppdumetadata.append(temp[0:len(temp)/2])
     snmppdumetadata.append(temp[len(temp)/2:])
     i += 6
@@ -91,3 +101,4 @@ if __name__ == "__main__":
   
     response = ''.join(clean)
     listen_socket.sendto(binascii.a2b_hex(response), addr)
+    break

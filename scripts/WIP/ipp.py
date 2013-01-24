@@ -3,6 +3,7 @@
 import sys
 import re
 import random
+import binascii
 
 IPP_VERSION = '1.1'
 IPP_PORT = 631
@@ -253,6 +254,103 @@ class IPPResponseUDP:
                   'inform-request':0xA6,
                   'snmpv2-trap':0xA7}
     
+  def parseResponse(self, response):
+    interpret = []
+    i = 2
+    snmpmessagelength = int(response[i:i + 2], 16)
+    interpret.append(snmpmessagelength)
+    i += 4
+    snmpversionlength = int(response[i: i + 2], 16)
+    interpret.append(snmpversionlength)
+    snmpversion = int(response[i:i + snmpversionlength], 16)
+    interpret.append(snmpversion)
+    i += snmpversionlength * 2 + 4
+    snmpcommunitystringlength = int(response[i:i + 2], 16)
+    interpret.append(snmpcommunitystringlength)
+    i += 2
+    snmpcommunitystring = binascii.unhexlify(response[i:i + snmpcommunitystringlength * 2])
+    interpret.append(snmpcommunitystring)
+    i += snmpcommunitystringlength * 2
+    snmppdumetadata = []
+    temp = response[i:i + 4]
+    snmppdumetadata.append(temp[0:len(temp)/2])
+    snmppdumetadata.append(temp[len(temp)/2:])
+    i += 6
+    snmppdutype = snmppdumetadata[0]
+    interpret.append(snmppdutype)
+    snmppdulength = int(snmppdumetadata[1], 16)
+    interpret.append(snmppdulength)
+    snmpreqidlength = int(response[i:i + 2], 16)
+    interpret.append(snmpreqidlength)
+    i += 2
+    snmpreqid = int(response[i:i + snmpreqidlength * 2], 16)
+    interpret.append(snmpreqid)
+    i += snmpreqidlength * 2 + 2
+    snmperrorlength = int(response[i:i + 2], 16)
+    interpret.append(snmperrorlength)
+    i += 2
+    snmperror = int(response[i:i + snmperrorlength * 2], 16)
+    interpret.append(snmperror)
+    i += snmperrorlength * 2 + 2
+    snmperrindexlength = int(response[i:i + 2], 16)
+    interpret.append(snmperrindexlength)
+    i += 2
+    snmperrindex = int(response[i:i + snmperrindexlength * 2], 16)
+    interpret.append(snmperrindex)
+    i += snmperrindexlength * 2 + 2
+    snmpvarbindlistlength = int(response[i:i + 2], 16)
+    interpret.append(snmpvarbindlistlength)
+    i += 4
+    snmpoid = []
+    togo = 0
+    while togo < snmpvarbindlistlength:
+      if not response[i:i + 2]:
+        break
+      snmpvarbindlength = int(response[i:i + 2], 16)
+      interpret.append(snmpvarbindlength)
+      i += 2
+      snmpvaluetype = int(response[i:i + 2], 16)
+      interpret.append(snmpvaluetype)
+      i += 2 
+      snmpvaluelength = int(response[i:i + 2], 16)
+      interpret.append(snmpvaluelength)
+      i += 2
+      snmpoid.append(response[i:i + snmpvaluelength * 2])
+      print 'interpret appending ' + response[i:i + snmpvaluelength * 2]
+      interpret.append(response[i:i + snmpvaluelength * 2])
+      i += snmpvaluelength * 10 + 4
+      togo += 6 + snmpvaluelength
+       
+    print 'Response data: ' 
+    self.interpretResponse(interpret)
+    
+  def interpretResponse(self, parsed):
+    """
+      Don't use
+    """
+    print 'response message length: ' + str(parsed[0])
+    print 'response version length: ' + str(parsed[1])
+    print 'response version: ' + str(parsed[2])
+    print 'response comm string length: ' + str(parsed[3])
+    print 'response community string: ' + str(parsed[4])
+    print 'response pdu-type: ' + str(parsed[5])
+    print 'response pdu-length: ' + str(parsed[6])
+    print 'response reqid length: ' + str(parsed[7])
+    print 'response reqid: ' + str(parsed[8])
+    print 'response error length: ' + str(parsed[9])
+    print 'response error: ' + str(parsed[10])
+    print 'response error index length: ' + str(parsed[11])
+    print 'response error index: ' + str(parsed[12])
+    print 'response varbind list length: ' + str(parsed[13])
+    print 'response varbind length: ' + str(parsed[14])
+    max = len(parsed)
+    i = 15
+    while i < max:
+      print 'response value type: ' + str(parsed[i])
+      print 'response value length: ' + str(parsed[i + 1])
+      print 'response oid: ' + str(parsed[i + 2])
+      i += 3
+      
   def generateResponse(self):
     ''' 
       The if statements here don't really do anything at the moment,
