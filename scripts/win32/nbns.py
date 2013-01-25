@@ -1,4 +1,5 @@
 import sys
+import binascii
 
 #Parse the NBNS header
 
@@ -22,20 +23,21 @@ additionals = sys.stdin.read(2)
 
 
 #We only respond to questions. Throw anything else out
-if (questions <= 0) or (answers > 0):
+if (int(binascii.hexlify(questions)) <= 0) or (int(binascii.hexlify(answers)) > 0):
 	sys.exit(0)
 
 
 #Parse the Question
 
 #The first byte has to be x20
-name_start = sys.stdin.read(2)
+name_start = sys.stdin.read(1)
 if name_start != '\x20':
 	sys.exit(0)
 
 #Netbios name
 #	First level encoded
 i = 'a'
+name = ""
 while i != '\x00':
 	i = sys.stdin.read(1)
 	name += i
@@ -77,6 +79,8 @@ if query_type == '\x00\x20':
 	#reponse_packet += $ip_addr
 	#TODO: Temp hardcoded IP address
 	reponse_packet += '\xc0\xa8\x0b\x16'
+	sys.stdout.write(reponse_packet)
+	sys.exit(0)
 
 #If this is a reverse request
 if query_type == '\x00\x21':
@@ -109,8 +113,9 @@ if query_type == '\x00\x21':
 	#name flags
 	reponse_packet += '\x04\x00'
 	#Empty fields at end (46 bytes)
-	reponse_packet += '\x00' * 46	
-
+	reponse_packet += '\x00' * 46
+	sys.stdout.write(reponse_packet)
+	sys.exit(0)
 
 sys.exit(0)
 
