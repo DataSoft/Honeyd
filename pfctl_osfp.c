@@ -28,7 +28,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
+#include <syslog.h>
 #include <dnet.h>
 
 #include "pfvar.h"
@@ -299,7 +299,10 @@ pfctl_get_fingerprint(const char *name)
 		/* Chop it up into class/version/subtype */
 
 		if ((wr_name = strdup(name)) == NULL)
-			err(1, "malloc");
+		{
+			syslog(LOG_ERR, "malloc");
+			exit(EXIT_FAILURE);
+		}
 		if ((ptr = strchr(wr_name, ' ')) == NULL) {
 			free(wr_name);
 			return (PF_OSFP_NOMATCH);
@@ -463,7 +466,10 @@ add_fingerprint(int dev, int opts, struct pf_osfp_ioctl *fp)
 	EXPAND(fp_os.fp_subtype_nm);
 
 	if (strcasecmp(fp->fp_os.fp_class_nm, "nomatch") == 0)
-		errx(1, "fingerprint class \"nomatch\" is reserved");
+	{
+		syslog(LOG_ERR, "fingerprint class \"nomatch\" is reserved");
+		exit(EXIT_FAILURE);
+	}
 
 	version = PF_OSFP_ANY;
 	subtype = PF_OSFP_ANY;
@@ -510,7 +516,8 @@ add_fingerprint(int dev, int opts, struct pf_osfp_ioctl *fp)
 				fp->fp_os.fp_subtype_nm);
 
 		} else {
-			err(1, "DIOCOSFPADD");
+			syslog(LOG_ERR, "DI0C0SFPADD FAKE_PF_KERNEL");
+			exit(EXIT_FAILURE);
 		}
 	}
 }
@@ -573,7 +580,10 @@ fingerprint_name_entry(struct name_list *list, char *name)
 	if (nm_entry == NULL) {
 		nm_entry = calloc(1, sizeof(*nm_entry));
 		if (nm_entry == NULL)
-			err(1, "calloc");
+		{
+			syslog(LOG_ERR, "calloc, failed to allocate new name entry");
+			exit(EXIT_FAILURE);
+		}
 		LIST_INIT(&nm_entry->nm_sublist);
 		strlcpy(nm_entry->nm_name, name, sizeof(nm_entry->nm_name));
 	}

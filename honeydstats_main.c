@@ -87,24 +87,23 @@ extern int checkpoint_fd;
 extern struct evbuffer *checkpoint_evbuf;
 extern struct usertree users;
 
-static struct event ev_recv;
 static int fd_recv;
 static struct evbuffer *evbuf_recv;
 static char *checkpoint_filename = NULL;
 static char *config_filename = "honeydstats.config";
 
 static void
-read_cb(int fd, short what, void *arg)
+read_cb(int fd, short what, void *unused)
 {
 	static u_char buf[4096];
-	struct event *ev = arg;
 	struct addr src;
 	struct sockaddr_storage from;
 	socklen_t fromsz = sizeof(from);
 	int nread;
 
 	/* Reschedule the event */
-	event_add(ev, NULL);
+	struct event *ev_recv = event_new(stats_libevent_base, fd_recv, EV_READ, read_cb, NULL);
+	event_add(ev_recv, NULL);
 
 	nread = recvfrom(fd, buf, sizeof(buf), MSG_WAITALL,
 	    (struct sockaddr *)&from, &fromsz);
@@ -118,7 +117,7 @@ read_cb(int fd, short what, void *arg)
 	syslog(LOG_INFO, "Received report from %s: %d",
 	    addr_ntoa(&src), nread);
 
-	evbuffer_drain(evbuf_recv, EVBUFFER_LENGTH(evbuf_recv));
+	evbuffer_drain(evbuf_recv, evbuffer_get_length(evbuf_recv));
 	evbuffer_add(evbuf_recv, buf, nread);
 
 	signature_process(evbuf_recv);
@@ -173,22 +172,27 @@ usage(void)
 void
 setup_socket(char *address, int port)
 {
-	if ((evbuf_recv = evbuffer_new()) == NULL)
-		err(1, "%s: evbuffer_new", __func__);
-	if ((fd_recv = make_socket(bind, SOCK_DGRAM, address, port)) == -1)
-		err(1, "%s: make_socket", __func__);
+	if ((evbuf_recv = evbuffer_new()) == NULL){
+		syslog(LOG_ERR, "%s: evbuffer_new", __func__);
+		exit(EXIT_FAILURE);
+	}
+
+	if ((fd_recv = make_socket(bind, SOCK_DGRAM, address, port)) == -1){
+		syslog(LOG_ERR, "%s: make_socket", __func__);
+		exit(EXIT_FAILURE);
+	}
 
 	syslog(LOG_NOTICE, "Listening on %s:%d", address, port);
 
-	event_set(&ev_recv, fd_recv, EV_READ, read_cb, &ev_recv);
-	event_add(&ev_recv, NULL);
+	struct event *ev_recv = event_new(stats_libevent_base, fd_recv, EV_READ, read_cb, NULL);
+	event_add(ev_recv, NULL);
 }
 
 void
 honeydstats_signal(int fd, short what, void *arg)
 {
 	syslog(LOG_NOTICE, "exiting on signal %d", fd);
-	exit(0);
+	exit(EXIT_SUCCESS);
 }
 
 void
@@ -225,7 +229,6 @@ main(int argc, char *argv[])
 		{"country_report", required_argument, &report_country, 1},
 		{0, 0, 0, 0}
 	};
-	struct event sigterm_ev, sigint_ev, sighup_ev;
 	char *replay_filename = NULL;
 	char *address = "0.0.0.0";
 	char **orig_argv;
@@ -269,6 +272,7 @@ main(int argc, char *argv[])
 			break;
 		case 'p':
 			if ((port = atoi(optarg)) == 0) {
+				syslog(LOG_ERR, "Bad port number: %s\n",optarg);
 				fprintf(stderr, "Bad port number: %s\n",
 				    optarg);
 				usage();
@@ -301,7 +305,7 @@ main(int argc, char *argv[])
 			break;
 		default:
 			usage();
-			/* not reached */
+			break;
 		}
 	}
 
@@ -317,9 +321,14 @@ main(int argc, char *argv[])
 
 	if (user_read_config(config_filename) == -1) {
 		if (!want_unittest)
-			errx(1, "config file '%s' not found", config_filename);
+		{
+			syslog(LOG_ERR, "config file '%s' not found", config_filename);
+			exit(EXIT_FAILURE);
+		}
 		else
-			warnx("config file '%s' not found", config_filename);
+		{
+			syslog(LOG_WARNING, "config file '%s' not found", config_filename);
+		}
 	}
 
 	syslog_init(orig_argc, orig_argv);
@@ -330,10 +339,13 @@ main(int argc, char *argv[])
 		
 		fprintf(stderr, "Starting as background process\n");
 		if (daemon(1, 0) < 0)
-			err(1, "daemon");
+		{
+			syslog(LOG_ERR, "daemon");
+			exit(EXIT_FAILURE);
+		}
 	}
 
-	event_init();
+	stats_libevent_base = event_base_new();
 
 	count_init();
 
@@ -349,7 +361,10 @@ main(int argc, char *argv[])
 
 		while ((p = strsep(&replay_filename, ",")) != NULL) {
 			if ((fd = open(p, O_RDONLY, 0)) == -1)
-				err(1, "%s: open(%s)", __func__, p);
+			{
+				syslog(LOG_ERR, "%s: open(%s)", __func__,p);
+				exit(EXIT_FAILURE);
+			}
 			checkpoint_replay(fd);
 		}
 	}
@@ -377,14 +392,17 @@ main(int argc, char *argv[])
 
 	setup_socket(address, port);
 
-	signal_set(&sigint_ev, SIGINT, honeydstats_signal, NULL);
-	signal_add(&sigint_ev, NULL);
-	signal_set(&sigterm_ev, SIGTERM, honeydstats_signal, NULL);
-	signal_add(&sigterm_ev, NULL);
-	signal_set(&sighup_ev, SIGHUP, honeydstats_sighup, NULL);
-	signal_add(&sighup_ev, NULL);
+	struct event *sigterm_ev, *sigint_ev, *sighup_ev;
 
-	event_dispatch();
+	sigterm_ev = evsignal_new(stats_libevent_base, SIGTERM, honeydstats_signal, NULL);
+	sigint_ev = evsignal_new(stats_libevent_base, SIGINT, honeydstats_signal, NULL);
+	sighup_ev = evsignal_new(stats_libevent_base, SIGHUP, honeydstats_sighup, NULL);
+
+	event_add(sigterm_ev, NULL);
+	event_add(sigint_ev, NULL);
+	event_add(sighup_ev, NULL);
+
+	event_base_dispatch(stats_libevent_base);
 
 	syslog(LOG_ERR, "Kqueue does not recognize bpf filedescriptor.");
 

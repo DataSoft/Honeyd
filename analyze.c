@@ -40,6 +40,7 @@
 #include <sys/stat.h>
 #include <sys/queue.h>
 #include <sys/tree.h>
+#include <syslog.h>
 #ifdef HAVE_SYS_TIME_H
 #include <sys/time.h>
 #endif
@@ -54,6 +55,7 @@
 #include <event.h>
 #include <evdns.h>
 
+#include "honeydstats.h"
 #include "tagging.h"
 #include "histogram.h"
 #include "keycount.h"
@@ -66,7 +68,6 @@ char *spammer_report_file = NULL;
 char *country_report_file = NULL;
 
 static int checkpoint_doreplay;		/* externally set by honeydstats */
-static struct event ev_analyze;
 
 struct kctree oses;
 struct kctree ports;
@@ -107,7 +108,10 @@ void
 port_key_extract(struct keycount *keycount, void **pkey, size_t *pkeylen)
 {
 	if ((*pkey = calloc(1, sizeof(uint16_t))) == NULL)
-		err(1, "%s: calloc");
+	{
+		syslog(LOG_ERR, "calloc");
+		exit(EXIT_FAILURE);
+	}
 	memcpy(*pkey, keycount->key, sizeof(uint16_t));
 	*pkeylen = sizeof(uint16_t);
 }
@@ -124,7 +128,10 @@ void
 spammer_key_extract(struct keycount *keycount, void **pkey, size_t *pkeylen)
 {
 	if ((*pkey = calloc(1, keycount->keylen)) == NULL)
-		err(1, "%s: calloc");
+	{
+		syslog(LOG_ERR, "calloc");
+		exit(EXIT_FAILURE);
+	}
 	memcpy(*pkey, keycount->key, keycount->keylen);
 	*pkeylen = keycount->keylen;
 }
@@ -141,7 +148,10 @@ void
 country_key_extract(struct keycount *keycount, void **pkey, size_t *pkeylen)
 {
 	if ((*pkey = calloc(1, keycount->keylen)) == NULL)
-		err(1, "%s: calloc");
+	{
+		syslog(LOG_ERR, "calloc, failed to allocate the pkey");
+		exit(EXIT_FAILURE);
+	}
 	memcpy(*pkey, keycount->key, keycount->keylen);
 	*pkeylen = keycount->keylen;
 }
@@ -178,7 +188,10 @@ aux_create(void)
 	struct aux *aux;
 
 	if ((aux = calloc(1, sizeof(struct aux))) == NULL)
-		err(1, "%s: calloc");
+	{
+		syslog(LOG_ERR, "%s: calloc failed to allocate aux",__func__);
+		exit(EXIT_FAILURE);
+	}
 	SPLAY_INIT(&aux->tree);
 	TAILQ_INIT(&aux->queue);
 	aux->limit = 100000;	/* Make better at some point */
@@ -227,7 +240,10 @@ aux_enter(struct aux *aux, uint32_t value)
 		aux->entries--;
 	} else {
 		if ((key = calloc(1, sizeof(struct auxkey))) == NULL)
-			err(1, "%s: calloc");
+		{
+			syslog(LOG_ERR, "%s: calloc failed to allocate key",__func__);
+			exit(EXIT_FAILURE);
+		}
 	}
 	key->value = tmp.value;
 
@@ -245,7 +261,10 @@ os_key_extract(struct keycount *keycount, void **pkey, size_t *pkeylen)
 	const char *key = keycount->key;
 
 	if ((*pkey = strdup(key)) == NULL)
-		err(1, "%s: strdup");
+	{
+		syslog(LOG_ERR, "%s: strdup",__func__);
+		exit(EXIT_FAILURE);
+	}
 	*pkeylen = strlen(key) + 1;
 }
 
@@ -269,12 +288,11 @@ void
 analyze_init(void)
 {
 	struct timeval tv;
-
-	evtimer_set(&ev_analyze, analyze_report_cb, &ev_analyze);
-
 	timerclear(&tv);
 	tv.tv_sec = ANALYZE_REPORT_INTERVAL; 
-	evtimer_add(&ev_analyze, &tv);
+
+	struct event *ev_analyze = evtimer_new(stats_libevent_base, analyze_report_cb, NULL);
+	evtimer_add(ev_analyze, &tv);
 
 	SPLAY_INIT(&oses);
 	SPLAY_INIT(&ports);
@@ -410,7 +428,10 @@ analyze_country_enter(const struct addr *addr, const struct addr *dst)
 
 	struct country_state *state = calloc(1, sizeof(struct country_state));
 	if (state == NULL)
-		err(1, "%s: calloc", __func__);
+	{
+		syslog(LOG_ERR, "%s: failed to calloc state", __func__);
+		exit(EXIT_FAILURE);
+	}
 
 	state->src = *addr;
 	state->dst = *dst;
@@ -554,7 +575,10 @@ report_create(struct kctree *kctree,
 	struct keycount *kc, *next;
 
 	if ((tree = calloc(1, sizeof(struct reporttree))) == NULL)
-		err(1, "%s: calloc", __func__);
+	{
+		syslog(LOG_ERR, "%s: calloc", __func__);
+		exit(EXIT_FAILURE);
+	}
 
 	SPLAY_INIT(tree);
 
@@ -568,7 +592,10 @@ report_create(struct kctree *kctree,
 		if ((report = SPLAY_FIND(reporttree, tree, &tmp)) == NULL) {
 			report = calloc(1, sizeof(struct report));
 			if (report == NULL)
-				err(1, "%s: calloc");
+			{
+				syslog(LOG_ERR, "%s: calloc",__func__);
+				exit(EXIT_FAILURE);
+			}
 			report->key = tmp.key;
 			report->keylen = tmp.keylen;
 			SPLAY_INSERT(reporttree, tree, report);
@@ -645,7 +672,10 @@ analyze_print_port_report()
 	}
 
 	if ((filtered_tree = calloc(1, sizeof(struct reporttree))) == NULL)
-		err(1, "%s: calloc");
+	{
+		syslog(LOG_ERR, "%s: calloc failed to allocate filtered_tree",__func__);
+		exit(EXIT_FAILURE);
+	}
 	SPLAY_INIT(filtered_tree);
 
 	/* 
@@ -695,7 +725,10 @@ analyze_print_spammer_report()
 	}
 
 	if ((filtered_tree = calloc(1, sizeof(struct reporttree))) == NULL)
-		err(1, "%s: calloc");
+	{
+		syslog(LOG_ERR, "%s: calloc failed to allocate filtered_tree",__func__ );
+		exit(EXIT_FAILURE);
+	}
 	SPLAY_INIT(filtered_tree);
 
 	/* 
@@ -745,7 +778,10 @@ analyze_print_country_report()
 	}
 
 	if ((filtered_tree = calloc(1, sizeof(struct reporttree))) == NULL)
-		err(1, "%s: calloc");
+	{
+		syslog(LOG_ERR, "%s: calloc failed to initialize failed tree",__func__);
+		exit(EXIT_FAILURE);
+	}
 	SPLAY_INIT(filtered_tree);
 
 	/* 
@@ -786,13 +822,14 @@ analyze_print_report()
 }
 
 void
-analyze_report_cb(int fd, short what, void *arg)
+analyze_report_cb(int fd, short what, void *unused)
 {
-	struct event *ev = arg;
 	struct timeval tv;
 
 	timerclear(&tv);
 	tv.tv_sec = ANALYZE_REPORT_INTERVAL;
+
+	struct event *ev = evtimer_new(stats_libevent_base, analyze_report_cb, NULL);
 	evtimer_add(ev, &tv);
 
 	analyze_print_report();
@@ -842,7 +879,10 @@ os_test()
 	}
 
 	if (SPLAY_ROOT(&oses) != NULL)
-		errx(1, "oses fingerprints should have been purged");
+	{
+		syslog(LOG_ERR,"oses fingerprints should have been purged");
+		exit(EXIT_FAILURE);
+	}
 
 	count_set_time(NULL);
 

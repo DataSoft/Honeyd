@@ -81,6 +81,7 @@
 #include <ctype.h>
 #include <fcntl.h>
 #include <assert.h>
+#include <syslog.h>
 
 #include <pcap.h>
 #include <dnet.h>
@@ -420,13 +421,19 @@ kv_add(struct keyvalueq *head, char *key, char *value)
 	struct keyvalue *entry = malloc(sizeof(struct keyvalue));
 
 	if (entry == NULL)
-		err(1, "%s: malloc", __func__);
+	{
+		syslog(LOG_ERR, "%s: malloc, failed to allocate keyvalue entry", __func__);
+		exit(EXIT_FAILURE);
+	}
 
 	entry->key = strdup(key);
 	entry->value = strdup(value);
 
 	if (entry->key == NULL || entry->value == NULL)
-		err(1, "%s: strdup", __func__);
+	{
+		syslog(LOG_ERR, "%s: strdup", __func__);
+		exit(EXIT_FAILURE);
+	}
 
 	TAILQ_INSERT_TAIL(head, entry, next);
 }
@@ -477,7 +484,10 @@ kv_replace(struct keyvalueq *head, char *key, char *value)
 	if (entry == NULL) {
 		entry = malloc(sizeof(struct keyvalue));
 		if (entry == NULL)
-			err(1, "%s: malloc", __func__);
+		{
+			syslog(LOG_ERR, "%s: malloc, failed to allocate entry", __func__);
+			exit(EXIT_FAILURE);
+		}
 	} else {
 		free(entry->key);
 		free(entry->value);
@@ -488,7 +498,10 @@ kv_replace(struct keyvalueq *head, char *key, char *value)
 	entry->value = strdup(value);
 
 	if (entry->key == NULL || entry->value == NULL)
-		err(1, "%s: strdup", __func__);
+	{
+		syslog(LOG_ERR, "%s: strdup", __func__);
+		exit(EXIT_FAILURE);
+	}
 
 	TAILQ_INSERT_TAIL(head, entry, next);
 }
@@ -503,7 +516,10 @@ name_from_addr(struct sockaddr *sa, socklen_t salen,
 	if (getnameinfo(sa, salen,
 		ntop, sizeof(ntop), strport, sizeof(strport),
 		NI_NUMERICHOST|NI_NUMERICSERV) != 0)
-		err(1, "%s: getnameinfo failed", __func__);
+	{
+		syslog(LOG_ERR, "%s: getnameinfo failed", __func__);
+	    exit(EXIT_FAILURE);
+	}
 
 	*phost = ntop;
 	*pport = strport;
@@ -615,7 +631,10 @@ trace_init(int fd)
 	for (i = trace_refsize; i < n; ++i) {
 		struct traceq *head = malloc(sizeof(struct traceq *));
 		if (head == NULL)
-			err(1, "%s: malloc", __func__);
+		{
+			syslog(LOG_ERR, "%s: malloc", __func__);
+			exit(EXIT_FAILURE);
+		}
 		TAILQ_INIT(head);
 		tmp[i] = head;
 	}

@@ -45,7 +45,7 @@ struct fragment {
 	TAILQ_ENTRY(fragment) next;
 
 	TAILQ_HEAD(fragq, fragent) fraglist;
-	struct event timeout;
+	struct event *timeout;
 
 	enum fragpolicy fragp;
 

@@ -62,7 +62,7 @@
 #include <getopt.h>
 #include <err.h>
 #include <sha1.h>
-
+#include <syslog.h>
 #include <event.h>
 #include <evdns.h>
 
@@ -758,7 +758,7 @@ smtp_write_email(struct smtp_ta *ta, int count)
 		}
 
 		hash = smtp_hashed_store(log_datadir, 
-		    EVBUFFER_DATA(buffer), EVBUFFER_LENGTH(buffer));
+		    EVBUFFER_DATA(buffer), evbuffer_get_length(buffer));
 		evbuffer_drain(buffer, -1);
 
 		evbuffer_add_printf(buffer, "\n%s\n", hash);
@@ -809,7 +809,7 @@ smtp_readline(struct bufferevent *bev)
 {
 	struct evbuffer *buffer = EVBUFFER_INPUT(bev);
 	char *data = EVBUFFER_DATA(buffer);
-	size_t len = EVBUFFER_LENGTH(buffer);
+	size_t len = evbuffer_get_length(buffer);
 	char *line;
 	int i;
 
@@ -1047,10 +1047,16 @@ smtp_bind_socket(struct event *ev, u_short port)
 	int fd;
 
 	if ((fd = make_socket(bind, SOCK_STREAM, "0.0.0.0", port)) == -1)
-		err(1, "%s: cannot bind socket: %d", __func__, port);
+	{
+		syslog(LOG_ERR, "%s: cannot bind socket: %d", __func__, port);
+		exit(EXIT_FAILURE);
+	}
 
 	if (listen(fd, 10) == -1)
-		err(1, "%s: listen failed: %d", __func__, port);
+	{
+		syslog(LOG_ERR, "%s: listen failed: %d", __func__, port);
+		exit(EXIT_FAILURE);
+	}
 
 	/* Schedule the socket for accepting */
 	event_set(ev, fd, EV_READ | EV_PERSIST, accept_socket, NULL);

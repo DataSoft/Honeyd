@@ -5,10 +5,10 @@
 1. Description
 
    cmdexe.pl is a simple Perl script, that works with honeyd, to
-   emulate a DOS command prompt.  It is useful to emulate a simple
-   Windows "shell" backdoor, as used by many worms nowadays.  It logs
-   the command line entered.  Non-printable characters are logged in
-   hexdump format.
+ï¿½ ï¿½emulate a DOS command prompt.  It is useful to emulate a simple
+ï¿½ ï¿½Windows "shell" backdoor, as used by many worms nowadays. ï¿½It logs
+ï¿½ ï¿½the command line entered. ï¿½Non-printable characters are logged in
+ï¿½ ï¿½hexdump format.
 
 
 2. Dependencies
@@ -37,8 +37,8 @@
       ###
       create backdoor
       set backdoor personality "Microsoft Windows XP Home Edition"
-      set backdoor default tcp action reset
-      set backdoor default udp action reset
+      set backdoor default tcp action closed
+      set backdoor default udp action closed
       set backdoor default icmp action open
       set backdoor uid 32767 gid 32767
       # blaster

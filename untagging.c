@@ -148,13 +148,13 @@ record_unmarshal(struct record *record, struct evbuffer *evbuf)
 			goto error;
 	}
 
-	evbuffer_drain(tmp, EVBUFFER_LENGTH(tmp));
+	evbuffer_drain(tmp, evbuffer_get_length(tmp));
 	if (evtag_unmarshal(evbuf, &tag, tmp) == -1 || tag != REC_SRC)
 		goto error;
 	if (addr_unmarshal(&record->src, tmp) == -1)
 		goto error;
 
-	evbuffer_drain(tmp, EVBUFFER_LENGTH(tmp));
+	evbuffer_drain(tmp, evbuffer_get_length(tmp));
 	if (evtag_unmarshal(evbuf, &tag, tmp) == -1 || tag != REC_DST)
 		goto error;
 	if (addr_unmarshal(&record->dst, tmp) == -1)
@@ -185,7 +185,10 @@ record_unmarshal(struct record *record, struct evbuffer *evbuf)
 			struct hash *tmp;
 
 			if ((tmp = calloc(1, sizeof(struct hash))) == NULL)
-				err(1, "%s: calloc", __func__);
+			{
+				syslog(LOG_ERR, "%s: calloc", __func__);
+				exit(EXIT_FAILURE);
+			}
 			if (evtag_unmarshal_fixed(evbuf, REC_HASH, tmp->digest,
 				sizeof(tmp->digest)) == -1) {
 				free(tmp);

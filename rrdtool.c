@@ -76,13 +76,18 @@ rrdtool_evb_readcb(struct bufferevent *bev, void *parameter)
 	struct rrdtool_drv *req = parameter;
 
 	char *start, *end;
+	struct evbuffer_ptr offset;
 
-	start = (char*)EVBUFFER_DATA(bev->input);
-	if ((end = (char*)evbuffer_find(bev->input, (unsigned char*)"OK ", 3)) == NULL)
+	start = (char*)evbuffer_pullup(bev->input, -1);
+
+	offset = evbuffer_search(bev->input, "OK ", 3, NULL);
+	if(offset.pos == -1)
 		return;
 	
+	end = start + offset.pos;
+
 	/* Find the end of the line */
-	if (strchr(end, '\n') == NULL)
+	if(strchr(end, '\n') == NULL)
 		return;
 
 	/* Communicate everything before the OK to the call back */
@@ -133,7 +138,7 @@ rrdtool_restart(int fd, short what, void *arg)
 		syslog(LOG_NOTICE, "Respawing rrdtool too quickly");
 		tv.tv_sec = 5;
 		tv.tv_usec = 0;
-		evtimer_add(&drv->ev_timeout, &tv);
+		evtimer_add(drv->ev_timeout, &tv);
 		return;
 	}
 
@@ -187,17 +192,19 @@ rrdtool_init(const char *path_rrdtool)
 		goto error;
 	}
 
-	if ((rrd->evb = bufferevent_new(rrd->fd,
-		 rrdtool_evb_readcb, rrdtool_evb_writecb, rrdtool_evb_errcb,
-		 rrd)) == NULL)
+	rrdtool_libevent_base = event_base_new();
+
+	if((rrd->evb = bufferevent_socket_new(rrdtool_libevent_base, rrd->fd, BEV_OPT_CLOSE_ON_FREE)) == NULL)
 		goto error;
+
+	bufferevent_setcb(rrd->evb, rrdtool_evb_readcb, rrdtool_evb_writecb, rrdtool_evb_errcb, rrd);
 
 	TAILQ_INIT(&rrd->commands);
 
 	bufferevent_disable(rrd->evb, EV_READ);
 	bufferevent_enable(rrd->evb, EV_WRITE);
 
-	evtimer_set(&rrd->ev_timeout, rrdtool_restart, rrd);
+	rrd->ev_timeout = evtimer_new(rrdtool_libevent_base, rrdtool_restart, rrd);
 
 	return rrd;
 
@@ -218,7 +225,7 @@ rrdtool_init(const char *path_rrdtool)
 void
 rrdtool_free(struct rrdtool_drv *drv)
 {
-	event_del(&drv->ev_timeout);
+	event_del(drv->ev_timeout);
 
 	bufferevent_free(drv->evb);
 
@@ -285,10 +292,16 @@ rrdtool_command(struct rrdtool_drv *drv, char *command,
 	struct rrdtool_command *cmd;
 
 	if ((cmd = calloc(1, sizeof(struct rrdtool_command))) == NULL)
-		err(1, "%s: calloc", __func__);
+	{
+		syslog(LOG_ERR, "%s: calloc", __func__);
+		exit(EXIT_FAILURE);
+	}
 	
 	if ((cmd->command = strdup(command)) == NULL)
-		err(1, "%s: strdup", __func__);
+	{
+		syslog(LOG_ERR, "%s: strdup", __func__);
+		exit(EXIT_FAILURE);
+	}
 
 	cmd->cb = cb;
 	cmd->cb_arg = cb_arg;
@@ -309,7 +322,10 @@ rrdtool_db_start(struct rrdtool_drv *drv, char *filename, int stepsize)
 	struct rrdtool_db *db;
 
 	if ((db = calloc(1, sizeof(struct rrdtool_db))) == NULL)
-		err(1, "%s: calloc", __func__);
+	{
+		syslog(LOG_ERR, "%s: calloc", __func__);
+		exit(EXIT_FAILURE);
+	}
 
 	db->drv = drv;
 
@@ -340,7 +356,10 @@ rrdtool_db_datasource(struct rrdtool_db *db, char *name, char *type,
 	snprintf(line, sizeof(line), "DS:%s:%s:%d:U:U",
 	    name, type, heartbeat);
 	if ((db->datasrcs[db->ndatasrcs++] = strdup(line)) == NULL)
-		err(1, "%s: strdup");
+	{
+		syslog(LOG_ERR, "%s: strdup",__func__);
+		exit(EXIT_FAILURE);
+	}
 
 	strlcat(db->create_command, " ", sizeof(db->create_command));
 	if ( strlcat(db->create_command, line, sizeof(db->create_command)) >=
@@ -479,14 +498,23 @@ rrdtool_fork(struct rrdtool_drv *drv)
 		/* Child */
 		close(pair[0]);
 		if (dup2(pair[1], fileno(stdout)) == -1)
-			err(1, "%s: dup2", __func__);
+		{
+			syslog(LOG_ERR, "%s: dup2", __func__);
+			exit(EXIT_FAILURE);
+		}
 		if (dup2(pair[1], fileno(stdin)) == -1)
-			err(1, "%s: dup2", __func__);
+		{
+			syslog(LOG_ERR, "%s: dup2", __func__);
+			exit(EXIT_FAILURE);
+		}
 
 		close(pair[1]);
 
 		if (execvp(drv->bin_path, (char * const*)argv) == -1)
-			err(1, "%s: execv(%s)", __func__, drv->bin_path);
+		{
+			syslog(LOG_ERR, "%s: execv(%s)", __func__, drv->bin_path);
+			exit(EXIT_FAILURE);
+		}
 
 		/* NOT REACHED */
 	}
@@ -532,7 +560,7 @@ rrdtool_test_done(char *something, void *arg)
 
 	timerclear(&tv);
 	tv.tv_sec = 1;
-	event_loopexit(&tv);
+	event_base_loopexit(rrdtool_libevent_base, &tv);
 }
 
 void
@@ -580,10 +608,13 @@ rrdtool_test(void)
 	    tv_now.tv_sec, tv.tv_sec);
 	rrdtool_command(drv, line, rrdtool_test_done, NULL);
 
-	event_dispatch();
+	event_base_dispatch(rrdtool_libevent_base);
 
 	if (access("/tmp/honeyd_myrouter.gif", R_OK) == -1)
-		errx(1, "%s: graph creation failed", __func__);
+	{
+		syslog(LOG_ERR, "%s: graph creation failed", __func__);
+		exit(EXIT_FAILURE);
+	}
 
 	rrdtool_free(drv);
 	fprintf(stderr, "\t%s: OK\n", __func__);

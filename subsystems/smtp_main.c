@@ -58,6 +58,7 @@
 #include <ctype.h>
 #include <getopt.h>
 #include <err.h>
+#include <syslog.h>
 
 #include <event.h>
 #include <evdns.h>
@@ -99,11 +100,11 @@ main(int argc, char **argv)
 		case 'p':
 			port = atoi(optarg);
 			if (!port)
-				err(1, "Bad port number: %s", optarg);
+			err(1, "Bad port number: %s", optarg);
 			break;
 		case 'd': {
 			if (smtp_set_datadir(optarg) == -1)
-				errx(1, "Bad directory specification: %s", 
+				errx(1, "Bad directory specification: %s",
 				    log_datadir);
 			break;
 		}
@@ -118,7 +119,7 @@ main(int argc, char **argv)
 	if (logfile != NULL) {
 		flog_email = fopen(logfile, "a");
 		if (flog_email == NULL)
-			err(1, "%s: fopen(%s)", __func__, logfile);
+		err(1, "%s: fopen(%s)", __func__, logfile);
 		fprintf(stderr, "Logging to %s\n", logfile);
 	}
 

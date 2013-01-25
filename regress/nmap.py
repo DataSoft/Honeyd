@@ -62,7 +62,7 @@ def make_configuration(filename, fingerprints):
     input = open(fingerprints, "r")
 
     print >>output, """create template
-set template default tcp action reset
+set template default tcp action closed
 add template tcp port 23 open
 """
     count = 0

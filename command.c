@@ -84,7 +84,7 @@ cmd_trigger_read(struct command *cmd, int size)
  	if (cmd->pfd == -1 || !cmd->fdconnected)
 		return;
 	if (size)
-		TRACE(cmd->pread.ev_fd, event_add(&cmd->pread, NULL));
+		TRACE(event_get_fd(cmd->pread), event_add(cmd->pread, NULL));
 }
 
 void
@@ -93,20 +93,20 @@ cmd_trigger_write(struct command *cmd, int size)
  	if (cmd->pfd == -1 || !cmd->fdconnected)
 		return;
 	if (size)
-		TRACE(cmd->pwrite.ev_fd, event_add(&cmd->pwrite, NULL));
+		TRACE(event_get_fd(cmd->pwrite), event_add(cmd->pwrite, NULL));
 }
 
 void
 cmd_free(struct command *cmd)
 {
-	TRACE(cmd->pread.ev_fd, event_del(&cmd->pread));
-	TRACE(cmd->pwrite.ev_fd, event_del(&cmd->pwrite));
+	TRACE(event_get_fd(cmd->pread), event_del(cmd->pread));
+	TRACE(event_get_fd(cmd->pwrite), event_del(cmd->pwrite));
 	TRACE_RESET(cmd->pfd, close(cmd->pfd));
 	cmd->pfd = -1;
 	cmd->pid = -1;
 
 	if (cmd->perrfd != -1) {
-		TRACE(cmd->peread.ev_fd, event_del(&cmd->peread));
+		TRACE(event_get_fd(cmd->peread), event_del(cmd->peread));
 		TRACE_RESET(cmd->perrfd, close(cmd->perrfd));
 		cmd->perrfd = -1;
 	}
@@ -121,15 +121,14 @@ void
 cmd_ready_fd(struct command *cmd, struct callback *cb, void *con)
 {
 	TRACE(cmd->pfd,
-	    event_set(&cmd->pread, cmd->pfd, EV_READ, cb->cb_read, con));
+		cmd->pread = event_new(libevent_base, cmd->pfd, EV_READ, cb->cb_read, con));
 	TRACE(cmd->pfd,
-	    event_set(&cmd->pwrite, cmd->pfd, EV_WRITE, cb->cb_write, con));
+		cmd->pwrite = event_new(libevent_base, cmd->pfd, EV_WRITE, cb->cb_write, con));
 	cmd->fdconnected = 1;
 
 	if (cmd->perrfd != -1) {
 		TRACE(cmd->perrfd,
-		    event_set(&cmd->peread, cmd->perrfd, EV_READ, cb->cb_eread,
-			con));
+			cmd->peread = event_new(libevent_base, cmd->perrfd, EV_READ, cb->cb_eread, con));
 	}
 }
 
@@ -192,8 +191,9 @@ cmd_proxy_connect(struct tuple *hdr, struct command *cmd, struct addrinfo *ai,
 		return (-1);
 	}
 
-	TRACE(fd, event_set(&cmd->pwrite, fd, EV_WRITE, cb->cb_connect, con));
-	TRACE(cmd->pwrite.ev_fd, event_add(&cmd->pwrite, &tv));
+	TRACE(fd,
+		cmd->pwrite = event_new(libevent_base, fd, EV_WRITE, cb->cb_connect, con));
+	TRACE(event_get_fd(cmd->pwrite), event_add(cmd->pwrite, &tv));
 
 	if (getnameinfo(ai->ai_addr, ai->ai_addrlen,
 		ntop, sizeof(ntop), strport, sizeof(strport),
@@ -317,8 +317,8 @@ cmd_droppriv(uid_t uid, gid_t gid)
 
 	return;
  error:
-	syslog(LOG_WARNING, error, "");
-	errx(1, "%s: terminated", __func__);
+ syslog(LOG_ERR,"%s: terminated",__func__);
+ exit(EXIT_FAILURE);
 }
 
 int
@@ -346,7 +346,10 @@ cmd_setpriv(struct template *tmpl)
 	/* Raising file descriptor limits */
 	rl.rlim_cur = rl.rlim_max = nofiles;
 	if (setrlimit(RLIMIT_NOFILE, &rl) == -1)
-		err(1, "setrlimit: %d", nofiles);
+	{
+		syslog(LOG_ERR, "setrlimit: %d, failed to set resource limit", nofiles);
+		exit(EXIT_FAILURE);
+	}
 
 	return (0);
 }
@@ -389,12 +392,21 @@ cmd_fork(struct tuple *hdr, struct command *cmd, struct template *tmpl,
 		/* Child */
 		TRACE_RESET(pair[0], close(pair[0]));
 		if (dup2(pair[1], fileno(stdout)) == -1)
-			err(1, "%s: dup2", __func__);
+		{
+			syslog(LOG_ERR, "%s: dup2 failed to copy descriptor",__func__);
+			exit(EXIT_FAILURE);
+		}
 		if (dup2(pair[1], fileno(stdin)) == -1)
-			err(1, "%s: dup2", __func__);
+		{
+			syslog(LOG_ERR, "%s: dup2", __func__);
+			exit(EXIT_FAILURE);
+		}
 		TRACE_RESET(pair[0], close(perr[0]));
 		if (dup2(perr[1], fileno(stderr)) == -1)
-			err(1, "%s: dup2", __func__);
+		{
+			syslog(LOG_ERR, "%s: dup2", __func__);
+			exit(EXIT_FAILURE);
+		}
 
 		TRACE_RESET(pair[1], close(pair[1]));
 		TRACE_RESET(perr[1], close(perr[1]));
@@ -402,7 +414,10 @@ cmd_fork(struct tuple *hdr, struct command *cmd, struct template *tmpl,
 		cmd_environment(tmpl, hdr);
 
 		if (execvp(execcmd, argv) == -1)
-			err(1, "%s: execv(%s)", __func__, execcmd);
+		{
+			syslog(LOG_ERR, "%s: execv(%s)", __func__, execcmd);
+			exit(EXIT_FAILURE);
+		}
 
 		/* NOT REACHED */
 	}
@@ -428,8 +443,8 @@ cmd_fork(struct tuple *hdr, struct command *cmd, struct template *tmpl,
 
 	cmd_ready_fd(cmd, cb, con);
 
-	TRACE(cmd->pread.ev_fd, event_add(&cmd->pread, NULL));
-	TRACE(cmd->peread.ev_fd, event_add(&cmd->peread, NULL));
+	TRACE(event_get_fd(cmd->pread), event_add(cmd->pread, NULL));
+	TRACE(event_get_fd(cmd->peread), event_add(cmd->peread, NULL));
 
 	honeyd_nchildren++;
 
@@ -484,7 +499,7 @@ cmd_python(struct tuple *hdr, struct command *cmd, void *con)
 
 	cmd_ready_fd(cmd, cb, con);
 
-	TRACE(cmd->pread.ev_fd, event_add(&cmd->pread, NULL));
+	TRACE(event_get_fd(cmd->pread), event_add(cmd->pread, NULL));
 
 	return (pair[1]);
 }
@@ -526,13 +541,22 @@ cmd_subsystem(struct template *tmpl, struct subsystem *sub,
 		TRACE_RESET(pair[0], close(pair[0]));
 		/* Set the communication fd */
 		if ((magic_fd = dup(pair[1])) == -1)
-			err(1, "%s: dup(%d): no magic", __func__, pair[1]);
+		{
+			syslog(LOG_ERR, "%s: dup(%d): no magic failed to duplicate the pair", __func__, pair[1]);
+			exit(EXIT_FAILURE);
+		}
 		snprintf(magic_buf, sizeof(magic_buf), "%d", magic_fd);
 		setenv(SUBSYSTEM_MAGICFD, magic_buf, 1);
 		if (dup2(fileno(stderr), fileno(stdout)) == -1)
-			err(1, "%s: dup2", __func__);
+		{
+			syslog(LOG_ERR, "%s: dup2", __func__);
+			exit(EXIT_FAILURE);
+		}
 		if (dup2(fileno(stderr), fileno(stdin)) == -1)
-			err(1, "%s: dup2", __func__);
+		{
+			syslog(LOG_ERR, "%s: dup2", __func__);
+			exit(EXIT_FAILURE);
+		}
 
 		TRACE_RESET(pair[1], close(pair[1]));
 
@@ -540,10 +564,16 @@ cmd_subsystem(struct template *tmpl, struct subsystem *sub,
 
 		/* Setup the wrapper library */
 		if (setenv("LD_PRELOAD", PATH_HONEYDLIB"/libhoneyd.so", 1) == -1)
-			err(1, "%s: setenv", __func__);
+		{
+			syslog(LOG_ERR, "%s: setenv", __func__);
+			exit(EXIT_FAILURE);
+		}
 
 		if (execv(execcmd, argv) == -1)
-			err(1, "%s: execv(%s)", __func__, execcmd);
+		{
+			syslog(LOG_ERR, "%s: execv(%s)", __func__, execcmd);
+			exit(EXIT_FAILURE);
+		}
 
 		/* NOT REACHED */
 	}
@@ -556,7 +586,7 @@ cmd_subsystem(struct template *tmpl, struct subsystem *sub,
 	cmd->perrfd = -1;
 	cmd_ready_fd(cmd, &subsystem_cb, sub);
 
-	TRACE(cmd->pread.ev_fd, event_add(&cmd->pread, NULL));
+	TRACE(event_get_fd(cmd->pread), event_add(cmd->pread, NULL));
 
 	honeyd_nchildren++;
 
@@ -622,9 +652,10 @@ cmd_subsystem_schedule_connect(struct tuple *hdr, struct command *cmd,
 
 	TAILQ_INSERT_TAIL(&port->pending, tmp, next);
 
-	TRACE(port->sub_fd, event_set(&tmp->ev, port->sub_fd, EV_WRITE,
-	    cmd_subsystem_connect_cb, tmp));
-	TRACE(tmp->ev.ev_fd, event_add(&tmp->ev, NULL));
+	TRACE(port->sub_fd,
+		event_new(libevent_base, port->sub_fd, EV_WRITE, cmd_subsystem_connect_cb, tmp));
+	TRACE(event_get_fd(tmp->ev),
+		event_add(tmp->ev, NULL));
 
 	syslog(LOG_DEBUG,
 	    "Scheduling connection establishment: %s -> subsystem \"%s\"",

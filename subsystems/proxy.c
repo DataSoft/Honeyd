@@ -58,6 +58,7 @@
 #include <ctype.h>
 #include <getopt.h>
 #include <err.h>
+#include <syslog.h>
 
 #include <pcre.h>
 #include <event.h>
@@ -243,7 +244,7 @@ proxy_remote_readcb(struct bufferevent *bev, void *arg)
 	struct proxy_ta *ta = arg;
 	struct evbuffer *buffer = EVBUFFER_INPUT(bev);
 	unsigned char *data = EVBUFFER_DATA(buffer);
-	size_t len = EVBUFFER_LENGTH(buffer);
+	size_t len = evbuffer_get_length(buffer);
 
 	bufferevent_write(ta->bev, data, len);
 	evbuffer_drain(buffer, len);
@@ -262,7 +263,7 @@ proxy_remote_errorcb(struct bufferevent *bev, short what, void *arg)
 	fprintf(stderr, "%s: called with %p, freeing\n", __func__, arg);
 
 	/* If we still have data to write; we just wait for the flush */
-	if (EVBUFFER_LENGTH(buffer)) {
+	if (evbuffer_get_length(buffer)) {
 		/* Shutdown this site at least - XXX: maybe call shutdown */
 		bufferevent_disable(bev, EV_READ|EV_WRITE);
 
@@ -552,7 +553,10 @@ proxy_pcre_group(char *line, int groupnr, int ovector[])
 	int end = ovector[2*groupnr + 1];
 	char *group = malloc(end - start + 1);
 	if (group == NULL)
-		err(1, "%s: malloc", __func__);
+	{
+		syslog(LOG_ERR, "%s: gettimeofday", __func__);
+		exit(EXIT_FAILURE);
+	}
 	memcpy(group, line + start, end - start);
 	group[end-start] = '\0';
 
@@ -599,7 +603,7 @@ proxy_readline(struct bufferevent *bev)
 {
 	struct evbuffer *buffer = EVBUFFER_INPUT(bev);
 	char *data = EVBUFFER_DATA(buffer);
-	size_t len = EVBUFFER_LENGTH(buffer);
+	size_t len = evbuffer_get_length(buffer);
 	char *line;
 	int i;
 
@@ -642,7 +646,7 @@ proxy_readcb(struct bufferevent *bev, void *arg)
 	if (ta->justforward) {
 		struct evbuffer *input = EVBUFFER_INPUT(bev);
 		char *data = EVBUFFER_DATA(input);
-		size_t len = EVBUFFER_LENGTH(input);
+		size_t len = evbuffer_get_length(input);
 		if (ta->corrupt) {
 			bufferevent_write(ta->remote_bev,
 			    proxy_corrupt(data, len), len);
@@ -816,10 +820,16 @@ proxy_bind_socket(struct event *ev, u_short port)
 	int fd;
 
 	if ((fd = make_socket(bind, SOCK_STREAM, "0.0.0.0", port)) == -1)
-		err(1, "%s: cannot bind socket: %d", __func__, port);
+	{
+		syslog(LOG_ERR, "%s: cannot bind socket: %d", __func__, port);
+		exit(EXIT_FAILURE);
+	}
 
 	if (listen(fd, 10) == -1)
-		err(1, "%s: listen failed: %d", __func__, port);
+	{
+		syslog(LOG_ERR, "%s: listen failed: %d", __func__, port);
+		exit(EXIT_FAILURE);
+	}
 
 	/* Schedule the socket for accepting */
 	event_set(ev, fd, EV_READ | EV_PERSIST, accept_socket, NULL);
@@ -844,15 +854,24 @@ proxy_init(void)
 	re_connect = pcre_compile(exp_connect, PCRE_CASELESS,
 	    &error, &erroroffset, NULL);
 	if (re_connect == NULL)
-		err(1, "%s: %s at %d", __func__, error, erroroffset);
+	{
+		syslog(LOG_ERR, "%s: %s at %d", __func__, error, erroroffset);
+		exit(EXIT_FAILURE);
+	}
 
 	re_hostport = pcre_compile(exp_hostport, PCRE_CASELESS,
 	    &error, &erroroffset, NULL);
 	if (re_connect == NULL)
-		err(1, "%s: %s at %d", __func__, error, erroroffset);
+	{
+		syslog(LOG_ERR, "%s: %s at %d", __func__, error, erroroffset);
+		exit(EXIT_FAILURE);
+	}
 
 	re_get = pcre_compile(exp_get, PCRE_CASELESS,
 	    &error, &erroroffset, NULL);
 	if (re_connect == NULL)
-		err(1, "%s: %s at %d", __func__, error, erroroffset);
+	{
+		syslog(LOG_ERR, "%s: %s at %d", __func__, error, erroroffset);
+		exit(EXIT_FAILURE);
+	}
 }

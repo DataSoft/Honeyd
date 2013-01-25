@@ -34,7 +34,7 @@
 %{
 #include <sys/types.h>
 #include <sys/tree.h>
-
+#include <syslog.h>
 #include "config.h"
 
 #include <sys/queue.h>
@@ -85,9 +85,9 @@ add		{ return ADD; }
 port		{ return PORT; }
 bind		{ return BIND; }
 clone		{ return CLONE; }
-block		{ return BLOCK; }
+filtered		{ return FILTERED; }
 open		{ return OPEN; }
-reset		{ return RESET; }
+closed		{ return CLOSED; }
 default		{ return DEFAULT; }
 action		{ return ACTION; }
 set		{ return SET; }
@@ -101,6 +101,7 @@ drop		{ return DROP; }
 old		{ return OLD; }
 new		{ return NEW; }
 proxy		{ return PROXY; }
+broadcast {return BROADCAST;}
 uptime		{ return UPTIME; }
 droprate	{ return DROPRATE; }
 in		{ return IN; }

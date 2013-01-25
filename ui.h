@@ -35,8 +35,8 @@
 struct uiclient {
 	int fd;
 
-	struct event ev_read;
-	struct event ev_write;
+	struct event *ev_read;
+	struct event *ev_write;
 
 	struct evbuffer *inbuf;
 	struct evbuffer *outbuf;

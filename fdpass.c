@@ -25,6 +25,7 @@
 
 #include <sys/param.h>
 #include <sys/types.h>
+#include <stdlib.h>
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -32,6 +33,7 @@
 
 #include <sys/socket.h>
 #include <sys/uio.h>
+#include <syslog.h>
 
 #include <errno.h>
 #include <err.h>
@@ -79,21 +81,24 @@ send_fd(int socket, int fd, void *base, size_t len)
 	if ((n = sendmsg(socket, &msg, 0)) == -1) {
 		if (errno == EAGAIN)
 			return (-1);
-		err(1, "%s: sendmsg(%d): %s", __func__, fd, strerror(errno));
+		syslog(LOG_ERR,"%s: sendmsg(%d): %s", __func__, fd, strerror(errno));
+		exit(EXIT_FAILURE);
 	}
 	if (n == 0)
-		errx(1, "%s: sendmsg: expected sent >0 got %ld",
-		    __func__, (long)n);
+	{
+		syslog(LOG_ERR,"%s: sendmsg: expected setn >0 got %ld", __func__, (long)n);
+		exit(EXIT_FAILURE);
+	}
 #else
-	errx(1, "%s: subsystems not supported due to lack of fd passing",
-	    __func__);
+	syslog(LOG_ERR, "%s: subsystems not supported due to lack of fd passing",__func__);
+			exit(EXIT_FAILURE);
 #endif
 
 	return (0);
 }
 
 int
-receive_fd(int socket, void *base, size_t *len)
+receive_fd(int socket, void *base, socklen_t *len)
 {
 #if defined(HAVE_RECVMSG) && (defined(HAVE_ACCRIGHTS_IN_MSGHDR) || defined(HAVE_CONTROL_IN_MSGHDR))
 	struct msghdr msg;
@@ -129,27 +134,37 @@ receive_fd(int socket, void *base, size_t *len)
 			continue;
 		if (errno == EAGAIN)
 			return (-1);
-		err(1, "%s: recvmsg: %s", __func__, strerror(errno));
+		syslog(LOG_ERR,"%s: recvmsg: %s", __func__, strerror(errno));
+		exit(EXIT_FAILURE);
 	}
 	if (n == 0)
-		errx(1, "%s: recvmsg: expected received >0 got %ld",
-		    __func__, (long)n);
+	{
+		syslog(LOG_ERR,"%s: recvmsg: expected received >0 got %ld", __func__, (long)n);
+		exit(EXIT_FAILURE);
+	}
 	if (len != 0)
 		*len = n;
 
 #ifdef HAVE_ACCRIGHTS_IN_MSGHDR
 	if (msg.msg_accrightslen != sizeof(fd))
-		errx(1, "%s: no fd", __func__);
+	{
+		syslog(LOG_ERR,"%s: no fd", __func__);
+		exit(EXIT_FAILURE);
+	}
 #else
 	cmsg = CMSG_FIRSTHDR(&msg);
 	if (cmsg->cmsg_type != SCM_RIGHTS)
-		errx(1, "%s: expected type %d got %d", __func__,
-		    SCM_RIGHTS, cmsg->cmsg_type);
+	{
+		syslog(LOG_ERR,"%s: expected type %d got %d", __func__, SCM_RIGHTS, cmsg->cmsg_type);
+		exit(EXIT_FAILURE);
+	}
 	memcpy(&fd, CMSG_DATA(cmsg), sizeof(fd));
 #endif
 	return fd;
 #else
-	errx(1, "%s: subsystems not supported due to lack of fd passing",
-	    __func__);
+	{
+	syslog(LOG_ERR, "%s: subsystems not supported due to lack of fd pasing", __func__);
+	exit(EXIT_FAILURE);
+	}
 #endif
 }

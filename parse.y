@@ -103,11 +103,11 @@ int curtype = -1;	/* Lex sets it to SOCK_STREAM or _DGRAM */
 
 %}
 
-%token	CREATE ADD PORT BIND CLONE DOT BLOCK OPEN RESET DEFAULT SET ACTION
+%token	CREATE ADD PORT BIND CLONE DOT FILTERED OPEN CLOSED DEFAULT SET ACTION
 %token	PERSONALITY RANDOM ANNOTATE NO FINSCAN FRAGMENT DROP OLD NEW COLON
 %token	PROXY UPTIME DROPRATE IN SYN UID GID ROUTE ENTRY LINK NET UNREACH
 %token	SLASH LATENCY MS LOSS BANDWIDTH SUBSYSTEM OPTION TO SHARED NETWORK
-%token	SPOOF FROM TEMPLATE
+%token	SPOOF FROM TEMPLATE BROADCAST
 %token  TUNNEL TARPIT DYNAMIC USE IF OTHERWISE EQUAL SOURCE OS IP BETWEEN
 %token  DELETE LIST ETHERNET DHCP ON MAXFDS RESTART DEBUG
 %token	DASH TIME INTERNAL
@@ -280,6 +280,8 @@ binding		: BIND ipaddr template
 				    "interface that can reach %s",
 				    $3->name, addr_ntoa(&$2));
 				break;
+			} else {
+				$3->addrbits = inter->if_addrbits;
 			}
 		}
 
@@ -800,16 +802,16 @@ action		: flags STRING
 				yyerror("Out of memory");
 		free($5);
 	}
-		| BLOCK
+		| FILTERED
 	{
 		memset(&$$, 0, sizeof($$));
-		$$.status = PORT_BLOCK;
+		$$.status = PORT_FILTERED;
 		$$.action = NULL;
 	}
-		| RESET
+		| CLOSED
 	{
 		memset(&$$, 0, sizeof($$));
-		$$.status = PORT_RESET;
+		$$.status = PORT_CLOSED;
 		$$.action = NULL;
 	}
 		| flags OPEN
@@ -1168,6 +1170,8 @@ dhcp_template(struct template *tmpl, char *interface, char *mac_addr)
 		yyerror("Binding to %s failed", addr_ntoa(&addr));
 		return;
 	}
+	
+	newtmpl->addrbits = inter->if_addrbits;
 
 	if (mac_addr != NULL) {
 		/*

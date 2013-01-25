@@ -21,12 +21,15 @@ struct port_encapsulate {
 	struct port *port;
 	void *con;
 
-	struct event ev;
+	struct event *ev;
 };
 
 /* Contains information common to both UDP and TCP connections */
 struct tuple {
-	SPLAY_ENTRY(tuple) node;
+	struct {
+		struct tuple *spe_left; /* left element */
+		struct tuple *spe_right; /* right element */
+	} node;
 	TAILQ_ENTRY(tuple) next;
 
 	// IP layer src/dst packet come from
@@ -51,7 +54,7 @@ struct tuple {
 	uint32_t received;
 	uint32_t sent;
 
-	struct event timeout;
+	struct event* timeout;
 
 	int local;	/* locally initiated */
 

@@ -70,7 +70,6 @@ int npersons;
 
 /* ET - global from honeyd.c */
 struct personate person_drop = {};
-static struct event personality_time_ev;
 static struct timeval tv_periodic;
 
 SPLAY_GENERATE(perstree, personality, node, perscompare);
@@ -79,15 +78,16 @@ SPLAY_GENERATE(perstree, personality, node, perscompare);
 SPLAY_GENERATE(xp_fprint_tree, xp_fingerprint, node, xp_fprint_compare);
 
 static void
-personality_time_evcb(int fd, short what, void *arg)
+personality_time_evcb(int fd, short what, void *unused)
 {
-	struct event *ev = arg;
 	struct timeval tv;
 
 	gettimeofday(&tv_periodic, NULL);
 
 	timerclear(&tv);
 	tv.tv_usec = 100000;	/* every 100 ms */
+
+	struct event *ev = evtimer_new(libevent_base, personality_time_evcb, NULL);
 	evtimer_add(ev, &tv);
 }
 
@@ -104,9 +104,7 @@ personality_init(void)
 	SPLAY_INIT(&personalities);
 
 	/* Start a timer that keeps track of the current system time */
-	evtimer_set(&personality_time_ev,
-	    personality_time_evcb, &personality_time_ev);
-	personality_time_evcb(-1, EV_TIMEOUT, &personality_time_ev);
+	personality_time_evcb(-1, EV_TIMEOUT, NULL);
 }
 
 struct personality *
@@ -119,10 +117,16 @@ personality_new(const char *name)
 		return (NULL);
 
 	if ((pers = calloc(1, sizeof(struct personality))) == NULL)
-		err(1, "%s: calloc", __FUNCTION__);
+	{
+		syslog(LOG_ERR, "%s: calloc", __func__);
+		exit(EXIT_FAILURE);
+	}
 
 	if ((pers->name = strdup(name)) == NULL)
-		err(1, "%s: stdup", __FUNCTION__);
+	{
+		syslog(LOG_ERR, "%s: stdrup", __func__);
+		exit(EXIT_FAILURE);
+	}
 
 	/* Initialize defaults */
 	pers->tstamphz = -1;
@@ -142,7 +146,10 @@ personality_clone(const struct personality *person)
 	struct personality *newperson;
 
 	if ((newperson = malloc(sizeof(struct personality))) == NULL)
-		err(1, "%s: malloc", __FUNCTION__);
+	{
+		syslog(LOG_ERR, "%s: malloc", __func__);
+		exit(EXIT_FAILURE);
+	}
 
 	memcpy(newperson, person, sizeof(struct personality));
 
@@ -298,6 +305,15 @@ ip_personality(struct template *tmpl, uint16_t *pid, enum ipid_protocol proto)
 		{
 			*ipid_cached = *ipid_cached + 1;
 			*pid = *ipid_cached;
+			break;
+		}
+		case(ID_NONE):
+		{
+			//need to know what to implement for this section
+			break;
+		}
+		default:
+		{
 			break;
 		}
 	}
@@ -2351,6 +2367,12 @@ personality_parse(FILE *fin)
 		/* Remove trailing comments */
 		p2 = p;
 		strsep(&p2, "#\r\n");
+
+		if (CMP(p, MATCHPOINTS) == 0) {
+			pers = NULL;
+			ignore = 1;
+			continue;
+		}
 
 		if (CMP(p, FINGERPRINT) == 0) {
 			p += sizeof(FINGERPRINT) - 1;

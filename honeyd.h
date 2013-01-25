@@ -56,12 +56,17 @@
 
 #define HONEYD_ADDR_MASK        0xFFFFFF00 /* for ICMP address mask replies */
 
+#include "compat/sys/tree.h"
+
+struct event_base *libevent_base;
+
 struct config {
 	char *config;	 /* Name of configuration file */
 	char *pers;
 	char *xprobe;
 	char *assoc;
 	char *osfp;
+	char *nmapMac;
 };
 
 struct count;
@@ -78,7 +83,7 @@ struct spoof {
 extern struct spoof no_spoof;
 
 struct delay {
-	struct event timeout;
+	struct event *timeout;
 
 	struct addr src;
 	struct addr dst;
@@ -98,7 +103,7 @@ struct delay {
 #define DELAY_UNREACH	0x0010
 #define DELAY_ETHERNET	0x0020	/* packet needs to be sent via ethernet */
 
-enum status {PORT_OPEN = 0, PORT_PROXY, PORT_BLOCK, PORT_RESET,
+enum status {PORT_OPEN = 0, PORT_PROXY, PORT_FILTERED, PORT_CLOSED,
 	     PORT_SUBSYSTEM, PORT_PYTHON, PORT_RESERVED
 };
 
@@ -152,9 +157,9 @@ struct command {
 	int pfd;
 	int perrfd;
 
-	struct event pread;
-	struct event pwrite;
-	struct event peread;
+	struct event *pread;
+	struct event *pwrite;
+	struct event *peread;
 
 	uint8_t fdconnected:1,
 	        fdwantclose:1,
@@ -210,7 +215,7 @@ struct tcp_con {
 
 	u_short retrans_time;
 
-	struct event retrans_timeout;
+	struct event *retrans_timeout;
 
 	struct port *port;		/* used if bound to sub system */
 

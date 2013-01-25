@@ -144,7 +144,10 @@ subsystem_insert_template(struct subsystem *sub, struct template *tmpl)
 	int isipaddr = addr_aton(tmpl->name, &addr) != -1;
 
 	if ((cont = calloc(1, sizeof(struct template_container))) == NULL)
-		err(1, "%s: calloc");
+	{
+		syslog(LOG_ERR, "%s: calloc",__func__);
+		exit(EXIT_FAILURE);
+	}
 	cont->tmpl = template_ref(tmpl);
 
 	TAILQ_INSERT_TAIL(&sub->templates, cont, next);
@@ -185,8 +188,7 @@ subsystem_cleanup(struct subsystem *sub)
 			
 			timerclear(&tv);
 			tv.tv_sec = 2 * SUBSYSTEM_RESTART_INTERVAL;
-			event_once(-1, EV_TIMEOUT,
-			    subsystem_restart, sub, &tv);
+			event_base_once(libevent_base, -1, EV_TIMEOUT, subsystem_restart, sub, &tv);
 		}
 		return;
 	}
@@ -389,8 +391,10 @@ subsystem_cmd_listen(int fd,
 			tmpl = cont->tmpl;
 			sub_port = port_find(tmpl, proto, port);
 			if (sub_port == NULL)
-				errx(1, "%s: no proto %d port %d",
-				    __func__, proto, port);
+			{
+				syslog(LOG_ERR, "%s: no proto %d port %d", __func__, proto, port);
+				exit(EXIT_FAILURE);
+			}
 			if (sub_port->sub == NULL) {
 				syslog(LOG_DEBUG,
 				    "Subsystem %s fails to listen on %s:%d",
@@ -551,8 +555,10 @@ subsystem_read(int fd, short what, void *arg)
 		if (strcmp(asrc, "0.0.0.0") != 0) {
 			tmpl = subsystem_template_find(sub, asrc);
 			if (tmpl == NULL)
-				errx(1, "%s: source address %s not found",
-				    __func__, asrc);
+			{
+				syslog(LOG_ERR, "%s: source address %s not found", __func__, asrc);
+				exit(EXIT_FAILURE);
+			}
 		} else {
 			cont = SPLAY_ROOT(&sub->root);
 			tmpl = cont->tmpl;
@@ -600,7 +606,7 @@ subsystem_read(int fd, short what, void *arg)
 			tcp.th_sport = htons(port);
 			tcp.th_dport = htons(sub_port->number);
 
-			if ((con = tcp_new(src, dst, &tcp, 1)) == NULL)
+			if ((con = tcp_new(src, dst, &tcp, INITIATED_BY_SUBSYSTEM)) == NULL)
 				goto out;
 			con->tmpl = template_ref(tmpl);
 
@@ -631,7 +637,7 @@ subsystem_read(int fd, short what, void *arg)
 			con->snd_una++;
 
 			con->retrans_time = 1;
-			generic_timeout(&con->retrans_timeout, con->retrans_time);
+			generic_timeout(con->retrans_timeout, con->retrans_time);
 			goto reschedule;
 		} else if (proto == IP_PROTO_UDP) {
 			struct udp_con *con;
@@ -642,7 +648,7 @@ subsystem_read(int fd, short what, void *arg)
 			udp.uh_sport = htons(port);
 			udp.uh_dport = htons(sub_port->number);
 
-			if ((con = udp_new(&ip, &udp, 1)) == NULL)
+			if ((con = udp_new(&ip, &udp, INITIATED_BY_SUBSYSTEM)) == NULL)
 				goto out;
 			con->tmpl = template_ref(tmpl);
 			
@@ -681,7 +687,7 @@ subsystem_read(int fd, short what, void *arg)
 	TRACE(fd, atomicio(write, fd, &res, 1));
  reschedule:
 	/* Reschedule read */
-	TRACE(sub->cmd.pread.ev_fd, event_add(&sub->cmd.pread, NULL));
+	TRACE(event_get_fd(sub->cmd.pread), event_add(sub->cmd.pread, NULL));
 }
 
 void

@@ -218,7 +218,8 @@ tcp_track_new(struct ip_hdr *ip, struct tcp_hdr *tcp, int local)
 	}
 
 	hsniff_settcp(con, ip, tcp, local);
-	evtimer_set(&con->timeout, hsniff_tcp_timeout, con);
+
+	con->timeout = evtimer_new(libevent_base, hsniff_tcp_timeout, con);
 
 	SPLAY_INSERT(tree, &tcpcons, &con->conhdr);
 
@@ -240,7 +241,7 @@ tcp_track_free(struct tcp_track *con)
 	hooks_dispatch(IP_PROTO_TCP, HD_INCOMING_STREAM, &con->conhdr,
 	    NULL, 0);
 
-	evtimer_del(&con->timeout);
+	evtimer_del(con->timeout);
 
 	free(con);
 }
@@ -266,7 +267,10 @@ tcp_insert(struct tcp_track *con, uint32_t th_seq, void *data, size_t dlen)
 		if (TCP_SEQ_LEQ(th_seq + dlen, seg->seq)) {
 			newseg = calloc(1, sizeof(struct tcp_segment));
 			if (newseg == NULL)
-				err(1, "%s: calloc", __func__);
+			{
+				syslog(LOG_ERR, "%s: calloc", __func__);
+				exit(EXIT_FAILURE);
+			}
 			TAILQ_INSERT_BEFORE(seg, newseg, next);
 			return;
 		}
@@ -319,7 +323,7 @@ tcp_drop_subsumed(struct tcp_track *con)
 		 * so we can stream its content out.
 		 */
 
-		syslog(LOG_NOTICE, "Streaming: %s %u: %d",
+		syslog(LOG_NOTICE, "Streaming: %s %u: %zd",
 		    honeyd_contoa(&con->conhdr), con->snd_una, seg->len);
 		hooks_dispatch(IP_PROTO_TCP, HD_INCOMING_STREAM,
 		    &con->conhdr, seg->data, seg->len);
@@ -375,7 +379,7 @@ tcp_recv_cb(u_char *pkt, u_short pktlen)
 	 * We need to hear back from this connection every so often,
 	 * or we are going to time it out.
 	 */
-	generic_timeout(&con->timeout, HSNIFF_CON_EXPIRE);
+	generic_timeout(con->timeout, HSNIFF_CON_EXPIRE);
 
 	hooks_dispatch(ip->ip_p, HD_INCOMING, &tmp.conhdr, pkt, pktlen);
 	
@@ -400,7 +404,7 @@ tcp_recv_cb(u_char *pkt, u_short pktlen)
 
 	if (th_seq == con->snd_una) {
 		/* Inform our listener about the new data */
-		syslog(LOG_NOTICE, "Streaming: %s %u: %d",
+		syslog(LOG_NOTICE, "Streaming: %s %u: %zd",
 		    honeyd_contoa(&con->conhdr), con->snd_una, dlen);
 		hooks_dispatch(IP_PROTO_TCP, HD_INCOMING_STREAM, &con->conhdr,
 		    data, dlen);
@@ -516,7 +520,6 @@ int
 main(int argc, char *argv[])
 {
 	extern int interface_dopoll;
-	struct event sigterm_ev, sigint_ev;
 	char *dev[HSNIFF_MAX_INTERFACES];
 	char **orig_argv;
 	char *osfp = PATH_HONEYDDATA "/pf.os";
@@ -597,7 +600,10 @@ main(int argc, char *argv[])
 			break;
 		case 'i':
 			if (ninterfaces >= HSNIFF_MAX_INTERFACES)
-				errx(1, "Too many interfaces specified");
+			{
+				syslog(LOG_ERR, "Too many interfaces specified");
+				exit(EXIT_FAILURE);
+			}
 			dev[ninterfaces++] = optarg;
 			break;
 		case '0':
@@ -608,7 +614,7 @@ main(int argc, char *argv[])
 			break;
 		default:
 			usage();
-			/* not reached */
+			break;
 		}
 	}
 
@@ -629,25 +635,37 @@ main(int argc, char *argv[])
 		struct addr addr;
 
 		if (addr_pton(*argv, &addr) == -1)
-			errx(1, "invalid address \"%s\"", *argv);
+		{
+			syslog(LOG_ERR, "invalid address \"%s\"", *argv);
+			exit(EXIT_FAILURE);
+		}
 
 		if (strlen(filter) &&
 		    strlcat(filter, " or ", sizeof(filter)) >= sizeof(filter))
-			errx(1, "too many addresses; filter too long");
+		{
+			syslog(LOG_ERR, "too many addresses; filter too big");
+			exit(EXIT_FAILURE);
+		}
 
 		if (addr.addr_bits == 32) {
 			snprintf(line, sizeof(line), "(not src %s and dst %s)",
 			    addr_ntoa(&addr), addr_ntoa(&addr));
 			if (strlcat(filter, line, sizeof(filter)) >= 
 			    sizeof(filter))
-				errx(1, "too many address; filter too long");
+			{
+				syslog(LOG_ERR, "too many addresses; filter too big");
+				exit(EXIT_FAILURE);
+			}
 		} else {
 			snprintf(line, sizeof(line),
 			    "(not src net %s and dst net %s)",
 			    addr_ntoa(&addr), addr_ntoa(&addr));
 			if (strlcat(filter, line, sizeof(filter)) >= 
 			    sizeof(filter))
-				errx(1, "too many address; filter too long");
+			{
+				syslog(LOG_ERR, "too many addresses, filter too big");
+				exit(EXIT_FAILURE);
+			}
 		}
 		argv++;
 		argc--;
@@ -669,7 +687,7 @@ main(int argc, char *argv[])
 	/* disabled event methods that don't work with bpf */
 	interface_prevent_init();
 
-	event_init();
+	hsniff_libevent_base = event_base_new();
 
 	syslog_init(orig_argc, orig_argv);
 
@@ -679,7 +697,10 @@ main(int argc, char *argv[])
 	interface_initialize(hsniff_recv_cb);
 
 	if (stats_username == NULL)
-		errx(1, "no username specified for stats reporting");
+	{
+		syslog(LOG_ERR, "no username specified for stats reporting");
+		exit(EXIT_FAILURE);
+	}
 
 	stats_init();
 	stats_init_collect(&stats_dst, stats_port,
@@ -687,7 +708,10 @@ main(int argc, char *argv[])
 
 	/* PF OS fingerprints */
 	if (honeyd_osfp_init(osfp) == -1)
-		errx(1, "reading OS fingerprints failed");
+	{
+		syslog(LOG_ERR, "failed to read OS fingerprints");
+		exit(EXIT_FAILURE);
+	}
 
 	/* Initialize the specified interfaces */
 	if (ninterfaces == 0)
@@ -700,7 +724,10 @@ main(int argc, char *argv[])
 	/* Create PID file, we might not be able to remove it */
 	unlink(HSNIFF_PIDFILE);
 	if ((fp = fopen(HSNIFF_PIDFILE, "w")) == NULL)
-		err(1, "fopen");
+	{
+		syslog(LOG_ERR, "fopen, failed to open file");
+		exit(EXIT_FAILURE);
+	}
 
 	/* Start Hsniff in the background if necessary */
 	if (!honeyd_debug) {
@@ -709,7 +736,8 @@ main(int argc, char *argv[])
 		fprintf(stderr, "Hsniff starting as background process\n");
 		if (daemon(1, 0) < 0) {
 			unlink(HSNIFF_PIDFILE);
-			err(1, "daemon");
+			syslog(LOG_ERR, "daemon");
+			exit(EXIT_FAILURE);
 		}
 	}
 	
@@ -725,12 +753,15 @@ main(int argc, char *argv[])
 	    "Demoting process privileges to uid %u, gid %u",
 	    hsniff_uid, hsniff_gid);
 
-	signal_set(&sigint_ev, SIGINT, hsniff_signal, NULL);
-	signal_add(&sigint_ev, NULL);
-	signal_set(&sigterm_ev, SIGTERM, hsniff_signal, NULL);
-	signal_add(&sigterm_ev, NULL);
+	struct event *sigterm_ev, *sigint_ev;
 
-	event_dispatch();
+	sigterm_ev = evsignal_new(hsniff_libevent_base, SIGTERM, hsniff_signal, NULL);
+	sigint_ev = evsignal_new(hsniff_libevent_base, SIGINT, hsniff_signal, NULL);
+
+	event_add(sigterm_ev, NULL);
+	event_add(sigint_ev, NULL);
+
+	event_base_dispatch(hsniff_libevent_base);
 
 	syslog(LOG_ERR, "Kqueue does not recognize bpf filedescriptor.");
 
@@ -811,6 +842,6 @@ droppriv(uid_t uid, gid_t gid)
 
 	return;
  error:
-	syslog(LOG_WARNING, error, "");
-	errx(1, "%s: terminated", __func__);
+	syslog(LOG_ERR, "%s: terminated", __func__);
+	exit(EXIT_FAILURE);
 }

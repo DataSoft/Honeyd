@@ -91,11 +91,10 @@ struct statscontrol {
 	struct addr *user_dst;
 	u_short user_port;
 	int stats_fd;
-	struct event ev_send;
+	struct event *ev_send;
 
 	struct measurement measurement;
 	struct timeval tv_start;
-	struct event ev_measure;
 	struct evbuffer *evbuf_measure;
 	struct evbuffer *evbuf_tmp;
 
@@ -191,8 +190,8 @@ stats_compress(struct evbuffer *evbuf)
 	}
 	deflateReset(&stream);
 
-	stream.next_in = EVBUFFER_DATA(evbuf);
-	stream.avail_in = EVBUFFER_LENGTH(evbuf);
+	stream.next_in = evbuffer_pullup(evbuf, -1);
+	stream.avail_in = evbuffer_get_length(evbuf);
 
 	do {
 		stream.next_out = buffer;
@@ -207,13 +206,15 @@ stats_compress(struct evbuffer *evbuf)
 			    sizeof(buffer) - stream.avail_out);
 			break;
 		default:
-			errx(1, "%s: deflate failed with %d",
-			    __func__, status);
+		{
+			syslog(LOG_ERR, "%s: deflate failed with %d", __func__, status);
+			exit(EXIT_FAILURE);
+		}
 			/* NOTREACHED */
 		}
 	} while (stream.avail_out == 0);
 
-	evbuffer_drain(evbuf, EVBUFFER_LENGTH(evbuf));
+	evbuffer_drain(evbuf, evbuffer_get_length(evbuf));
 	evbuffer_add_buffer(evbuf, tmp);
 }
 
@@ -232,8 +233,8 @@ stats_decompress(struct evbuffer *evbuf)
 	}
 	inflateReset(&stream);
 
-	stream.next_in = EVBUFFER_DATA(evbuf);
-	stream.avail_in = EVBUFFER_LENGTH(evbuf);
+	stream.next_in = evbuffer_pullup(evbuf, -1);
+	stream.avail_in = evbuffer_get_length(evbuf);
 
 	do {
 		stream.next_out = buffer;
@@ -258,7 +259,7 @@ stats_decompress(struct evbuffer *evbuf)
 		}
 	} while (!done);
 
-	evbuffer_drain(evbuf, EVBUFFER_LENGTH(evbuf));
+	evbuffer_drain(evbuf, evbuffer_get_length(evbuf));
 	evbuffer_add_buffer(evbuf, tmp);
 
 	return (0);
@@ -276,13 +277,14 @@ stats_shingle_data(struct stats *stats)
 {
 	uint16_t hash = 0;
 
-	while (EVBUFFER_LENGTH(stats->evbuf) >= SHINGLE_MIN) {
-		u_char *data = EVBUFFER_DATA(stats->evbuf);
+	while (evbuffer_get_length(stats->evbuf) >= SHINGLE_MIN)
+	{
+		u_char *data = evbuffer_pullup(stats->evbuf, -1);
 		int i;
 
 		/* So, we are wasting some time here, but that's alright */
 		for (i = SHINGLE_MIN;
-		    i < EVBUFFER_LENGTH(stats->evbuf) - 4; i++) {
+		    i < evbuffer_get_length(stats->evbuf) - 4; i++) {
 			if (i >= SHINGLE_MAX)
 				break;
 			hash = ((~data[i] << 8 | data[i+1]) +
@@ -305,7 +307,7 @@ stats_shingle_data(struct stats *stats)
 /* Adds a regular timeout at which stats are sent off to a monitor */
 
 static void
-stats_measure_timeout(void)
+stats_measure_timeout()
 {
 	struct timeval tv, now;
 	uint32_t diff_ms;
@@ -319,7 +321,8 @@ stats_measure_timeout(void)
 	tv.tv_sec = diff_ms / 1000;
 	tv.tv_usec = diff_ms * 1000;
 
-	evtimer_add(&sc.ev_measure, &tv);
+	struct event *ev_measure = evtimer_new(libevent_base, stats_measure_cb, NULL);
+	evtimer_add(ev_measure, &tv);
 }
 
 
@@ -330,7 +333,7 @@ stats_add_timeout(struct stats *stats)
 
 	timerclear(&tv);
 	tv.tv_sec = STATS_TIMEOUT;
-	evtimer_add(&stats->ev_timeout, &tv);
+	evtimer_add(stats->ev_timeout, &tv);
 }
 
 static struct stats *
@@ -385,8 +388,8 @@ stats_ready_cb(int fd, short what, void *arg)
 	tmp = TAILQ_FIRST(&sc.send_queue);
 	TAILQ_REMOVE(&sc.send_queue, tmp, next);
 	if (what != EV_TIMEOUT) {
-		syslog(LOG_DEBUG, "writing stats of length %d",
-		    EVBUFFER_LENGTH(tmp->evbuf));
+		syslog(LOG_DEBUG, "writing stats of length %zu",
+		    evbuffer_get_length(tmp->evbuf));
 		if (evbuffer_write(tmp->evbuf, fd) == -1) {
 			syslog(LOG_WARNING,
 			    "remote stats daemon unreachable: %m");
@@ -403,7 +406,7 @@ stats_ready_cb(int fd, short what, void *arg)
 		struct timeval tv;
 		timerclear(&tv);
 		tv.tv_sec = STATS_SEND_TIMEOUT;
-		event_add(&sc.ev_send, &tv);
+		event_add(sc.ev_send, &tv);
 	}
 }
 
@@ -416,14 +419,17 @@ stats_prepare_send(struct evbuffer *evbuf)
 	assert(sc.stats_fd != -1);
 	
 	if ((tmp = calloc(1, sizeof(struct stats_packet))) == NULL)
-		err(1, "%s: calloc", __func__);
+	{
+		syslog(LOG_ERR, "%s: calloc", __func__);
+		exit(EXIT_FAILURE);
+	}
 
 	tmp->evbuf = evbuf;
 	TAILQ_INSERT_TAIL(&sc.send_queue, tmp, next);
 
 	timerclear(&tv);
 	tv.tv_sec = STATS_SEND_TIMEOUT;
-	event_add(&sc.ev_send, &tv);
+	event_add(sc.ev_send, &tv);
 }
 
 static void
@@ -437,22 +443,24 @@ stats_package_measurement()
 		return;
 	
 	if ((evbuf = evbuffer_new()) == NULL)
-		err(1, "%s: evbuffer_new", __func__);
+	{
+		syslog(LOG_ERR, "%s: evbuffer_new", __func__);
+		exit(EXIT_FAILURE);
+	}
 
 	/* Compress the measured data */
 	stats_compress(sc.evbuf_measure);
 
 	/* Sign the data - at this point, we could use compression */
 	hmac_sign(&sc.hmac, digest, sizeof(digest),
-	    EVBUFFER_DATA(sc.evbuf_measure),
-	    EVBUFFER_LENGTH(sc.evbuf_measure));
+		evbuffer_pullup(sc.evbuf_measure, -1),
+	    evbuffer_get_length(sc.evbuf_measure));
 
 	/* Create the signed buffer */
 	evtag_marshal_string(evbuf, SIG_NAME, sc.user_name);
 	evtag_marshal(evbuf, SIG_DIGEST, digest, sizeof(digest));
-	evtag_marshal(evbuf, SIG_COMPRESSED_DATA,
-	    EVBUFFER_DATA(sc.evbuf_measure),
-	    EVBUFFER_LENGTH(sc.evbuf_measure));
+	evtag_marshal(evbuf, SIG_COMPRESSED_DATA, evbuffer_pullup(sc.evbuf_measure, -1),
+		evbuffer_get_length(sc.evbuf_measure));
 
 	stats_prepare_send(evbuf);
 }
@@ -469,7 +477,7 @@ measurement_marshal(struct evbuffer *evbuf, struct measurement *m)
  * Packages up the measured data and sents it to a collector.
  */
 
-static void
+void
 stats_measure_cb(int fd, short what, void *arg)
 {
 	struct stats *stats;
@@ -485,7 +493,7 @@ stats_measure_cb(int fd, short what, void *arg)
 		sc.measurement.counter++;
 		measurement_marshal(sc.evbuf_measure, &sc.measurement);
 		while ((stats = TAILQ_FIRST(&sc.active_stats)) != NULL &&
-		    EVBUFFER_LENGTH(sc.evbuf_measure) < STATS_MAX_SIZE) {
+		    evbuffer_get_length(sc.evbuf_measure) < STATS_MAX_SIZE) {
 			struct hash *hash;
 			int i;
 
@@ -495,12 +503,12 @@ stats_measure_cb(int fd, short what, void *arg)
 			 * now.
 			 */
 			if (stats->needelete &&
-			    EVBUFFER_LENGTH(stats->evbuf) >= SHINGLE_MIN) {
+			    evbuffer_get_length(stats->evbuf) >= SHINGLE_MIN) {
 				record_add_hash(&stats->hashes,
-				    EVBUFFER_DATA(stats->evbuf),
-				    EVBUFFER_LENGTH(stats->evbuf));
+					evbuffer_pullup(stats->evbuf, -1),
+				    evbuffer_get_length(stats->evbuf));
 				evbuffer_drain(stats->evbuf,
-				    EVBUFFER_LENGTH(stats->evbuf));
+				    evbuffer_get_length(stats->evbuf));
 			}
 
 			/* 
@@ -557,8 +565,8 @@ stats_measure_cb(int fd, short what, void *arg)
 			if (stats->needelete && !stats->isactive)
 				stats_free(stats);
 
-			if (EVBUFFER_LENGTH(sc.evbuf_measure) +
-			    EVBUFFER_LENGTH(sc.evbuf_tmp) >= STATS_MAX_SIZE) {
+			if (evbuffer_get_length(sc.evbuf_measure) +
+			    evbuffer_get_length(sc.evbuf_tmp) >= STATS_MAX_SIZE) {
 				/* Package up current packet */
 				stats_package_measurement();
 
@@ -600,7 +608,10 @@ stats_new(const struct tuple *conhdr)
 
 	assert(stats_find(conhdr) == NULL);
 	if ((stats = calloc(1, sizeof(struct stats))) == NULL)
-		err(1, "%s: calloc", __func__);
+	{
+		syslog(LOG_ERR, "%s: calloc", __func__);
+		exit(EXIT_FAILURE);
+	}
 
 	TAILQ_INIT(&stats->hashes);
 	stats->conhdr = *conhdr;
@@ -608,9 +619,12 @@ stats_new(const struct tuple *conhdr)
 	record_fill(&stats->record, conhdr);
 
 	if ((stats->evbuf = evbuffer_new()) == NULL)
-		err(1, "%s: evbuffer_new", __func__);
+	{
+		syslog(LOG_ERR, "%s: evbuffer_new", __func__);
+		exit(EXIT_FAILURE);
+	}
 
-	evtimer_set(&stats->ev_timeout, stats_timeout_cb, stats);
+	stats->ev_timeout = evtimer_new(libevent_base, stats_timeout_cb, stats);
 	stats_add_timeout(stats);
 
 	stats->record.state = RECORD_STATE_NEW;
@@ -634,7 +648,10 @@ record_add_hash(struct hashq *hashes, void *data, size_t len)
 	SHA1Final(digest, &ctx);
 
 	if ((hash = calloc(1, sizeof(struct hash))) == NULL)
-		err(1, "%s: calloc", __func__);
+	{
+		syslog(LOG_ERR, "%s: calloc", __func__);
+		exit(EXIT_FAILURE);
+	}
 
 	/* We just xor the overlap together */
 	for (i = 0; i < sizeof(digest); i++)
@@ -708,7 +725,7 @@ stats_free(struct stats *stats)
 	SPLAY_REMOVE(statstree, &sc.all_stats, stats);
 	stats_deactivate(stats);
 
-	evtimer_del(&stats->ev_timeout);
+	evtimer_del(stats->ev_timeout);
 
 	record_clean(&stats->record);
 	record_remove_hashes(&stats->hashes);
@@ -787,8 +804,12 @@ stats_make_fd(struct addr *dst, u_short port)
 {
 	sc.stats_fd = make_socket(connect, SOCK_DGRAM, addr_ntoa(dst), port);
 	if (sc.stats_fd == -1)
-		err(1, "%s: make_socket", __func__);
-	event_set(&sc.ev_send, sc.stats_fd, EV_WRITE, stats_ready_cb, NULL);
+	{
+		syslog(LOG_ERR, "%s: make_socket", __func__);
+		exit(EXIT_FAILURE);
+	}
+
+	sc.ev_send = event_new(libevent_base, sc.stats_fd, EV_WRITE, stats_ready_cb, NULL);
 }
 
 void
@@ -849,7 +870,6 @@ stats_init()
 	memset(&sc.measurement, 0, sizeof(sc.measurement));
 	gettimeofday(&sc.measurement.tv_start, NULL);
 	sc.tv_start = sc.measurement.tv_start;
-	evtimer_set(&sc.ev_measure, stats_measure_cb, NULL);
 
 	stats_measure_timeout();
 }
@@ -865,11 +885,17 @@ stats_hmac_test()
 
 	if (!hmac_verify(&sc.hmac, digest, sizeof(digest),
 		test1, strlen(test1)))
-		errx(1, "%s: verify failed", __func__);
+	{
+		syslog(LOG_ERR,"%s: verified failed",__func__);
+		exit(EXIT_FAILURE);
+	}
 
 	if (hmac_verify(&sc.hmac, digest, sizeof(digest),
 		test2, strlen(test2)))
-		errx(1, "%s: verify should have failed", __func__);
+	{
+		syslog(LOG_ERR,"%s: verify should have failed", __func__);
+		exit(EXIT_FAILURE);
+	}
 
 	fprintf(stderr, "\t%s: OK\n", __func__);
 }
@@ -889,23 +915,31 @@ stats_compress_test()
 	}
 
 	for (i = 0; i < 3; i++) {
-		evbuffer_drain(buf, EVBUFFER_LENGTH(buf));
+		evbuffer_drain(buf, evbuffer_get_length(buf));
 		evbuffer_add(buf, something, sizeof(something));
 		stats_compress(buf);
-		fprintf(stderr, "\t\t Decompressed: %d, Compressed: %d\n",
-		    sizeof(something), EVBUFFER_LENGTH(buf));
+		fprintf(stderr, "\t\t Decompressed: %zd, Compressed: %zd\n",
+		    sizeof(something), evbuffer_get_length(buf));
 
 		/* Simulate packet loss */
 		if (i == 1)
 			continue;
 
 		if (stats_decompress(buf) == -1)
-			errx(1, "Decompress failed");
-		if (EVBUFFER_LENGTH(buf) != sizeof(something))
-			errx(1, "Decompressed data has bad length: %d vs %d",
-			    EVBUFFER_LENGTH(buf), sizeof(something));
-		if (memcmp(something, EVBUFFER_DATA(buf), sizeof(something)))
-			errx(1, "Decompressed data is corrupted");
+		{
+			syslog(LOG_ERR,"Decompressed failed");
+			exit(EXIT_FAILURE);
+		}
+		if (evbuffer_get_length(buf) != sizeof(something))
+		{
+			syslog(LOG_ERR,"Decompressed data has bad length: %zd vs. %zd", evbuffer_get_length(buf), sizeof(something));
+			exit(EXIT_FAILURE);
+		}
+		if (memcmp(something, evbuffer_pullup(buf, -1), sizeof(something)))
+		{
+			syslog(LOG_ERR,"%s: Decompressed data is corrupted", __func__);
+			exit(EXIT_FAILURE);
+		}
 	}
 
 	evbuffer_free(buf);

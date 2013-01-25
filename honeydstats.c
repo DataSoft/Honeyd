@@ -112,10 +112,16 @@ user_new(const char *name, const char *password)
 	tmp.name = name;
 	if ((user = SPLAY_FIND(usertree, &users, &tmp)) == NULL) {
 		if ((user = calloc(1, sizeof(struct user))) == NULL)
-			err(1, "%s: calloc", __func__);
+		{
+			syslog(LOG_ERR, "%s: calloc", __func__);
+			exit(EXIT_FAILURE);
+		}
 
 		if ((user->name = strdup(name)) == NULL)
-			err(1, "%s: strdup", __func__);
+		{
+			syslog(LOG_ERR, "%s: strdup", __func__);
+			exit(EXIT_FAILURE);
+		}
 
 		gettimeofday(&user->tv_when, NULL);
 
@@ -177,7 +183,10 @@ record_process(struct user *user, struct evbuffer *evbuf)
 	int res = -1;
 
 	if ((record = calloc(1, sizeof(struct record))) == NULL)
-		err(1, "%s: calloc", __func__);
+	{
+		syslog(LOG_ERR, "%s: calloc", __func__);
+		exit(EXIT_FAILURE);
+	}
 
 	if (tag_unmarshal_record(evbuf, M_RECORD, record) == -1) {
 		syslog(LOG_WARNING,
@@ -269,8 +278,7 @@ signature_process(struct evbuffer *evbuf)
 
 	if (checkpoint_fd != -1) {
 		evbuffer_drain(checkpoint_evbuf, -1);
-		evbuffer_add(checkpoint_evbuf,
-		    EVBUFFER_DATA(evbuf), EVBUFFER_LENGTH(evbuf));
+		evbuffer_add_buffer(checkpoint_evbuf, evbuf);
 	}
 
 	if (evtag_unmarshal_string(evbuf, SIG_NAME, &username) == -1)
@@ -286,13 +294,16 @@ signature_process(struct evbuffer *evbuf)
 	}
 
 	if ((tmp = evbuffer_new()) == NULL)
-		err(1, "%s: evbuffer_new");
+	{
+		syslog(LOG_ERR, "%s: evbuffer_new",__func__);
+		exit(EXIT_FAILURE);
+	}
 	if (evtag_unmarshal(evbuf, &tag, tmp) == -1)
 		goto out;
 
 	/* Validate signature */
-	if (!hmac_verify(&user->hmac, digest, sizeof(digest),
-		EVBUFFER_DATA(tmp), EVBUFFER_LENGTH(tmp))) {
+	if (!hmac_verify(&user->hmac, digest, sizeof(digest), evbuffer_pullup(tmp, -1), evbuffer_get_length(tmp)))
+	{
 		syslog(LOG_WARNING, "Bad signature on data from user '%s'",
 		    username);
 		goto out;
@@ -340,7 +351,7 @@ signature_length(struct evbuffer *evbuf)
 	}
 
 	/* name */
-	if (evtag_peek_length(tmp, &tlen) == -1 || EVBUFFER_LENGTH(tmp) < tlen)
+	if (evtag_peek_length(tmp, &tlen) == -1 || evbuffer_get_length(tmp) < tlen)
 	{
 		evbuffer_free(tmp);
 		return -1;
@@ -350,7 +361,7 @@ signature_length(struct evbuffer *evbuf)
 	evbuffer_drain(tmp, tlen);
 
 	/* signature */
-	if (evtag_peek_length(tmp, &tlen) == -1 || EVBUFFER_LENGTH(tmp) < tlen)
+	if (evtag_peek_length(tmp, &tlen) == -1 || evbuffer_get_length(tmp) < tlen)
 	{
 		evbuffer_free(tmp);
 		return -1;
@@ -360,7 +371,7 @@ signature_length(struct evbuffer *evbuf)
 	evbuffer_drain(tmp, tlen);
 
 	/* data */
-	if (evtag_peek_length(tmp, &tlen) == -1 || EVBUFFER_LENGTH(tmp) < tlen)
+	if (evtag_peek_length(tmp, &tlen) == -1 || evbuffer_get_length(tmp) < tlen)
 	{
 		evbuffer_free(tmp);
 		return -1;
@@ -388,7 +399,7 @@ checkpoint_replay(int fd)
 		int length;
 
 		while ((length = signature_length(evbuf)) != -1 &&
-		    EVBUFFER_LENGTH(evbuf) >= length) {
+		    evbuffer_get_length(evbuf) >= length) {
 				signature_process(evbuf);
 		}
 	}

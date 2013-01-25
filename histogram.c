@@ -49,15 +49,16 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include <syslog.h>
 
 #include <dnet.h>
 #include <event.h>
 
 #include "histogram.h"
+#include "honeyd.h"
 
 static struct timeval *tv_now;	/* used for unittesting */
 
-static struct event count_time_ev;
 static struct timeval tv_periodic;
 
 /*
@@ -67,15 +68,16 @@ static struct timeval tv_periodic;
  */
 
 static void
-count_time_evcb(int fd, short what, void *arg)
+count_time_evcb(int fd, short what, void *unused)
 {
-	struct event *ev = arg;
 	struct timeval tv;
 
 	gettimeofday(&tv_periodic, NULL);
 
 	timerclear(&tv);
 	tv.tv_sec = 1;
+
+	struct event *ev = evtimer_new(libevent_base, count_time_evcb, NULL);
 	evtimer_add(ev, &tv);
 }
 
@@ -83,8 +85,7 @@ void
 count_init(void)
 {
 	/* Start a timer that keeps track of the current system time */
-	evtimer_set(&count_time_ev, count_time_evcb, &count_time_ev);
-	count_time_evcb(-1, EV_TIMEOUT, &count_time_ev);
+	count_time_evcb(-1, EV_TIMEOUT, NULL);
 }
 
 void
@@ -108,7 +109,10 @@ count_new(void)
 	struct count *count;
 
 	if ((count = calloc(1, sizeof(struct count))) == NULL)
-		err(1, "%s: calloc", __func__);
+	{
+		syslog(LOG_ERR, "%s: calloc, failed to allocate count", __func__);
+		exit(EXIT_FAILURE);
+	}
 
 	count_get_time(&count->tv_seconds);
 
@@ -226,7 +230,10 @@ count_internal_increment(struct count *count, struct timeval *tv, int delta)
 		entry->count += delta;
 	} else {
 		if ((entry = calloc(1, sizeof(struct entry))) == NULL)
-			err(1, "%s: calloc", __func__);
+		{
+			syslog(LOG_ERR, "%s: calloc failed to allocate entry", __func__);
+			exit(EXIT_FAILURE);
+		}
 		entry->count = delta;
 		TAILQ_INSERT_HEAD(&count->seconds, entry, next);
 	}
@@ -317,7 +324,10 @@ count_test(void)
 	
 	count_internal_increment(count, &tv, 3);
 	if (count_get_sum(&count->seconds) != 3)
-		errx(1, "second count should be 1");
+	{
+		syslog(LOG_ERR,"second count should be 1");
+		exit(EXIT_FAILURE);
+	}
 
 	tv.tv_sec += 61;
 
@@ -325,19 +335,34 @@ count_test(void)
 	count_internal_increment(count, &tv, 0);
 
 	if (count_get_sum(&count->seconds) != 2)
-		errx(1, "second count should be 1");
+	{
+		syslog(LOG_ERR,"second count should be 1");
+		exit(EXIT_FAILURE);
+	}
 	if (count_get_sum(&count->minutes) != 3)
-		errx(1, "minute count should be 1");
+	{
+		syslog(LOG_ERR,"minute count should be 1");
+		exit(EXIT_FAILURE);
+	}
 
 	tv.tv_sec += 3540;
 	count_internal_increment(count, &tv, 1);
 
 	if (count_get_sum(&count->seconds) != 1)
-		errx(1, "second count should be 1");
+	{
+		syslog(LOG_ERR,"second coutn should be 1");
+		exit(EXIT_FAILURE);
+	}
 	if (count_get_sum(&count->minutes) != 2)
-		errx(1, "minute count should be 1");
+	{
+		syslog(LOG_ERR,"minute count should be 1");
+		exit(EXIT_FAILURE);
+	}
 	if (count_get_sum(&count->hours) != 3)
-		errx(1, "hour count should be 1");
+	{
+		syslog(LOG_ERR,"hour count should be 1");
+		exit(EXIT_FAILURE);
+	}
 
 	count_internal_print(stderr, count, "test-count");
 	for (i = 0; i < 24; i++) {
@@ -348,7 +373,10 @@ count_test(void)
 	if (count_get_sum(&count->seconds) ||
 	    count_get_sum(&count->minutes) ||
 	    count_get_sum(&count->hours))
-		errx(1, "all counts should be zero");
+	{
+		syslog(LOG_ERR,"Decompressed failed");
+		exit(EXIT_FAILURE);
+	}
 
 	fprintf(stderr, "\t%s: OK\n", __func__);
 }

@@ -32,7 +32,7 @@
 
 #include <sys/types.h>
 #include <sys/param.h>
-
+#include <syslog.h>
 #include "config.h"
 
 #include <sys/queue.h>
@@ -104,20 +104,35 @@ network_test_compare(void)
 	net_two.net = two;
 
 	if (network_compare(&net_one, &net_two) != NET_PRECEEDS)
-		errx(1, "network_compare");
+	{
+		syslog(LOG_ERR, "network_compare");
+		exit(EXIT_FAILURE);
+	}
 	if (network_compare(&net_two, &net_one) != NET_FOLLOWS)
-		errx(1, "network_compare");
+	{
+		syslog(LOG_ERR, "network_compare");
+		exit(EXIT_FAILURE);
+	}
 	if (network_compare(&net_two, &net_two) != NET_EQUALS)
-		errx(1, "network_compare");
+	{
+		syslog(LOG_ERR, "network_compare");
+		exit(EXIT_FAILURE);
+	}
 
 	addr_pton("2.1.0.0/24", &one);
 	addr_pton("2.0.0.0/8", &two);
 	net_one.net = one;
 	net_two.net = two;
 	if (network_compare(&net_one, &net_two) != NET_CONTAINED)
-		errx(1, "network_compare: !contained");
+	{
+		syslog(LOG_ERR, "network_compare: !contained");
+		exit(EXIT_FAILURE);
+	}
 	if (network_compare(&net_two, &net_one) != NET_CONTAINS)
-		errx(1, "network_compare: !contains");
+	{
+		syslog(LOG_ERR, "network_compare: !contains");
+		exit(EXIT_FAILURE);
+	}
 
 	fprintf(stderr, "\t%s: OK\n", __func__);
 }

@@ -38,6 +38,7 @@
 #endif
 
 #include <sys/stat.h>
+#include <syslog.h>
 #include <sys/queue.h>
 #include <sys/tree.h>
 #ifdef HAVE_SYS_TIME_H
@@ -83,7 +84,10 @@ filter_create(void)
 {
 	struct filtertree *filters;
 	if ((filters = calloc(1, sizeof(struct filtertree))) == NULL)
-		err(1, "%s: calloc");
+	{
+		syslog(LOG_ERR, "%s: calloc, failed to allocate filtertree",__func__);
+		exit(EXIT_FAILURE);
+	}
 
 	SPLAY_INIT(filters);
 
@@ -121,7 +125,10 @@ filter_insert(struct filtertree *filters, uint32_t count, void *report)
 		return;
 
 	if ((filter = calloc(1, sizeof(struct filter))) == NULL)
-		err(1, "%s: calloc");
+	{
+		syslog(LOG_ERR, "%s: calloc failed to allocate filter",__func__);
+		exit(EXIT_FAILURE);
+	}
 
 	filter->count = count;
 	filter->report = report;

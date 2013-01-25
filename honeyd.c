@@ -136,7 +136,8 @@ struct config config = {
 	PATH_HONEYDDATA "/nmap-os-db",
 	PATH_HONEYDDATA "/xprobe2.conf",
 	PATH_HONEYDDATA "/nmap.assoc",
-	PATH_HONEYDDATA "/pf.os"
+	PATH_HONEYDDATA "/pf.os",
+	PATH_HONEYDDATA "/nmap-mac-prefixes"//add the install path for the file
 };
 
 struct stats_network stats_network = {
@@ -149,37 +150,36 @@ SPLAY_GENERATE(tree, tuple, node, conhdr_compare);
 
 struct rrdtool_drv	*honeyd_rrd_drv;
 struct rrdtool_db	*honeyd_traffic_db;
-struct event		 honeyd_rrd_ev;
-FILE			*honeyd_servicefp;
-struct timeval		 honeyd_uptime;
-static FILE		*honeyd_logfp;
-static ip_t		*honeyd_ip;
-struct pool		*pool_pkt;
-struct pool		*pool_delay;
-rand_t			*honeyd_rand;
-int			 honeyd_sig;
-int			 honeyd_nconnects;
-int			 honeyd_nchildren;
-int			 honeyd_ttl = HONEYD_DFL_TTL;
-struct tcp_con		 honeyd_tmp;
-int                      honeyd_show_include_dir;
-int                      honeyd_show_data_dir;
-int                      honeyd_show_version;
-int                      honeyd_show_usage;
-int			 honeyd_debug;
-uid_t			 honeyd_uid = 32767;
-gid_t			 honeyd_gid = 32767;
-char *templateDump = NULL;
-int			 honeyd_needsroot;	/* Need different IDs */
-int			 honeyd_disable_webserver = 0;
-int			 honeyd_ignore_parse_errors = 0;
-int			 honeyd_verify_config = 0;
-int			 honeyd_webserver_fix_permissions = 0;
-char			*honeyd_webserver_address = "127.0.0.1";
-int			 honeyd_webserver_port = 80;
-char			*honeyd_webserver_root = PATH_HONEYDDATA \
+FILE				*honeyd_servicefp;
+struct timeval		honeyd_uptime;
+static FILE			*honeyd_logfp;
+static ip_t			*honeyd_ip;
+struct pool			*pool_pkt;
+struct pool			*pool_delay;
+rand_t				*honeyd_rand;
+int					honeyd_sig;
+int					honeyd_nconnects;
+int					honeyd_nchildren;
+int					honeyd_ttl = HONEYD_DFL_TTL;
+struct tcp_con		honeyd_tmp;
+int					honeyd_show_include_dir;
+int					honeyd_show_data_dir;
+int					honeyd_show_version;
+int					honeyd_show_usage;
+int					honeyd_debug;
+uid_t				honeyd_uid = 32767;
+gid_t				honeyd_gid = 32767;
+char				*templateDump = NULL;
+int					honeyd_needsroot;	/* Need different IDs */
+int					honeyd_disable_webserver = 0;
+int					honeyd_ignore_parse_errors = 0;
+int					honeyd_verify_config = 0;
+int					honeyd_webserver_fix_permissions = 0;
+char				*honeyd_webserver_address = "127.0.0.1";
+int					honeyd_webserver_port = 80;
+char				*honeyd_webserver_root = PATH_HONEYDDATA \
 						"/webserver/htdocs";
-char			*honeyd_rrdtool_path = PATH_RRDTOOL;
+char				*honeyd_rrdtool_path = PATH_RRDTOOL;
 
 /* can be used by unittests to do bad stuff */
 void (*honeyd_delay_callback)(int, short, void *) = honeyd_delay_cb;
@@ -220,6 +220,7 @@ static struct option honeyd_long_opts[] = {
 	{"verify-config", 0, &honeyd_verify_config, 1},
 	{"ignore-parse-errors", 0, &honeyd_ignore_parse_errors, 1},
 	{"fix-webserver-permissions", 0, &honeyd_webserver_fix_permissions, 1},
+	{"mac-address",0,0,1},
 	{0, 0, 0, 0}
 };
 
@@ -241,6 +242,7 @@ usage(void)
 	    "  -0 osfingerprints      Read pf-style OS fingerprints from file.\n"
 	    "  -u uid		  Set the uid Honeyd should run as.\n"
 	    "  -g gid		  Set the gid Honeyd should run as.\n"
+		"  -m file				  Read nmap-mac-prefixes from file. \n"
 	    "  -f configfile          Read configuration from file.\n"
 	    "  -c host:port:name:pass Reports starts to collector.\n"
 	    "  --webserver-address=address Address on which webserver listens.\n"
@@ -257,7 +259,7 @@ usage(void)
 	    "  --include-dir          Prints out header files directory and exits.\n"
 	    "  --data-dir             Prints out data/plug-in directory and exits.\n");
 	
-	exit(1);
+	exit(EXIT_FAILURE);
 }
 
 /* XXX ches debug */
@@ -276,6 +278,13 @@ print_spoof(char *msg, struct spoof s) {
 		addr_ntop(&s.new_dst, buf3, sizeof(buf3));
 }
 
+/*
+ * Populates a new tcp_con structure, which holds the state of a TCP connection
+ * 		con    : connection structure to populate
+ * 		ip     : IP header of the initial packet
+ * 		tcp    : TCP header of the initial packet
+ * 		local  : source of this connection, INITIATED_BY_EXTERNAL or INITIATED_BY_SUBSYSTEM
+ */
 void
 honeyd_settcp(struct tcp_con *con, struct addr *src, struct addr *dst, struct tcp_hdr *tcp,
     int local)
@@ -296,8 +305,15 @@ honeyd_settcp(struct tcp_con *con, struct addr *src, struct addr *dst, struct tc
 	con->cmd.perrfd = -1;
 }
 
+/*
+ * Populates a new udp_con structure, which holds the state of a UDP connection
+ * 		con    : connection structure to populate
+ * 		ip     : IP header of the initial packet
+ * 		tcp    : TCP header of the initial packet
+ * 		local  : source of this connection, INITIATED_BY_EXTERNAL or INITIATED_BY_SUBSYSTEM
+ */
 void
-honeyd_setudp(struct udp_con *con, struct ip_hdr *ip, struct udp_hdr *udp,
+honeyd_setudp(struct udp_con *con, const struct ip_hdr *ip, const struct udp_hdr *udp,
     int local)
 {
 	struct tuple *hdr = &con->conhdr;
@@ -375,11 +391,10 @@ syslog_init(int argc, char *argv[])
  */
 
 void
-honeyd_rrd_cb(int fd, short what, void *arg)
+honeyd_rrd_cb(int fd, short what, void *unused)
 {
 	static int count;
 	char line[1024];
-	struct event *ev = arg;
 	struct timeval tv;
 
 	snprintf(line, sizeof(line), "%f:%f",
@@ -390,6 +405,7 @@ honeyd_rrd_cb(int fd, short what, void *arg)
 
 	timerclear(&tv);
 	tv.tv_sec = 60;
+	struct event *ev = evtimer_new(libevent_base, honeyd_rrd_cb, NULL);
 	evtimer_add(ev, &tv);
 
 	/* Create a graph every five minutes */
@@ -431,11 +447,16 @@ honeyd_rrd_start(const char *rrdtool_path)
 	/* Initialize our traffic stats for rrdtool */
 	char *honeyd_traffic_filename = "/tmp/honeyd_traffic.rrd";
 	if ((honeyd_rrd_drv = rrdtool_init(rrdtool_path)) == NULL)
-		errx(1, "%s: cannot start rrdtool", __func__);
+	{
+		syslog(LOG_ERR, "%s: cannot start rrdtool", __func__);
+		exit(EXIT_FAILURE);
+	}
 	if ((honeyd_traffic_db = rrdtool_db_start(honeyd_rrd_drv, 
 		 honeyd_traffic_filename, 60)) == NULL)
-		errx(1, "%s: cannot create rrd db: %s",
-		    __func__, honeyd_traffic_filename);
+	{
+		syslog(LOG_ERR, "%s: cannot create rrd db(database): %s", __func__, honeyd_traffic_filename);
+		exit(EXIT_FAILURE);
+	}
 
 	rrdtool_db_datasource(honeyd_traffic_db,
 	    "input", "GAUGE", 600);
@@ -445,8 +466,7 @@ honeyd_rrd_start(const char *rrdtool_path)
 	rrdtool_db_commit(honeyd_traffic_db);
 
 	/* Start the periodic traffic update timer */
-	evtimer_set(&honeyd_rrd_ev, honeyd_rrd_cb, &honeyd_rrd_ev);
-	honeyd_rrd_cb(-1, EV_TIMEOUT, &honeyd_rrd_ev);
+	honeyd_rrd_cb(-1, EV_TIMEOUT, NULL);
 }
 
 /*
@@ -485,18 +505,30 @@ honeyd_init(void)
 	if (setrlimit(RLIMIT_NOFILE, &rl) == -1) {
 		/* Linux does not seem to like this */
 		if (getrlimit(RLIMIT_NOFILE, &rl) == -1)
-			err(1, "getrlimit: NOFILE");
+		{
+			syslog(LOG_ERR, "getrlimit: NOFILE, failed at getting the files resources limit due to file not existing");
+			exit(EXIT_FAILURE);
+		}
 		rl.rlim_cur = rl.rlim_max;
 		if (setrlimit(RLIMIT_NOFILE, &rl) == -1)
-			err(1, "setrlimit: NOFILE");
+		{
+			syslog(LOG_ERR, "setrlimit: NOFILE, failed to set resource limit due to file not existing");
+			exit(EXIT_FAILURE);
+		}
 	}
 #ifdef RLIMIT_NPROC
 	if (getrlimit(RLIMIT_NPROC, &rl) == -1)
-		err(1, "getrlimit: NPROC");
+	{
+		syslog(LOG_ERR, "getrlimit: NPROC, failed at getting the process' resource limit due to process not running");
+		exit(EXIT_FAILURE);
+	}
 	rl.rlim_max = rl.rlim_max/2;
 	rl.rlim_cur = rl.rlim_max;
 	if (setrlimit(RLIMIT_NPROC, &rl) == -1)
-		err(1, "setrlimit: NPROC");
+	{
+		syslog(LOG_ERR, "setrlimit: NPROC, failed at setting the process' resource limit due to process not running");
+		exit(EXIT_FAILURE);
+	}
 #endif
 
 	stats_network.input_bytes = count_new();
@@ -540,9 +572,8 @@ honeyd_exit(int status)
 }
 
 /* Encapsulate a packet into Ethernet */
-
 void
-honeyd_ether_cb(struct arp_req *req, int success, void *arg, uint8_t frameDataLength)
+honeyd_ether_send_cb(struct arp_req *req, int success, void *arg, uint8_t frameDataLength)
 {
 	if((req == NULL) || (arg == NULL))
 	{
@@ -635,9 +666,8 @@ honeyd_ether_cb_ip6(struct ndp_req *req, int success, void *arg, uint8_t frameDa
  * Delivers an IP packet to a specific interface.
  * Generates ARP request if necessary.
  */
-
 void
-honeyd_deliver_ethernet(struct interface *inter,
+honeyd_send_ethernet(struct interface *inter,
     struct addr *src_pa, struct addr *src_ha,
     struct addr *dst_pa, u_char *frameData, u_int frameLength)
 {
@@ -650,15 +680,19 @@ honeyd_deliver_ethernet(struct interface *inter,
 
 		/* Ethernet delivery if possible */
 		if ((req = arp_find(dst_pa)) == NULL) {
-			arp_request(inter, src_pa, src_ha, dst_pa, honeyd_ether_cb,ip);
-		} else if (req->cnt == -1) {
+		arp_request(inter, src_pa, src_ha, dst_pa, honeyd_ether_send_cb,ip);
+
+	// If the ARP request finished with success
+	} else if (req->cnt == ARP_REQUEST_SUCESS) {
 			/*
 			 * The source MAC of the original requestor does not help
 			 * us here, but we can overwrite it with the MAC of this
 			 * honeypot without causing any harm.
 			 */
 			req->src_ha = *src_ha;
-			honeyd_ether_cb(req, 1, ip, ip->ip_len);
+			honeyd_ether_send_cb(req, 1, ip, ip->ip_len);
+
+	// We couldn't figure out how to deliver this
 		} else {
 			/*
 			 * Fall through in case that this packet needs
@@ -794,7 +828,7 @@ honeyd_delay_cb(int fd, short which, void *arg)
 			ip = honeyd_delay_own_memory(delay, ip, iplen);
 
 			/* This function computes the IP checksum for us */
-			honeyd_deliver_ethernet(tmpl->inter,
+			honeyd_send_ethernet(tmpl->inter,
 			    &src, tmpl->ethernet_addr,
 			    &dst, (u_char*)ip, iplen);
 		} else {
@@ -822,9 +856,10 @@ honeyd_delay_cb(int fd, short which, void *arg)
 		addr_pack(&addr, ADDR_TYPE_IP, IP_ADDR_BITS,
 		    &ip->ip_dst, IP_ADDR_LEN);
 		router = network_lookup(reverse, &addr);
-		if (router == NULL)
-			errx(1, "%s: bad configuration", __func__);
-
+		if (router == NULL){
+			syslog(LOG_ERR, "%s: bad configuration", __func__);
+			exit(EXIT_FAILURE);
+		}
 		/* 
 		 * If we are routing for an external sender, then we
 		 * might have to copy the packet into an allocated
@@ -834,7 +869,7 @@ honeyd_delay_cb(int fd, short which, void *arg)
 		ip = honeyd_delay_own_memory(delay, ip, iplen);
 
 		/* This function computes the IP checksum for us */
-		honeyd_deliver_ethernet(inter,
+		honeyd_send_ethernet(inter,
 		    &router->addr, &inter->if_ent.intf_link_addr,
 		    &addr, (u_char*)ip, iplen);
 	} else {
@@ -920,11 +955,11 @@ honeyd_delay_packet(struct template *tmpl, struct ip_hdr *ip, u_int iplen,
 	delay->spoof = spoof;
 
 	if (ms) {
-		evtimer_set(&delay->timeout, honeyd_delay_callback, delay);
+		delay->timeout = evtimer_new(libevent_base, honeyd_delay_callback, delay);
 		timerclear(&tv);
 		tv.tv_sec = ms / 1000;
 		tv.tv_usec = (ms % 1000) * 1000;
-		evtimer_add(&delay->timeout, &tv);
+		evtimer_add(delay->timeout, &tv);
 	} else
 		honeyd_delay_callback(-1, EV_TIMEOUT, delay);
 }
@@ -951,7 +986,7 @@ honeyd_ip_send(u_char *pkt, u_int iplen, struct spoof spoof)
 	int delay = 0, flags = 0;
 	struct addr addr, src;
 
-print_spoof("honeyd_ip_send", spoof);
+	print_spoof("honeyd_ip_send", spoof);
 
 	if (iplen > HONEYD_MTU) {
 		u_short off = ntohs(ip->ip_off);
@@ -966,7 +1001,7 @@ print_spoof("honeyd_ip_send", spoof);
 
 	/* Find the template for the external address */
 	tmpl = template_find_best(addr_ntoa(&addr), ip, iplen);
-	if (tmpl != NULL && tmpl->flags & TEMPLATE_EXTERNAL)
+	if ((tmpl != NULL) && (tmpl->flags & TEMPLATE_EXTERNAL))
 		flags |= DELAY_ETHERNET;
 
 	/* But all sending decisions are really based on the source template */
@@ -1030,7 +1065,7 @@ connection_remove(struct tree *tree, struct conlru *head, struct tuple *hdr)
 	SPLAY_REMOVE(tree, tree, hdr);
 	TAILQ_REMOVE(head, hdr, next);
 
-	evtimer_del(&hdr->timeout);
+	evtimer_del(hdr->timeout);
 }
 
 /* Called when a connection received data and has not been idle */
@@ -1041,7 +1076,7 @@ connection_update(struct conlru *head, struct tuple *hdr)
 	TAILQ_REMOVE(head, hdr, next);
 	TAILQ_INSERT_HEAD(head, hdr, next);
 
-	generic_timeout(&hdr->timeout, HONEYD_IDLE_TIMEOUT);
+	generic_timeout(hdr->timeout, HONEYD_IDLE_TIMEOUT);
 }
 
 struct tcp_con *
@@ -1065,8 +1100,8 @@ tcp_new(struct addr src, struct addr dst, struct tcp_hdr *tcp, int local)
 
 	honeyd_nconnects++;
 	honeyd_settcp(con, &src, &dst, tcp, local);
-	evtimer_set(&con->conhdr.timeout, honeyd_tcp_timeout, con);
-	evtimer_set(&con->retrans_timeout, tcp_retrans_timeout, con);
+	con->conhdr.timeout = evtimer_new(libevent_base, honeyd_tcp_timeout, con);
+	con->retrans_timeout = evtimer_new(libevent_base, tcp_retrans_timeout, con);
 
 	connection_insert(&tcpcons, &tcplru, &con->conhdr);
 
@@ -1092,7 +1127,7 @@ tcp_free(struct tcp_con *con)
 	    NULL, 0);
 	honeyd_log_flowend(honeyd_logfp, IP_PROTO_TCP, &con->conhdr);
 
-	evtimer_del(&con->retrans_timeout);
+	evtimer_del(con->retrans_timeout);
 
 	if (con->cmd_pfd > 0)
 		cmd_free(&con->cmd);
@@ -1128,7 +1163,7 @@ tcp_retrans_timeout(int fd, short event, void *arg)
 		tcp_send(con, TH_SYN, NULL, 0);
 		con->snd_una++;
 		
-		generic_timeout(&con->retrans_timeout, con->retrans_time);
+		generic_timeout(con->retrans_timeout, con->retrans_time);
 		break;
 
 	case TCP_STATE_SYN_RECEIVED:
@@ -1136,7 +1171,7 @@ tcp_retrans_timeout(int fd, short event, void *arg)
 		tcp_send(con, TH_SYN|TH_ACK, NULL, 0);
 		con->snd_una++;
 		
-		generic_timeout(&con->retrans_timeout, con->retrans_time);
+		generic_timeout(con->retrans_timeout, con->retrans_time);
 		break;
 
 	default:
@@ -1160,7 +1195,7 @@ udp_new(struct ip_hdr *ip, struct udp_hdr *udp, int local)
 
 	connection_insert(&udpcons, &udplru, &con->conhdr);
 
-	evtimer_set(&con->conhdr.timeout, honeyd_udp_timeout, con);
+	con->conhdr.timeout = evtimer_new(libevent_base, honeyd_udp_timeout, con);
 
 	honeyd_log_flownew(honeyd_logfp, IP_PROTO_UDP, &con->conhdr);
 
@@ -1237,6 +1272,7 @@ honeyd_protocol(struct template *tmpl, int proto)
 	}
 }
 
+/* Specifies if we should drop the packet or not */
 int
 honeyd_block(struct template *tmpl, int proto, int number)
 {
@@ -1252,7 +1288,7 @@ honeyd_block(struct template *tmpl, int proto, int number)
 	else
 		action = &port->action;
 
-	return (action->status == PORT_BLOCK);
+	return (action->status == PORT_FILTERED);
 }
 
 void
@@ -1677,10 +1713,10 @@ tcp_senddata(struct tcp_con *con, uint8_t flags)
 	 */
 	needretrans = con->poff || (con->sentfin && !con->finacked);
 
-	if (needretrans && !evtimer_pending(&con->retrans_timeout, NULL)) {
+	if (needretrans && !evtimer_pending(con->retrans_timeout, NULL)) {
 		if (!con->retrans_time)
 			con->retrans_time = 1;
-		generic_timeout(&con->retrans_timeout, con->retrans_time);
+		generic_timeout(con->retrans_timeout, con->retrans_time);
 	}
 }
 
@@ -2082,7 +2118,7 @@ generic_timeout(struct event *ev, int seconds)
 			} \
 		} else if (acked) { \
 			con->retrans_time = 0; \
-			evtimer_del(&con->retrans_timeout); \
+			evtimer_del(con->retrans_timeout); \
 			con->dupacks=0; \
 		} \
 } while (0)
@@ -2174,7 +2210,7 @@ tcp_recv_cb(struct template *tmpl, u_char *pkt, struct tuple *summary, u_short p
 	 * Check if we have a real connection header for this connection, so
 	 * that we can look at potential flags like local origination.
 	 */
-	honeyd_settcp(&honeyd_tmp, &summary->address_src, &summary->address_dst, tcp, 0);
+	honeyd_settcp(&honeyd_tmp, &summary->address_src, &summary->address_dst, tcp, INITIATED_BY_EXTERNAL);
 	con = (struct tcp_con *)SPLAY_FIND(tree, &tcpcons, &honeyd_tmp.conhdr);
 
 	/* TODO ipv6: disabled for ipv6 work
@@ -2269,11 +2305,11 @@ tcp_recv_cb(struct template *tmpl, u_char *pkt, struct tuple *summary, u_short p
 		con->snd_una++;
 		con->state = TCP_STATE_SYN_RECEIVED;
 
-		generic_timeout(&con->conhdr.timeout, HONEYD_SYN_WAIT);
+		generic_timeout(con->conhdr.timeout, HONEYD_SYN_WAIT);
 
 		/* Get initial value from personality */
 		con->retrans_time = 3;
-		generic_timeout(&con->retrans_timeout, con->retrans_time);
+		generic_timeout(con->retrans_timeout, con->retrans_time);
 
 		return;
 	}
@@ -2285,9 +2321,9 @@ tcp_recv_cb(struct template *tmpl, u_char *pkt, struct tuple *summary, u_short p
 
 	if (action != NULL) {
 		switch (action->status) {
-		case PORT_RESET:
+		case PORT_CLOSED:
 			goto dropwithreset;
-		case PORT_BLOCK:
+		case PORT_FILTERED:
 			goto drop;
 		default:
 			break;
@@ -2347,7 +2383,7 @@ tcp_recv_cb(struct template *tmpl, u_char *pkt, struct tuple *summary, u_short p
 
 			/* Clear retransmit timeout */
 			con->retrans_time = 0;
-			evtimer_del(&con->retrans_timeout);
+			evtimer_del(con->retrans_timeout);
 
 			connection_update(&tcplru, &con->conhdr);
 
@@ -2364,7 +2400,7 @@ tcp_recv_cb(struct template *tmpl, u_char *pkt, struct tuple *summary, u_short p
 
 			connection_update(&tcplru, &con->conhdr);
 
-			if (tiflags & TH_FIN && !(con->flags & TCP_TARPIT))
+			if ((tiflags & TH_FIN) && !(con->flags & TCP_TARPIT))
 			{
 				if (con->cmd_pfd > 0)
 				{
@@ -2443,10 +2479,9 @@ tcp_recv_cb(struct template *tmpl, u_char *pkt, struct tuple *summary, u_short p
 
 			tcp_do_options(con, tcp, 0);
 
-			if (tiflags & TH_FIN && !(con->flags & TCP_TARPIT)) {
+			if ((tiflags & TH_FIN) && !(con->flags & TCP_TARPIT)) {
 				con->state = TCP_STATE_CLOSING;
-				generic_timeout(&con->conhdr.timeout,
-					HONEYD_CLOSE_WAIT);
+				generic_timeout(con->conhdr.timeout, HONEYD_CLOSE_WAIT);
 				dlen++;
 			} else {
 				connection_update(&tcplru, &con->conhdr);
@@ -2534,7 +2569,7 @@ tcp_recv_cb(struct template *tmpl, u_char *pkt, struct tuple *summary, u_short p
 	return;
 
  justlog:
- 	 honeyd_settcp(&honeyd_tmp, &summary->address_src, &summary->address_dst, tcp, 0);
+ 	 honeyd_settcp(&honeyd_tmp, &summary->address_src, &summary->address_dst, tcp, INITIATED_BY_EXTERNAL);
 
  	 honeyd_log_probe(honeyd_logfp, IP_PROTO_TCP,&honeyd_tmp.conhdr,
 	    pktlen, tcp->th_flags, comment);
@@ -2582,54 +2617,104 @@ udp_send(struct udp_con *con, u_char *payload, u_int len)
 
 	honeyd_ip_send(pkt, iplen, spoof);
 
-	generic_timeout(&con->conhdr.timeout, HONEYD_UDP_WAIT);
+	generic_timeout(con->conhdr.timeout, HONEYD_UDP_WAIT);
 
 	return (len);
 }
 
+struct packet_wrapper {
+	u_char *pkt;
+	u_short pktlen;
+	u_char unicast;
+};
+
 void
-udp_recv_cb(struct template *tmpl, u_char *pkt, u_short pktlen)
+handle_udp_packet(struct template *tmpl, void *wrapper)
 {
-	struct ip_hdr *ip = NULL;
-	struct udp_hdr *udp;
+	u_char *pkt;
+	u_short pktlen;
 	struct udp_con *con, honeyd_udp;
 	struct addr addr;
 	struct spoof spoof;
+	char unicast;
+	char isBroadcast;
+	int i;
 	
 	uint16_t uh_sum;
 	u_char *data;
 	u_int dlen;
 	u_short portnum;
 
+	struct packet_wrapper *pwrapper = (struct packet_wrapper*)wrapper;
+	pkt = pwrapper->pkt;
+	pktlen = pwrapper->pktlen;
+	unicast = pwrapper->unicast;
+
+	struct ip_hdr *ip = NULL;
+	struct udp_hdr *udp;
 	ip = (struct ip_hdr *)pkt;
 	udp = (struct udp_hdr *)(pkt + (ip->ip_hl << 2));
 
 	if (pktlen < (ip->ip_hl << 2) + UDP_HDR_LEN)
 		return;
 
-	/* 
-	 * Check if we have a real connection header for this connection, so
-	 * that we can look at potential flags like local origination.
-	 */
-	honeyd_setudp(&honeyd_udp, ip, udp, 0);
-	con = (struct udp_con *)SPLAY_FIND(tree, &udpcons, &honeyd_udp.conhdr);
-
-	hooks_dispatch(ip->ip_p, HD_INCOMING,
-	    con != NULL ? &con->conhdr : &honeyd_udp.conhdr, pkt, pktlen);
-
-	data = (u_char *)(pkt + (ip->ip_hl*4) + UDP_HDR_LEN);
-	dlen = ntohs(ip->ip_len) - (ip->ip_hl << 2) - UDP_HDR_LEN;
-	if (dlen != (ntohs(udp->uh_ulen) - UDP_HDR_LEN))
-		return;
-	
-	portnum = ntohs(udp->uh_dport);
-	if (honeyd_block(tmpl, IP_PROTO_UDP, portnum))
-		goto justlog;
+	ip_addr_t templateIp;
+	int res = inet_pton(AF_INET, tmpl->name, &(templateIp));
 
 	/* Check the packet checksum, if no uh_sum is set, we ignore it */
 	uh_sum = udp->uh_sum;
 	ip_checksum(ip, pktlen);
 	if ((uh_sum && uh_sum != udp->uh_sum))
+		goto justlog;
+
+	if (!unicast) {
+		/* If this isn't a template for a real honeypot instance, return */
+		if (res != 1)
+			return;
+
+		uint32_t bcastAddress = ntohl(templateIp);
+		for (i = 0; i < 32 - tmpl->addrbits; i++)
+			bcastAddress |= (0 | (1 << i));
+		bcastAddress = htonl(bcastAddress);
+
+		/* Is it to the global broadcast address? */
+		if (ip->ip_dst == 0xFFFFFFFF) {
+			isBroadcast = 1;
+		/* Is it to the honeypot interface's subnet broadcast address? */
+		} else if (ip->ip_dst == bcastAddress) {
+			isBroadcast = 1;
+		} else {
+			isBroadcast = 0;
+		}
+
+		if (!isBroadcast)
+			return;
+
+		/* Replace the broadcast address with our template address */
+		// xxx: This means scripts can't tell if the packet was to a bcast address or not. Does it matter for UDP?
+		if (isBroadcast) {
+			ip->ip_dst = templateIp;
+		}
+	}
+
+
+	/*
+	 * Check if we have a real connection header for this connection, so
+	 * that we can look at potential flags like local origination.
+	 */
+	honeyd_setudp(&honeyd_udp, ip, udp, INITIATED_BY_EXTERNAL);
+	con = (struct udp_con *)SPLAY_FIND(tree, &udpcons, &honeyd_udp.conhdr);
+
+	hooks_dispatch(ip->ip_p, HD_INCOMING,
+		con != NULL ? &con->conhdr : &honeyd_udp.conhdr, pkt, pktlen);
+
+	data = (u_char *)(pkt + (ip->ip_hl*4) + UDP_HDR_LEN);
+	dlen = ntohs(ip->ip_len) - (ip->ip_hl << 2) - UDP_HDR_LEN;
+	if (dlen != (ntohs(udp->uh_ulen) - UDP_HDR_LEN))
+		return;
+
+	portnum = ntohs(udp->uh_dport);
+	if (honeyd_block(tmpl, IP_PROTO_UDP, portnum))
 		goto justlog;
 
 	if (con == NULL) {
@@ -2638,25 +2723,33 @@ udp_recv_cb(struct template *tmpl, u_char *pkt, u_short pktlen)
 
 		/* Send unreachable on closed port */
 		if (action == NULL || !PORT_ISOPEN(action)) {
-			syslog(LOG_DEBUG, "Connection to closed port: udp %s",
-			    honeyd_contoa(&honeyd_udp.conhdr));
-			goto closed;
+			if (!isBroadcast) {
+				syslog(LOG_DEBUG, "Connection to closed port: udp %s",
+						honeyd_contoa(&honeyd_udp.conhdr));
+				goto closed;
+			} else {
+				return;
+			}
 		}
 
 		/* Otherwise create a new udp connection */
 		syslog(LOG_DEBUG, "Connection: udp %s",
-		    honeyd_contoa(&honeyd_udp.conhdr));
+			honeyd_contoa(&honeyd_udp.conhdr));
 
 		/* Out of memory is dealt by having the port closed */
-		if ((con = udp_new(ip, udp, 0)) == NULL) {
-			goto closed;
+		if ((con = udp_new(ip, udp, INITIATED_BY_EXTERNAL)) == NULL) {
+			if (!isBroadcast)
+				goto closed;
+			else
+				return;
 		}
 
+		con->tmpl = template_ref(tmpl);
 		generic_connect(tmpl, &con->conhdr, &con->cmd, con);
 	}
 
 	/* Keep this state active */
-	generic_timeout(&con->conhdr.timeout, HONEYD_UDP_WAIT);
+	generic_timeout(con->conhdr.timeout, HONEYD_UDP_WAIT);
 	con->softerrors = 0;
 
 	/* Statistics */
@@ -2668,7 +2761,7 @@ udp_recv_cb(struct template *tmpl, u_char *pkt, u_short pktlen)
 
  closed:
 	honeyd_log_probe(honeyd_logfp, IP_PROTO_UDP, &honeyd_udp.conhdr,
-	    pktlen, 0, NULL);
+		pktlen, 0, NULL);
 
 	addr_pack(&addr, ADDR_TYPE_IP, IP_ADDR_BITS, &ip->ip_dst, IP_ADDR_LEN);
 
@@ -2680,15 +2773,42 @@ udp_recv_cb(struct template *tmpl, u_char *pkt, u_short pktlen)
 	else
 		spoof = no_spoof;
 	// compute_spoof(&spoof, tmpl, &tmpl->spoof, ip->ip_src, ip->ip_dst);
-print_spoof("udp_recv_cb after", spoof);
+	print_spoof("udp_recv_cb after", spoof);
 
-	icmp_error_send(tmpl, &addr, ICMP_UNREACH, ICMP_UNREACH_PORT, ip, spoof); 
+	icmp_error_send(tmpl, &addr, ICMP_UNREACH, ICMP_UNREACH_PORT, ip, spoof);
 	return;
 
  justlog:
-	honeyd_setudp(&honeyd_udp, ip, udp, 0);
+	honeyd_setudp(&honeyd_udp, ip, udp, INITIATED_BY_EXTERNAL);
 	honeyd_log_probe(honeyd_logfp, IP_PROTO_UDP, &honeyd_udp.conhdr,
-	    pktlen, 0, NULL);
+		pktlen, 0, NULL);
+}
+
+
+void
+udp_recv_cb(struct template *tmpl, u_char *pkt, u_short pktlen)
+{
+	struct ip_hdr *ip = NULL;
+	struct udp_hdr *udp;
+	ip = (struct ip_hdr *)pkt;
+	udp = (struct udp_hdr *)(pkt + (ip->ip_hl << 2));
+
+	if (pktlen < (ip->ip_hl << 2) + UDP_HDR_LEN)
+		return;
+
+	struct packet_wrapper wrapper;
+	wrapper.pkt = pkt;
+	wrapper.pktlen = pktlen;
+
+	// Send the packet to all of the templates and let handle_udp_packet
+	// figure out if it's a match to a subnet
+	if (!strcmp("default", tmpl->name))  {
+		wrapper.unicast = 0;
+		template_iterate(&handle_udp_packet, (void*)&wrapper);
+	} else {
+		wrapper.unicast = 1;
+		handle_udp_packet(tmpl, (void*)&wrapper);
+	}
 }
 
 void
@@ -2734,7 +2854,7 @@ icmp_recv_cb(struct template *tmpl, u_char *pkt, u_short pktlen)
 	honeyd_log_probe(honeyd_logfp, IP_PROTO_ICMP, &icmphdr, pktlen, 0, NULL);
 
 	/* We can block ICMP, too */
-	if (tmpl && tmpl->icmp.status == PORT_BLOCK)
+	if (tmpl && (tmpl->icmp.status == PORT_FILTERED || tmpl->icmp.status == PORT_CLOSED))
 		return;
 
 	if (tmpl != NULL && tmpl->person != NULL)
@@ -2799,7 +2919,7 @@ icmp_recv_cb(struct template *tmpl, u_char *pkt, u_short pktlen)
 
 			if(((icmp->icmp_code == 9) && (ip->ip_tos == 0)) || ((icmp->icmp_code == 0) && (ip->ip_tos == 4)))
 			{
-				//If we don't have an icmp personality, just quit (no response, aka block)
+				//If we don't have an icmp personality, just quit (no response, aka filtered/closed)
 				if(nmap_print == NULL)
 				{
 					return;
@@ -2898,7 +3018,7 @@ icmp_recv_cb(struct template *tmpl, u_char *pkt, u_short pktlen)
 			tmpip.ip_dst = rip->ip_src;
 			tmpudp.uh_sport = udp->uh_dport;
 			tmpudp.uh_dport = udp->uh_sport;
-			honeyd_setudp(&honeyd_udp, &tmpip, &tmpudp, 0);
+			honeyd_setudp(&honeyd_udp, &tmpip, &tmpudp, INITIATED_BY_EXTERNAL);
 
 			/* Find matching state */
 			con = (struct udp_con *)SPLAY_FIND(tree, &udpcons,
@@ -3253,7 +3373,7 @@ honeyd_input(const struct interface *inter, struct ip_hdr *ip, u_short iplen)
 			if (value < tmpl->drop_inrate)
 				return;
 		}
-		if (tmpl != NULL && tmpl->flags & TEMPLATE_EXTERNAL)
+		if ((tmpl != NULL) && (tmpl->flags & TEMPLATE_EXTERNAL))
 			flags |= DELAY_ETHERNET;
 		honeyd_delay_packet(tmpl, ip, iplen, NULL, NULL, delay, flags, no_spoof);
 		return;
@@ -3332,7 +3452,7 @@ honeyd_input(const struct interface *inter, struct ip_hdr *ip, u_short iplen)
 	} else
 		tmpl = template_find_best(addr_ntoa(&addr), ip, iplen);
 
-	if (tmpl != NULL && tmpl->flags & TEMPLATE_EXTERNAL)
+	if ((tmpl != NULL) && (tmpl->flags & TEMPLATE_EXTERNAL))
 		flags |= DELAY_ETHERNET;
 
 	/* Delay the packet if necessary, otherwise deliver it directly */
@@ -3490,7 +3610,10 @@ honeyd_signal(int fd, short what, void *arg)
 	{
 		FILE *fp;
 		if ((fp = fopen(templateDump , "w+")) == NULL)
-			warn("Error opening the DHCP IP address dump file");
+		{
+			syslog(LOG_WARNING, "Error opening the DHCP IP address dump file");
+		}
+			//warn("Error opening the DHCP IP address dump file");
 		else
 			fclose(fp);
 	}
@@ -3531,7 +3654,7 @@ struct _unittest {
 	{ "pydataprocessing", pydataprocessing_test },
 	{ "pydatahoneyd", pydatahoneyd_test },
 #endif
-	{ "rrdtool", rrdtool_test },
+	//{ "rrdtool", rrdtool_test },
 	{ "ethernet", ethernet_test },
 	{ "interface", interface_test },
 	{ "network", network_test },
@@ -3557,7 +3680,6 @@ int
 main(int argc, char *argv[])
 {
 	extern int interface_dopoll;
-	struct event sigterm_ev, sigint_ev, sighup_ev, sigchld_ev, sigusr_ev;
 	char *dev[HONEYD_MAX_INTERFACES];
 	char **orig_argv;
 	struct addr stats_dst;
@@ -3572,16 +3694,17 @@ main(int argc, char *argv[])
 	if(chdir(PATH_HONEYDDATA) == -1)
 	{
 		printf("ERROR: Could not find path PATH_HONEYDDATA: %s\n", PATH_HONEYDDATA);
+		syslog(LOG_ERR,"ERROR: Could not find path PATH_HONEYDDATA: %s\n", PATH_HONEYDDATA);
 		perror("");
 		exit(EXIT_FAILURE);
 	}
-
 	fprintf(stderr, "Honeyd V%s Copyright (c) 2002-2007 Niels Provos\n",
 	    VERSION);
 
 	orig_argc = argc;
 	orig_argv = argv;
-	while ((c = getopt_long(argc, argv, "VPTdc:i:p:x:a:u:g:f:t:l:s:0:R:h?",
+	syslog_init(orig_argc, orig_argv);
+	while ((c = getopt_long(argc, argv, "VPTdc:i:p:x:a:u:g:f:t:l:s:0:R:m:h?",
 				honeyd_long_opts, NULL)) != -1) {
 		char *ep;
 		switch (c) {
@@ -3672,8 +3795,10 @@ main(int argc, char *argv[])
 			honeyd_debug++;
 			break;
 		case 'i':
-			if (ninterfaces >= HONEYD_MAX_INTERFACES)
-				errx(1, "Too many interfaces specified");
+			if (ninterfaces >= HONEYD_MAX_INTERFACES){
+				syslog(LOG_ERR, "Too many interfaces specified");
+				exit(EXIT_FAILURE);
+			}
 			dev[ninterfaces++] = optarg;
 			break;
 		case 'f':
@@ -3700,18 +3825,23 @@ main(int argc, char *argv[])
 		case '0':
 			config.osfp = optarg;
 			break;
+		case 'm':
+			config.nmapMac = optarg;
+			printf("nmac: %s\n",config.nmapMac);
+
+			break;
 		case 0:
 			/* long option handled -- skip this one. */
 			break;
 		default:
 			usage();
-			/* not reached */
+			break;
 		}
 	}
 
 	if (honeyd_show_version) {
 		printf("Honeyd Version %s\n", VERSION);
-		exit(0);
+		exit(EXIT_SUCCESS);
 	}
 	if (honeyd_show_usage) {
 		usage();
@@ -3719,18 +3849,21 @@ main(int argc, char *argv[])
 	}
 	if (honeyd_show_include_dir) {
 		printf("%s\n", PATH_HONEYDINCLUDE);
-		exit(0);
+		exit(EXIT_SUCCESS);
 	}
 	if (honeyd_show_data_dir) {
 		printf("%s\n", PATH_HONEYDDATA);
-		exit(0);
+		exit(EXIT_SUCCESS);
 	}
 
 	argc -= optind;
 	argv += optind;
 
 	if ((honeyd_rand = rand_open()) == NULL)
-		err(1, "rand_open");
+	{
+		syslog(LOG_ERR, "rand_open");
+		exit(EXIT_FAILURE);
+	}
 	/* We need reproduceable random numbers for regression testing */
 	if (setrand)
 		rand_set(honeyd_rand, &setrand, sizeof(setrand));
@@ -3740,12 +3873,10 @@ main(int argc, char *argv[])
 	interface_prevent_init();
 
 	/* Initalize libevent */
-	event_init();
+	libevent_base = event_base_new();
 
 	/* Three priorities - UI connections always get a better priority */
-	event_priority_init(3);
-
-	syslog_init(orig_argc, orig_argv);
+	event_base_priority_init(libevent_base, 3);
 
 	/* Initalize pool allocator */
 	pool_pkt = pool_init(HONEYD_MTU);
@@ -3771,30 +3902,43 @@ main(int argc, char *argv[])
 	associations_init();
 
 	/* Xprobe2 fingerprints */
-	if ((fp = fopen(config.xprobe, "r")) == NULL)
-		err(1, "fopen(%s)", config.xprobe);
-	if (xprobe_personality_parse(fp) == -1)
-		errx(1, "parsing xprobe personality file failed");
+	if ((fp = fopen(config.xprobe, "r")) == NULL){
+		syslog(LOG_ERR, "fopen(%s)", config.xprobe);
+		exit(EXIT_FAILURE);
+	}
+	if (xprobe_personality_parse(fp) == -1){
+		syslog(LOG_ERR, "parsing xprobe personality file failed");
+		exit(EXIT_FAILURE);
+	}
 	fclose(fp);
 	
 	/* Association between xprobe and nmap fingerprints */
-	if ((fp = fopen(config.assoc, "r")) == NULL)
-		err(1, "fopen(%s)", config.assoc);
-	if (parse_associations(fp) == -1)
-		errx(1, "parsing associations file failed");
+	if ((fp = fopen(config.assoc, "r")) == NULL){
+		syslog(LOG_ERR, "fopen(%s)", config.assoc);
+		exit(EXIT_FAILURE);
+	}
+	if (parse_associations(fp) == -1){
+		syslog(LOG_ERR, "parsing associations file failed");
+		exit(EXIT_FAILURE);
+	}
 	fclose(fp);
 
 	/* Nmap fingerprints */
-	if ((fp = fopen(config.pers, "r")) == NULL)
-		err(1, "fopen(%s)", config.pers);
-	if (personality_parse(fp) == -1)
-		errx(1, "parsing personality file failed");
+	if ((fp = fopen(config.pers, "r")) == NULL){
+		syslog(LOG_ERR, "fopen(%s)", config.pers);
+		exit(EXIT_FAILURE);
+	}
+	if (personality_parse(fp) == -1){
+		syslog(LOG_ERR, "parsing personality file failed");
+		exit(EXIT_FAILURE);
+	}
 	fclose(fp);
 
-
 	/* PF OS fingerprints */
-	if (honeyd_osfp_init(config.osfp) == -1)
-		errx(1, "reading OS fingerprints failed");
+	if (honeyd_osfp_init(config.osfp) == -1){
+		syslog(LOG_ERR, "reading OS fingerprints failed");
+		exit(EXIT_FAILURE);
+	}
 
 	honeyd_init();
 	
@@ -3807,8 +3951,10 @@ main(int argc, char *argv[])
 		 * the configuration - some configs will not load without
 		 * this call succeeding.
 		 */
-		if (!honeyd_verify_config)
-			err(1, "ip_open");
+		if (!honeyd_verify_config){
+			syslog(LOG_ERR, "ip_open");
+			exit(EXIT_FAILURE);
+		}
 	}
 
 	if (honeyd_verify_config) {
@@ -3816,14 +3962,6 @@ main(int argc, char *argv[])
 		
 		/* Make sure that we do not open interfaces for real */
 		interface_verify_config = 1;
-	}
-
-	/* Initialize the specified interfaces */
-	if (ninterfaces == 0)
-		interface_init(NULL, argc, argc ? argv : NULL);
-	else {
-		for (i = 0; i < ninterfaces; i++)
-			interface_init(dev[i], argc, argc ? argv : NULL);
 	}
 
 #ifdef HAVE_PYTHON
@@ -3837,9 +3975,33 @@ main(int argc, char *argv[])
 			honeyd_webserver_port,
 			honeyd_webserver_root);
 #endif
-
 	/* Reads in the ethernet codes and indexes them for use in config */
-	ethernetcode_init();
+		//ethernetcode_init();
+		//nmap mac addresses are read in here
+	//they did enter the -m flag and entered a path for the ethernet codes and indexes
+	/* Reads in the ethernet codes and indexes them for use in config */
+
+	fp = fopen(config.nmapMac, "r");
+	if (fp != NULL){
+		ethernetcode_init(fp);
+	}else{
+		syslog(LOG_ERR,"Can't open the nmap-mac-address file");
+		exit(EXIT_FAILURE);
+	}
+
+
+
+
+	/* Initialize the specified interfaces */
+	if (ninterfaces == 0)
+		interface_init(NULL, argc, argc ? argv : NULL);
+	else {
+		for (i = 0; i < ninterfaces; i++)
+			interface_init(dev[i], argc, argc ? argv : NULL);
+	}
+
+
+
 
 	/* Read main configuration file */
 	if (config.config != NULL)
@@ -3847,7 +4009,10 @@ main(int argc, char *argv[])
 
 	/* Just verify the configuration - exit with success */
 	if (honeyd_verify_config)
-		errx(0, "parsing configuration file successful");
+	{
+		syslog(LOG_ERR, "parsing configuration file successful");
+		exit(EXIT_FAILURE);
+	}
 
 	//Start sending DHCP discoveries that have been queue'd up
 	dhcp_send_discover();
@@ -3873,16 +4038,19 @@ main(int argc, char *argv[])
 	/* Create PID file, we might not be able to remove it */
 	unlink(PIDFILE);
 	if ((fp = fopen(PIDFILE, "w")) == NULL)
-		err(1, "fopen");
+		{
+		syslog(LOG_ERR, "fopen");
+		exit(EXIT_FAILURE);
+		}
 
 	/* Start Honeyd in the background if necessary */
 	if (!honeyd_debug) {
 		setlogmask(LOG_UPTO(LOG_INFO));
-
 		fprintf(stderr, "Honeyd starting as background process\n");
 		if (daemon(1, 0) < 0) {
 			unlink(PIDFILE);
-			err(1, "daemon");
+			syslog(LOG_ERR, "daemon");
+			exit(EXIT_FAILURE);
 		}
 	}
 	
@@ -3907,7 +4075,8 @@ main(int argc, char *argv[])
 	{
 		FILE *fp;
 		if ((fp = fopen(templateDump , "w+")) == NULL)
-			warn("Error opening the DHCP IP address dump file");
+			syslog(LOG_WARNING, "Error opening the DHCP IP address dump file");
+			//warn("Error opening the DHCP IP address dump file");
 		else
 			fclose(fp);
 	}
@@ -3920,22 +4089,24 @@ main(int argc, char *argv[])
 		syslog(LOG_INFO, "Internal webserver has been disabled.");
 #endif
 
-	/* Setup signal handler */
 	if (signal(SIGPIPE, SIG_IGN) == SIG_ERR) {
 		perror("signal");
 		return (-1);
 	}
 
-	signal_set(&sigint_ev, SIGINT, honeyd_signal, NULL);
-	signal_add(&sigint_ev, NULL);
-	signal_set(&sigterm_ev, SIGTERM, honeyd_signal, NULL);
-	signal_add(&sigterm_ev, NULL);
-	signal_set(&sigchld_ev, SIGCHLD, honeyd_sigchld, NULL);
-	signal_add(&sigchld_ev, NULL);
-	signal_set(&sighup_ev, SIGHUP, honeyd_sighup, NULL);
-	signal_add(&sighup_ev, NULL);
-	signal_set(&sigusr_ev, SIGUSR1, honeyd_sigusr, NULL);
-	signal_add(&sigusr_ev, NULL);
+	struct event *sigterm_ev, *sigint_ev, *sighup_ev, *sigchld_ev, *sigusr_ev;
+
+	sigterm_ev = evsignal_new(libevent_base, SIGTERM, honeyd_signal, NULL);
+	sigint_ev = evsignal_new(libevent_base, SIGINT, honeyd_signal, NULL);
+	sighup_ev = evsignal_new(libevent_base, SIGHUP, honeyd_sighup, NULL);
+	sigchld_ev = evsignal_new(libevent_base, SIGCHLD, honeyd_sigchld, NULL);
+	sigusr_ev = evsignal_new(libevent_base, SIGUSR1, honeyd_sigusr, NULL);
+
+	event_add(sigterm_ev, NULL);
+	event_add(sigint_ev, NULL);
+	event_add(sighup_ev, NULL);
+	event_add(sigchld_ev, NULL);
+	event_add(sigusr_ev, NULL);
 
 	/* Start logging via rrd */
 	if (honeyd_rrdtool_path != NULL && strlen(honeyd_rrdtool_path))
@@ -3949,7 +4120,7 @@ main(int argc, char *argv[])
 	if (servicelog != NULL)
 		honeyd_servicefp = honeyd_logstart(servicelog);
 
-	event_dispatch();
+	event_base_dispatch(libevent_base);
 
 	syslog(LOG_ERR, "Kqueue does not recognize bpf filedescriptor.");
 

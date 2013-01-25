@@ -157,7 +157,7 @@ honeyd_osfp_cache_insert(const struct ip_hdr *ip, struct pf_osfp_enlist *list)
 		}
 
 		entry->src = ip->ip_src;
-		evtimer_set(&entry->timeout, honeyd_osfp_timeout, entry);
+		entry->timeout = evtimer_new(libevent_base, honeyd_osfp_timeout, entry);
 		root = honeyd_osfp_hash(ip);
 
 		SPLAY_INSERT(osfptree, root, entry);
@@ -167,7 +167,7 @@ honeyd_osfp_cache_insert(const struct ip_hdr *ip, struct pf_osfp_enlist *list)
 	
 	timerclear(&tv);
 	tv.tv_sec = OSFP_TIMEOUT;
-	evtimer_add(&entry->timeout, &tv);
+	evtimer_add(entry->timeout, &tv);
 }
 
 static struct osfp *
@@ -190,7 +190,7 @@ honeyd_osfp_cache(const struct ip_hdr *ip)
 	/* Update timeout */
 	timerclear(&tv);
 	tv.tv_sec = OSFP_TIMEOUT;
-	evtimer_add(&entry->timeout, &tv);
+	evtimer_add(entry->timeout, &tv);
 
 	return (entry);
 }

@@ -6,9 +6,9 @@
 #route 10.3.1.1 link 10.3.1.0/24
 
 create default
-set default default tcp action block
-set default default udp action block
-set default default icmp action block
+set default default tcp action filtered
+set default default udp action filtered
+set default default icmp action filtered
 
 # Example of a simple host template and its binding
 create windows
@@ -20,11 +20,11 @@ add windows tcp port 22 "scripts/test.sh"
 add windows tcp port 23 "scripts/router-telnet.pl"
 add windows udp port 53 open
 set windows ethernet "dell" 
-set windows default tcp action reset
+set windows default tcp action closed
 
 #create router
 #set router personality "Cisco 2514 router (IOS 12.1)"
-#set router default tcp action reset
+#set router default tcp action closed
 #add router tcp port 22 "scripts/test.sh"
 #add router tcp port 23 "scripts/router-telnet.pl"
 
