@@ -1,6 +1,10 @@
 import sys
 import binascii
 
+our_IP = sys.argv[1]
+
+sys.stderr.write(sys.argv[2])
+
 #Parse the NBNS header
 
 #Read Transaction ID -> 2 bytes
@@ -76,9 +80,7 @@ if query_type == '\x00\x20':
 	#flags
 	reponse_packet += '\x00\x00'
 	#Our address
-	#reponse_packet += $ip_addr
-	#TODO: Temp hardcoded IP address
-	reponse_packet += '\xc0\xa8\x0b\x16'
+	reponse_packet += socket.inet_aton(our_IP)
 	sys.stdout.write(reponse_packet)
 	sys.exit(0)
 
