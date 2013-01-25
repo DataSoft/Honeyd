@@ -1,0 +1,467 @@
+<DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+  <head>
+    <title>Honeyd - Network Rhapsody for You</title>
+<style type="text/css">
+<!--
+body,p,b,i,ul,ol,li,td { font-family: arial, helvetica, sans-serif; }
+h1,h2,h3,h4,h5 { font-family: arial, helvetica, sans-serif;
+    font-weight: bold; }
+div.body { margin-left: 32px; }
+pre { font-family: monospace; }
+-->
+</style>
+  </head>
+
+  <body>
+  <body bgcolor="#ffffff">
+    <table noborder cellspacing="0" cellpadding="4" width="100%">
+	<tr><td bgcolor="#ff0000">&nbsp;</td></tr>
+	<tr><td width="100%" bgcolor="#cccccc" align="left">
+<font size="+1" color="#000088">
+Due to a new <a	href="http://www.michiganlegislature.org/printDocument.asp?objName=mcl-750-540c&version=txt">Michigan law</a> (Super DMCA), the legality of
+my research or these web pages is currently unclear.  Felten provides
+<a href="http://www.freedom-to-tinker.com/superdmca.html">additional information</a> about the resulting restrictions on technology and research.
+Potentially <strong>offending web content</strong> has been
+<strong>moved to the Netherlands</strong>.  Please, support the
+<a href="http://www.eff.org/">EFF</a>.
+</font>
+</td></tr>
+	<tr><td bgcolor="#ff0000">&nbsp;</td></tr>
+</table>
+<br>
+    <table noboder cellspacing="0" cellpadding="2" width="95%">
+      <tr>
+	  <td bgcolor="#0880b8" nowrap>
+	    <font size="-1" face="Arial,Helvetica" color="#30c0f0">
+		&nbsp;&nbsp;
+		Center for Information Technology Integration
+		&nbsp;&nbsp;
+	      <br>
+	      </font>
+	    <center>
+	      <font size="+3" face="Arial,Helvetica" color="#50d0ff">
+		Honeyd - Network Rhapsody for You
+	      </font>
+	    </center>
+	  </td>
+	    <td bgcolor="#0880b8">
+	      &nbsp;&nbsp;
+	    </td>
+	</tr>
+	<tr>
+	  <td>
+	    &nbsp;
+	  </td>
+	</tr>
+	<tr>
+	  <td bgcolor="#eeeeee">
+	    <dl>
+	      <dd>
+<p>
+<table noborder cellspacing="2" cellpadding="0">
+<tr><td valign="top">
+<table noborder cellspacing="0" cellpadding="0" width="100%">
+<tr><td align="middle">
+<font color="#aa1010">
+Honeyd spam trap shows that <a href="http://www.honeyd.org/spam.php">43% of spam is sent by Linux</a> machines.
+</font>
+</td></tr>
+<tr><td align="middle">
+</td></tr>
+</table>
+<p>
+<font color="#aa1010">
+For <a href="http://www.honeyd.org/viewtopic.php">recent information</a> visit: <strong><a href="http://www.honeyd.org/">www.honeyd.org</a></strong>
+</font>
+<p>
+Honeyd is a small daemon that creates virtual hosts on a network.  The
+hosts can be configured to run arbitrary services, and their
+personality can be adapted so that they appear to be running certain
+operating systems.  Honeyd enables a single host to claim
+multiple addresses - I have tested up to 65536 - on a LAN for network
+simulation.  Honeyd improves <a href="http://www.citi.umich.edu/u/provos/cybersecurity/">cyber security</a>
+by providing mechanisms for threat detection and assessment.  It also
+deters adversaries by hiding real systems in the middle of virtual
+systems.
+<p>
+It is possible to ping the virtual machines, or to traceroute them.
+Any type of service on the virtual machine can be simulated according
+to a simple configuration file.  Instead of simulating a service, it
+is also possible to proxy it to another machine.
+<p>
+<dl>
+<dd>
+<table noborder cellpadding="2" cellspacing="0" center>
+<tr><td nowrap bgcolor="#ccddee">
+<pre>
+annotate "AIX 4.0 - 4.2" fragment old
+# Example of a simple host template and its binding
+create template
+set template personality "AIX 4.0 - 4.2"
+add template tcp port 80 "sh scripts/web.sh"
+add template tcp port 22 "sh scripts/test.sh $ipsrc $dport"
+add template tcp port 23 proxy 10.23.1.2:23
+set template default tcp action reset
+
+bind 10.21.19.102 template
+</pre>
+</td></tr>
+</table>
+</dd>
+</dl>
+<p>
+The different TCP personalities are learned from reading a nmap
+fingerprint file.  The configured personality is the operating system
+that nmap or xprobe will return.  Personalities can be annotated to
+determine if they allow FIN-scans for open ports or to select the
+preference in which they reassemble fragmented IP packets.
+<p>
+Honeyd can be used to create a virtual honey net or for general
+network monitoring.  It supports the creation of a virtual network
+topology including dedicated routes and routers.  The routes can
+be attributed with latency and packet loss to make the topology
+seem more realistic.
+<p>
+Because Honeyd interacts with potentially malicious adversaries, you
+should sandbox it with <a href="http://www.citi.umich.edu/u/provos/systrace/">Systrace</a>.  Systrace
+prevents an adversary from exploiting bugs in your Honeyd scripts.
+<h3>Subsystem Virtualization</h3>
+Honeyd supports service virtualization by executing Unix applications
+as subsystems running in the virtual IP address space of a configured
+honeypot.  This allows any network application to dynamically bind
+ports, create TCP and UDP connections using a virtual IP address.
+<p>
+Subsystems are virtualized by intercepting their network requests
+and redirecting them to Honeyd.  Every configuration template may
+contain subsystems that are started as separated processes when
+the template is bound to a virtual IP address.  An additional
+benefit of this approach is the ability of honeypots to create
+sporadic background traffic like requesting web pages and reading
+email, etc.
+
+<h3>Network Simulation/Internet-In-The-Box</h3>
+Honeyd supports assymetric routes and the integration of physical
+machines into the virtual network topology.  As a result, it is
+possible to use Honeyd for simple network simulations:  Physical
+hosts can be exposed to high latency or packet loss, arbitrary
+routing infrastructures, etc.
+<p>
+<dl>
+<dd>
+<table noborder cellpadding="2" cellspacing="0">
+<tr><td bgcolor="#ccddee">
+<pre>
+<font size="-1">
+route entry 10.0.0.1 network 10.0.0.0/8
+route 10.0.0.1 link 10.0.0.0/24
+route 10.0.0.1 add net 10.4.0.0/14 tunnel "thishost" "honeyd-b"
+route 10.0.0.1 add net 10.1.0.0/16 10.1.0.1 latency 55ms loss 0.1
+route 10.0.0.1 add net 10.2.0.0/16 10.2.0.1 latency 20ms loss 0.1
+route 10.0.0.1 add net 10.3.0.0/16 10.2.0.1 latency 20ms loss 0.1
+route 10.1.0.1 link 10.1.0.0/24
+route 10.2.0.1 link 10.2.0.0/24
+[...]
+route 10.2.0.1 add net 10.3.0.0/16 10.3.0.1 latency 10ms loss 0.1
+route 10.3.0.1 link 10.3.0.0/24
+route 10.3.0.1 add net 10.3.1.1/24 10.3.1.1 latency 10ms
+route 10.3.0.1 add net 10.3.240.0/20 10.3.240.1 latency 5ms
+route 10.3.1.1 link 10.3.1.1/24
+route 10.3.240.1 link 10.3.240.0/20
+route 10.3.240.1 add net 0.0.0.0/0 10.3.0.1 latency 40ms loss 0.5&nbsp;
+[...]
+bind 10.2.0.243 to fxp0
+bind 10.3.1.15 to fxp0
+</font>
+</pre>
+</td></tr>
+</table>
+</dd>
+</dl>
+<p>
+Using GRE tunneling allows the creation of distributed
+setups that allow Honeyd to scale to larger networks. It also allows
+virtual machines to be spread across separate address spaces as GRE
+tunnel selection can be based on the source addresses.
+</td>
+<td>&nbsp;</td>
+<td valign="top">
+<center>
+&nbsp;<br>
+<table border="0" bgcolor="#000000" cellpadding="0" cellspacing="1">
+<tr><td valign="top" align="middle" bgcolor="#aaaacc">
+<font color="#333377" size="+0.5">
+&nbsp;<a href="http://www.citi.umich.edu/u/provos/wishlists/amazon.html">Happpy&nbsp;Hacking</a>&nbsp;
+</font>
+</td></tr>
+<tr>
+<td valign="top" align="left" bgcolor="#ccccee">
+<font color="#101044" size="+0.5">
+&nbsp;Keep&nbsp;me&nbsp;happy&nbsp;while<br>
+&nbsp;hacking&nbsp;on&nbsp;Honeyd.&nbsp;
+</font>
+</td></tr>
+<tr><td valign="top" align="middle" bgcolor="#aaaacc">
+<font color="#333377" size="+0.5">
+&nbsp;<a href="http://www.citi.umich.edu/u/provos/wishlists/amazon.html">Reduce&nbsp;my&nbsp;wishlist!</a>&nbsp;
+</font>
+</td></tr>
+</table>
+<p>
+<table border="0" bgcolor="#000000" cellpadding="0" cellspacing="1">
+<tr><td valign="top" align="middle" bgcolor="#aaaacc">
+<font color="#333377" size="+0.5">
+&nbsp;<a href="http://www.citi.umich.edu/u/provos/wishlists/amazon.html">Support&nbsp;Honeyd</a>&nbsp;
+</font>
+</td></tr>
+<tr><td valign="bottom" align="left" bgcolor="#ccccee">
+<font color="#101044" size="+0.5">
+<form method="get" action="http://www.amazon.com/exec/obidos/external-search">
+<table border="0" cellpadding="1" cellspacing="0" align="center" bgcolor="#ccccee">
+<tr border="0">
+<td bgcolor="#ccccee" align="right" valign="middle"><font face="verdana,arial,helvetica" size="-2"><B>Search:</B></font></TD>
+<td bgcolor="#CCCCEE" align="left" valign="middle"><font face="verdana,arial,helvetica" size="-2">
+<SELECT NAME="mode">
+<OPTION VALUE="books">Books
+<OPTION VALUE="music">Music
+<OPTION VALUE="dvd">DVD
+<OPTION VALUE="toys">Toys & Games
+<OPTION VALUE="videogames">Computer Games
+<OPTION VALUE="electronics">Electronics
+<OPTION VALUE="software">Software
+<OPTION VALUE="photo">Camera & Photo
+<OPTION VALUE="pc-hardware">Computers
+</select>
+</font></td></tr>
+<tr border="0" cellpadding="0" cellspacing="0">
+<TD BGCOLOR="#CCCCEE" align="RIGHT" valign="middle">
+<font face="verdana,arial,helvetica" size="-2"><B>Keywords:</B></font></TD>
+<td bgcolor="#ccccee" align="left" valign="middle">
+<font face="verdana,arial,helvetica" size="-2">
+<INPUT TYPE="text" NAME="keyword" SIZE="10" VALUE="">
+<INPUT TYPE="hidden" NAME="tag" VALUE="honeyd-20">
+<INPUT TYPE="submit" width="21" height="21" border="0" value="Go" name="Go" align="absmiddle">
+</font></td></TR>
+</table></form></font></td></tr>
+<tr><td valign="top" align="middle" bgcolor="#aaaacc">
+<font color="#333377" size="+0.5">
+&nbsp;<a href="http://www.amazon.com/exec/obidos/redirect-home/honeyd-20">Search Amazon</a>
+&nbsp;
+</font>
+</td></tr>
+</table>
+</center>
+&nbsp;<br>
+<table noborder bgcolor="#000000" cellpadding="2" cellspacing="1">
+<tr>
+<td valign="top" align="left" bgcolor="#eeeeaa">
+<font color="#aa1010">
+<font size="+1.5"><strong>&nbsp;Features</strong></font>
+<ul>
+<li>Simulates&nbsp;thousands&nbsp;of&nbsp;virtual&nbsp;hosts&nbsp;at&nbsp;the same time.</li>
+<li>Configuration of arbitrary services via simple configuration file:
+	<ul>
+	<li>Includes proxy connects.</li>
+        <li>Passive fingerprinting to identify remote hosts.</li>
+        <li>Random sampling for load scaling.</li>
+	</ul>
+</li>
+<li>Simulates operating systems at TCP/IP stack level:
+	<ul>
+	<li>Fools nmap and xprobe,</li>
+        <li>Adjustable fragment reassembly policy,</li>
+        <li>Adjustable FIN-scan policy.</li>
+	</ul>			    
+</li>
+<li>Simulation of arbitrary routing topologies:
+	<ul>
+	<li>Configurable latency and packet loss.</li>
+	<li>Assymetric routing.</li>
+	<li>Integration of physical machines into topology.</li>
+	<li>Distributed Honeyd via GRE tunneling.</li>
+	</ul>
+</li>
+<li>Subsystem virtualization:
+	<ul>
+	<li>Run real UNIX applications under virtual Honeyd IP addresses: web servers, ftp servers, etc...</li>
+	<li>Dynamic port binding in virtual address space, background initiation of network connections, etc.</li>
+	</ul>
+</li>
+</ul>
+</font>
+&nbsp;
+</td>
+</tr>
+</table>
+&nbsp;<p>
+<table width="100%" noborder bgcolor="#000000" cellpadding="2" cellspacing="1">
+<tr>
+<td valign="top" align="left" bgcolor="#ccccee">
+<font color="#101044">
+<font size="+1.5"><strong>&nbsp;Future Work</strong></font>
+<ul>
+<li>In the near future, Honeyd and Arpd are going to be integrated into the
+<strong>Monkey MasterBaiter</strong> toolkit.</li>
+<li>
+A sneak pre-view on future features can be found on the
+<a href="http://www.honeyd.org/">Honeyd development page</a>.</li>
+</ul>
+</td></tr></table>
+&nbsp;<p>
+<table width="100%" noborder bgcolor="#000000" cellpadding="2" cellspacing="1">
+<tr>
+<td valign="top" align="left" bgcolor="#ccccee">
+<font color="#101044">
+<font size="+1.5"><strong>&nbsp;Contributions</strong></font>
+<ul>
+<li>If you have implemented your own services, please send them to me
+and I will put them on the
+<a href="http://www.honeyd.org/contrib.php">contributions</a> page.</li>
+<li>If you are using <strong>Honeyd</strong> for something cool, please
+drop me an email and let me know if you would like to be listed on
+a Honeyd users web page.</li>
+</ul>
+</td></tr></table>
+</td>
+</tr>
+</table>
+<hr>
+<table noborder cellspacing="2" cellpadding="0">
+<tr><td valign="top" width="48%">
+<h2>Source code</h2>
+<font color="red">Honeyd is released under the
+<a href="http://www.gnu.org/copyleft/gpl.html">GNU General Public License (GPL)</a>.</font>
+<p>
+Honeyd should compile and run on *BSD systems, GNU/Linux and Solaris.<p>
+Please check the <a href="http://www.honeyd.org/faq.php">FAQ</a>
+before sending questions via email.
+<ul>
+<li>
+<a href="http://www.citi.umich.edu/u/provos/honeyd/honeyd-1.5a.tar.gz">honeyd-1.5</a>
+<a href="http://www.citi.umich.edu/u/provos/honeyd/honeyd-1.5a.tar.gz.sig">[GPG sig]</a>
+- Release 2006-02-19
+</li>
+<li><a href="http://www.citi.umich.edu/u/provos/honeyd/arpd-0.2.tar.gz">arpd-0.2</a> - Release 2003-02-10</li>
+<li><a href="http://www.citi.umich.edu/u/provos/honeyd/honeyd_kit-1.0c-a.tgz">Honeyd Linux Toolkit</a> - Precompiled binaries for Linux including many service script. <i>Version 1.0c</i>.
+</ul>
+You might need other tools like arpd or proxy arp to get honeyd
+working for you.
+</td><td width="52%" valign="top">
+<h2>Dependencies</h2>
+In order to compile honeyd, you need the following libraries:
+<p>
+<ul>
+<li><a href="http://www.monkey.org/~provos/libevent/">libevent</a> - an asynchronous event library.</li>
+<li><a href="http://libdnet.sourceforge.net/">libdnet</a> - the [not
+so] dumb network library.</li>
+<li><a href="http://www.tcpdump.org/">libpcap</a> - a packet capture library.</li>
+</ul>
+</td>
+</tr><tr>
+<td width="48%" valign="top">
+<br>
+<h3>References</h3>
+<ul>
+<li>
+	<dl><dt><a href="http://www.citi.umich.edu/u/provos/papers/honeyd.pdf">A Virtual Honeypot Framework</a></dt>
+	<dd>Niels Provos, <i>13th USENIX Security Symosium,</i>
+	San Diego, CA, August 2004.
+	</dd>
+	</dl>
+</li>
+<li>
+<dl><dt><a href="http://www.citi.umich.edu/u/provos/honeyd/honeyd-man.pdf">Honeyd Manual Page</a></dt>
+<dd>Niels Provos, <i>Honeyd Man Page</i>, November 2003.  </dd></dl>
+</li>
+<!--<li>
+<dl><dt><a href="../papers/honeyd-eabstract.pdf">Honeyd - A Virtual
+Honeypot Daemon (Extended Abstract)</a> [<a href="../papers/honeyd-eabstract.ps">ps</a>]</dt> <dd>Niels Provos, <i>10th
+DFN-CERT Workshop</i>, Hamburg, Germany, Feburary 2003.  </dd></dl>
+</li>
+-->
+</ul>
+</td><td width="52%" valign="top">
+<br>
+<h3>Links</h3>
+<ul>
+<li><a href="http://www.honeyd.org/">Honeyd development</a> page - Current developments and future features.</li>
+<li>Use Honeyd to fight
+<a href="msblast.html">Windows worms</a>! Thanks to Rstack!</li>
+<li><a href="http://www.citi.umich.edu/u/provos/honeyd/ch01-results">The results</a> of the <a href="challenge.html">First Honeyd Challenge</a>.</li>
+<li><a href="http://www.citi.umich.edu/u/provos/papers/honeyd-dfn/">Honeyd Talk</a> at the 10th DFN-CERT Workshop, Februrary 2003.</li>
+<li><a href="http://www.amazon.com/exec/obidos/ASIN/0321108957/honeyd-20">Honeypots: Tracking Hackers</a> - A book about honeypots that includes a chapter on <b>Honeyd</b>.</li>
+<li><a href="http://www.amazon.com/exec/obidos/external-search?tag=honeyd-20&keyword=computer+security&mode=books">Computer Security</a> - General books that deal with computer security.</li>
+</ul>
+</td></tr>
+</table>
+<p>
+<table noborder cellspacing="0" cellpadding="0" width="95%">
+<tr><td>
+<h3>Honeyd in the Press</h3>
+<ul>
+<li>Honeyd, <i><a href="http://miscmag.com/">MISC</a></i>, July 2003.</li>
+<li>Honey-Techniken zur Einburchsvorsorge, <i><a href="http://www.heise.de/ix/">iX - Magazin f&uuml;r Professionelle Informationstechnik</a></i>, June 2003.</li>
+<li><a href="http://www.networkmagazine.com/shared/article/showArticle.jhtml?articleId=8703533">Strategies & Issues: Honeypots - Sticking It to Hackers</a> -
+Lance Spitzner, <i>Network Magazine</i>, April 2003.</li>
+<li><a href="http://www.securityfocus.com/infocus/1675">Open Source Honeypots, Part Two: Deploying Honeyd in the Wild</a> - Lance Spitzer,
+<i>SecurityFocus</i>, March 2003.</li>
+<li><a href="http://www.infosecuritymag.com/2003/feb/baitswitch.shtml">Bait and Switch with Honeyd</a> - Marcus Ranum on Honeyd,
+<i>Information Scurity</i>, February 2003.</li>
+<li><a href="http://online.securityfocus.com/infocus/1659">Open Source Honeypots: Learning with Honeyd</a> - Lance Spitzner on Honeyd,
+<i>SecurityFocus</i>, January 2003.</li>
+</ul>
+<h3>Acknowledgments</h3>
+Arpd is work done mostly by Dug Song and some beautification by me.
+<p>
+Without Dug Song's <a href="http://libdnet.sourceforge.net">libdnet</a>
+this work would have been much much harder.  I would also like to
+thank Bill Cheswick, Derek Cotton, Marius Eriksen, Christopher Kolina,
+Christian Kreibich, Yuqing Mai, Jamie Van Randwyk, Dug Song, Lance
+Spitzner and Eric Thomas for helpful suggestions, ideas and code
+contribution, George Akimov, Peter Balland and Christian Kreibich for
+finding bugs.
+</td>
+<td align="right">
+&nbsp;
+&nbsp;
+&nbsp;
+&nbsp;
+&nbsp;
+&nbsp;
+&nbsp;
+</td>
+<td align="right">
+<img src="honeyd.gif" align="right">
+</td></tr>
+</table>
+</dd>
+</dl>
+</td>
+<td bgcolor="#eeeeee">
+&nbsp;
+</td></tr>
+</table>
+    <hr>
+<table noborder cellspacing="0" cellpadding="2" width="90%">
+<tr><td>
+Questions and Comments:
+    <address><a href="mailto:provos@citi.umich.edu">Niels Provos</a></address>
+<!-- Created: Mon Mar 11 12:43:06 EST 2002 -->
+<!-- hhmts start -->
+Last modified: Sun Feb 19 14:55:49 PST 2006
+<!-- hhmts end -->
+</td><td>
+&nbsp;
+</td><td bgcolor="#ddffdd" align="middle">
+You can keep me happy while hacking by reducing my
+Wishlists:
+<a href="http://www.citi.umich.edu/u/provos/wishlists/amazon.html">Books</a>,
+<a href="http://www.citi.umich.edu/u/provos/wishlists/cdnow.html">Music</a><br>
+</td>
+<td bgcolor="#ddffdd" align="middle">
+<a href="https://secure.bmtmicro.com/opera/buy-opera.html?AID=620358">
+<img src="http://www.citi.umich.edu/u/provos/pictures/ol-get-00-en-mic.gif" alt="[Get Opera!]" width="88" height="31"></a>
+</td></tr>
+</table>
+  </body>
+</html>
