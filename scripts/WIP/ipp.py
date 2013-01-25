@@ -106,7 +106,7 @@ class IPPResponseTCP:
             else:    
                 try:
                     self.version = [int(p) for p in str(float(version)).split('.')]
-                except:
+                except Exception:
                     self.version = [int(p) for p in IPP_VERSION.split('.')]
       
   def setStatusCode(self, stcd):        

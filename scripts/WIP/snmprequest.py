@@ -147,7 +147,7 @@ if __name__ == "__main__":
     for i in range(0, len(split)):
       split[i] = convertDotsToHex(split[i])
     OID = split
-  except:
+  except Exception:
     OID = convertDotsToHex(sys.argv[3])
   
   s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
