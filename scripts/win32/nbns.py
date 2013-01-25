@@ -1,9 +1,8 @@
 import sys
 import binascii
+import socket
 
 our_IP = sys.argv[1]
-
-sys.stderr.write(sys.argv[2])
 
 #Parse the NBNS header
 
