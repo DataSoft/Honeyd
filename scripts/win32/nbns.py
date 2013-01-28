@@ -2,7 +2,60 @@ import sys
 import binascii
 import socket
 
+#Returns the name that our IP address is allocated to in the names_alloc file
+#	returns empty string if not present
+def GetAllocatedName(names_path, our_IP):
+	try:
+		fd = open(names_path + "_alloc")
+		line = fd.readline()
+		while line:
+			if(line.split(",", 1)[1] == our_IP):
+				return line.split(",", 1)[0]
+			line = fd.read
+		return ""
+	except IOError:
+		return ""
+
+#Searches for the given name in the names_alloc file
+#	returns true is present, false if not
+def IsAllocated(names_path, name):
+	try:
+		fd = open(names_path + "_alloc")
+		line = fd.readline()
+		while line:
+			if(line.split(",", 1)[0] == name):
+				return True
+			line = fd.readline()
+		return False
+	except IOError:
+		return False
+
+#Picks the next name from the names file and allocates it to ourself
+#	by adding an entry in the names_alloc file
+#	returns the chosen name on success, empty string on failure
+def AddNameAllocation(names_path, our_IP):
+	fd = open(names_path)
+	line = fd.readline()
+	while line:
+		if(not IsAllocated(names_path, line)):
+			writeFD = open(names_path + "_alloc", "a")
+			writeFD.write(line.rstrip('\n') + "," + our_IP)
+			return line
+		line = fd.readline()
+	return ""
+
+#Decodes a "First Level" encoded string
+def FirstLevelDecode(encoded_str):
+	return ""
+
 our_IP = sys.argv[1]
+names_path = sys.argv[2]
+
+our_name = GetAllocatedName(names_path, our_IP)
+if(our_name == ""):
+	our_name = AddNameAllocation(names_path, our_IP)
+	if(our_name == ""):
+		sys.exit(0)
 
 #Parse the NBNS header
 
@@ -54,6 +107,10 @@ query_class = sys.stdin.read(2)
 
 #If this is a forward request
 if query_type == '\x00\x20':
+	#Only repond if it was our name they wanted
+	if(our_name != name):
+		sys.exit(0)
+		
 	#Begin forging a response
 	reponse_packet = trans_ID
 	#flags
@@ -105,12 +162,13 @@ if query_type == '\x00\x21':
 	reponse_packet += '\x00\x01'
 	#TTL == 0
 	reponse_packet += '\x00\x00\x00\x00'
-	#Data Length (65 bytes -> 0x41)
-	reponse_packet += '\x00\x41'
+	#Data Length 49 bytes + name + 1
+	name_len = len(our_name) + 50
+	reponse_packet += '\x00' + chr(name_len)
 	#Number of names == 1
 	reponse_packet += '\x01'
-	#Name (ascii) (16 bytes) TODO
-	reponse_packet += "WOOT           " + '\x00'
+	#Name (ascii) (16 bytes)
+	reponse_packet += our_name + '\x00'
 	#name flags
 	reponse_packet += '\x04\x00'
 	#Empty fields at end (46 bytes)
