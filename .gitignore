@@ -153,6 +153,14 @@ scripts/WIP/*.pyc
 scripts/WIP/.project
 scripts/WIP/.pydevproject
 scripts/WIP/*.txt
+scripts/WIP/IPP/*.pyc
+scripts/WIP/IPP/.project
+scripts/WIP/IPP/.pydevproject
+scripts/WIP/IPP/*.txt
+scripts/WIP/DNS/*.pyc
+scripts/WIP/DNS/.project
+scripts/WIP/DNS/.pydevproject
+scripts/WIP/DNS/*.txt
 /pypcap/Makefile
 /pypcap/Makefile.in
 /regress/Makefile

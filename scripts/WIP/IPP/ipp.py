@@ -352,11 +352,6 @@ class IPPResponseUDP:
       i += 3
       
   def generateResponse(self):
-    ''' 
-      The if statements here don't really do anything at the moment,
-      but if further research reveals a difference between get-request
-      and get-next-request pdu types, it'll come in handy
-    '''
     if int(self.pdutype, 16) == self.ids['get-request']:
       packet = []
       head = []
