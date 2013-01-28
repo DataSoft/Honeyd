@@ -30,17 +30,6 @@ def getEncodedDomain():
       break
   return [ret[:-1], binary]
 
-def findDNSBoundaries(start):
-  ret = start
-  while 1:
-    traverse = int(hexlify(sys.stdin.read(1)), 10)
-    ret += 1
-    if traverse == 0:
-      break
-    ret += traverse
-  ret += 3
-  return ret
-
 if __name__ == "__main__":
   if len(sys.argv) != 2:
     sys.exit(1)
