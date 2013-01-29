@@ -55,6 +55,7 @@
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <pwd.h>
 #include <string.h>
 #include <syslog.h>
 #include <signal.h>
@@ -524,6 +525,64 @@ honeyd_init(void)
 
 	stats_network.input_bytes = count_new();
 	stats_network.output_bytes = count_new();
+
+	//set environment variable for scripts to use
+	char *sudo_user = getenv("SUDO_USER");
+	int uid = 0;
+	char *home_path = NULL;
+
+	//Try getting the "SUDO_USER".
+	//If it doesn't exist (not running with sudo), then just default to using the current user
+	struct passwd *pass = getpwnam(sudo_user);
+	if(pass == NULL)
+	{
+		pass = getpwuid(getuid());
+		if(pass == NULL)
+		{
+			syslog(LOG_ERR, "%s: Cannot find a valid user to run as, is your system okay?!",  __func__);
+			exit(EXIT_FAILURE);
+		}
+	}
+	uid = pass->pw_uid;
+	home_path = pass->pw_dir;
+
+	char config_suffix[] = "/.config";
+	char honeyd_suffix[] = "/honeyd/";
+	char *full_path = malloc(strlen(home_path) + strlen(config_suffix) + strlen(honeyd_suffix));
+	strcpy(full_path, home_path);
+	strcat(full_path, config_suffix);
+
+	//Try to make ~/.config/
+	if(mkdir(full_path, S_IRWXU|S_IRWXO) != 0)
+	{
+		if(errno != EEXIST)
+		{
+			perror("xxxDEBUGxxx bad 1\n");
+		}
+	}
+
+	strcat(full_path, honeyd_suffix);
+	//Try to make ~/.config/honeyd
+	if(mkdir(full_path, S_IRWXU|S_IRWXO) != 0)
+	{
+		if(errno != EEXIST)
+		{
+			perror("xxxDEBUGxxx bad 2\n");
+		}
+	}
+	if(chown(full_path, uid, 0) != 0)
+	{
+		perror("xxxDEBUGxxx bad 3\n");
+	}
+	if(chmod(full_path, S_IRWXU|S_IRWXO))
+	{
+		perror("xxxDEBUGxxx bad 4\n");
+	}
+
+	if(setenv("HONEYD_HOME", full_path, 1))
+	{
+		perror("xxxDEBUGxxx bad 5\n");
+	}
 }
 
 #ifdef HAVE_PYTHON
