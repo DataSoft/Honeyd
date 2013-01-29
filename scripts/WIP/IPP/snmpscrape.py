@@ -134,7 +134,7 @@ if __name__ == '__main__':
 
   parser = argparse.ArgumentParser(description='snmpwalk an IP address for its MIB data within the 1.3.6.1.2 and 1.3.6.1.4 subtrees, and create a CSV file for honeyd scripts to use.')
   parser.add_argument('-i', '--ip', help='The IP Address for snmpscrape to get MIB data from', required=True)
-  parser.add_argument('-o', '--ofile', help='The name of the output file for the CSV MIB data. snmpscrape adds ".txt" to the end automatically', required=True)
+  parser.add_argument('-o', '--ofile', help='The name of the output file for the CSV MIB data. snmpscrape adds ".txt" to the end automatically. Preferred value is an absolute path name of $HOME/.config/honeyd', required=True)
   parser.add_argument('-n', '--name', help='Name of the script in $NOVA_HOME/config/templates/scripts.xml to make the results of snmpscrape available to', nargs='*')
   #parser.add_argument('-r', '--results-name', help='Required in conjunction with -n. The value for this argument will be the name of the device placed in the scripts file', nargs='*')
   parser.add_argument('-p', '--script-path', help='Used in confunction with -n. Path to Nova scripts.xml file (defaults to $HOME/.config/nova/config/templates/scripts.xml', default=temp)

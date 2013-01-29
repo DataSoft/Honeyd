@@ -1,9 +1,8 @@
 #!/usr/bin/python
 
-import sys
-import re
-import random
-import binascii
+from re import match
+from binascii import unhexlify
+import os
 
 IPP_VERSION = '1.1'
 IPP_PORT = 631
@@ -268,7 +267,7 @@ class IPPResponseUDP:
     snmpcommunitystringlength = int(response[i:i + 2], 16)
     interpret.append(snmpcommunitystringlength)
     i += 2
-    snmpcommunitystring = binascii.unhexlify(response[i:i + snmpcommunitystringlength * 2])
+    snmpcommunitystring = unhexlify(response[i:i + snmpcommunitystringlength * 2])
     interpret.append(snmpcommunitystring)
     i += snmpcommunitystringlength * 2
     snmppdumetadata = []
@@ -499,13 +498,15 @@ class IPPResponseUDP:
   
   def matchOidToResponse(self, oid, getorgetnext):
     res = 3 * [0]
-    random.seed()
     filemax = 0    
     # Generate dynamically
-    f = open('/home/addison/Code/Honeyd/scripts/WIP/' + self.file, 'r')
-    match = f.readlines()
+    filePath = os.getenv('HOME') + '/.config/honeyd/scripts/WIP/IPP/' + self.file
+    if 'HONEYD_HOME' in os.environ:
+      filePath = os.getenv('HONEYD_HOME') + '/scripts/WIP/IPP/' + self.file
+    f = open(filePath, 'r')
+    lines = f.readlines()
     if getorgetnext == 0:
-      for line in match:
+      for line in lines:
         check = line.split(',')
         if check[0] == oid:
           if len(check) != 3:
@@ -518,8 +519,8 @@ class IPPResponseUDP:
     elif getorgetnext == 1:
       nextline = 0
       # need to handle both parent OIDs and get-next-request increments
-      for line in range(0, len(match)):
-        check = match[line].split(',')
+      for line in range(0, len(lines)):
+        check = lines[line].split(',')
         if nextline == 1:
           if len(check) != 3:
             res[0] = check[0]
@@ -529,7 +530,7 @@ class IPPResponseUDP:
           return check
         if check[0] == oid:
           nextline = 1
-        elif re.match(oid, check[0]):
+        elif match(oid, check[0]):
           if len(check) != 3:
             res[0] = check[0]
             res[1] = check[1].rstrip()

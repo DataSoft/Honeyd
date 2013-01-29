@@ -1,14 +1,19 @@
 #!/usr/bin/python
 
 import sys
-import binascii
+from binascii import hexlify, a2b_hex
 from ipp import *
+import os
 
 if __name__ == "__main__":
   if len(sys.argv) < 2:
     sys.exit(1)
   debug = False
   
+  filePath = os.getenv('HOME') + '/.config/honeyd/config/scripts/WIP/IPP/'
+  if 'HONEYD_HOME' in os.environ:
+    filePath = os.getenv('HONEYD_HOME') + '/scripts/WIP/IPP/'
+    
   if len(sys.argv) == 3:
     debug = True if sys.argv[2] == '--debug' or sys.argv[2] == '-d' else False
     
@@ -20,37 +25,37 @@ if __name__ == "__main__":
     try:
       # This needs to be generated dynamically; might be easy if the
       # fork of the script is running out of /usr/share/honeyd/scripts/*
-      path = '/home/addison/Code/Honeyd/scripts/WIP/' + mib
+      path = filePath + mib
       test = open(path, 'r')
       break
     except IOError:
       sys.stderr.write('Could not find ' + mib)
   
-  snmpmessagelength = int(binascii.hexlify(sys.stdin.read(2)[1]), 16)
-  snmpversionlength = int(binascii.hexlify(sys.stdin.read(2)[1]), 16)
-  snmpversion = int(binascii.hexlify(sys.stdin.read(snmpversionlength)))
-  snmpcommunitystringlength = int(binascii.hexlify(sys.stdin.read(2)[1]), 16)
+  snmpmessagelength = int(hexlify(sys.stdin.read(2)[1]), 16)
+  snmpversionlength = int(hexlify(sys.stdin.read(2)[1]), 16)
+  snmpversion = int(hexlify(sys.stdin.read(snmpversionlength)))
+  snmpcommunitystringlength = int(hexlify(sys.stdin.read(2)[1]), 16)
   snmpcommunitystring = str(sys.stdin.read(snmpcommunitystringlength))
   snmppdumetadata = sys.stdin.read(2)
-  snmppdutype = binascii.hexlify(snmppdumetadata[0])
-  snmppdulength = int(binascii.hexlify(snmppdumetadata[1]), 16)
-  snmpreqidlength = int(binascii.hexlify(sys.stdin.read(2)[1]), 16)
-  tempreq = binascii.hexlify(sys.stdin.read(snmpreqidlength))
+  snmppdutype = hexlify(snmppdumetadata[0])
+  snmppdulength = int(hexlify(snmppdumetadata[1]), 16)
+  snmpreqidlength = int(hexlify(sys.stdin.read(2)[1]), 16)
+  tempreq = hexlify(sys.stdin.read(snmpreqidlength))
   if len(tempreq) % 2 == 1:
     tempreq = '0' + tempreq
   snmpreqid = int(tempreq, 16)
-  snmperrorlength = int(binascii.hexlify(sys.stdin.read(2)[1]), 16)
-  snmperror = int(binascii.hexlify(sys.stdin.read(snmperrorlength)), 16)
-  snmperrindexlength = int(binascii.hexlify(sys.stdin.read(2)[1]), 16)
-  snmperrindex = int(binascii.hexlify(sys.stdin.read(snmperrindexlength)), 16)
-  snmpvarbindlistlength = int(binascii.hexlify(sys.stdin.read(2)[1]), 16)
+  snmperrorlength = int(hexlify(sys.stdin.read(2)[1]), 16)
+  snmperror = int(hexlify(sys.stdin.read(snmperrorlength)), 16)
+  snmperrindexlength = int(hexlify(sys.stdin.read(2)[1]), 16)
+  snmperrindex = int(hexlify(sys.stdin.read(snmperrindexlength)), 16)
+  snmpvarbindlistlength = int(hexlify(sys.stdin.read(2)[1]), 16)
   snmpoid = []
   togo = 0
   while togo < snmpvarbindlistlength:
-    snmpvarbindlength = int(binascii.hexlify(sys.stdin.read(2)[1]), 16)
-    snmpvaluetype = int(binascii.hexlify(sys.stdin.read(1)), 16) 
-    snmpvaluelength = int(binascii.hexlify(sys.stdin.read(1)), 16)
-    snmpoid.append(str(binascii.hexlify(sys.stdin.read(snmpvaluelength))))
+    snmpvarbindlength = int(hexlify(sys.stdin.read(2)[1]), 16)
+    snmpvaluetype = int(hexlify(sys.stdin.read(1)), 16) 
+    snmpvaluelength = int(hexlify(sys.stdin.read(1)), 16)
+    snmpoid.append(str(hexlify(sys.stdin.read(snmpvaluelength))))
     snmpnull = sys.stdin.read(2)
     togo += 6 + snmpvaluelength
   
@@ -88,6 +93,6 @@ if __name__ == "__main__":
   # Fix the parseResponse method s.t. it works. Need a debugging tool for this.
   if debug:
     req.parseResponse(response)
-  sys.stdout.write(binascii.a2b_hex(response))
+  sys.stdout.write(a2b_hex(response))
     
     

@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-import socket
+from socket import *
 import sys
 from binascii import hexlify, a2b_hex
 from random import seed, randint

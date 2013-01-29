@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
-from socket import *
 import sys
+from socket import *
 from binascii import hexlify, a2b_hex
 from re import match
 from random import seed, randint
@@ -34,14 +34,17 @@ if __name__ == "__main__":
   if len(sys.argv) != 2:
     sys.exit(1)
   seed()
+  DNS_HEADER = 12
+  Q_TYPE = 2
+  Q_CLASS = 2
   dstip = sys.argv[1]
-  save = sys.stdin.read(12)
-  domain_pair = getEncodedDomain()
+  save = sys.stdin.read(DNS_HEADER)
+  domain_pair = getEncodedDomain() 
   domain = domain_pair[0]
   save += domain_pair[1]
-  save += sys.stdin.read(5)
+  save += sys.stdin.read(Q_TYPE + Q_CLASS)
   port = randint(49152, 65535)
-  address_recv = (dstip, port)
+  address_recv = ('localhost', port)
   sock = socket(AF_INET, SOCK_DGRAM)
   sock.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
   sock.bind(address_recv)
@@ -49,5 +52,5 @@ if __name__ == "__main__":
   sock.sendto(save, ns)
   
   data, addr = sock.recvfrom(4096)
-  print data
+  sys.stdout.write(data)
   
