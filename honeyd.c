@@ -2518,6 +2518,9 @@ handle_udp_packet(struct template *tmpl, void *wrapper)
 		/* Is it to the global broadcast address? */
 		if (ip->ip_dst == 0xFFFFFFFF) {
 			isBroadcast = 1;
+		/* Is it MDNS multicast address? */
+		} else if (ip->ip_dst == 0xFB0000E0) {
+			isBroadcast = 1;
 		/* Is it to the honeypot interface's subnet broadcast address? */
 		} else if (ip->ip_dst == bcastAddress) {
 			isBroadcast = 1;
