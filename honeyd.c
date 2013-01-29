@@ -2525,7 +2525,7 @@ struct packet_wrapper {
 	u_char unicast;
 };
 
-void
+int
 handle_udp_packet(struct template *tmpl, void *wrapper)
 {
 	u_char *pkt;
@@ -2553,7 +2553,7 @@ handle_udp_packet(struct template *tmpl, void *wrapper)
 	udp = (struct udp_hdr *)(pkt + (ip->ip_hl << 2));
 
 	if (pktlen < (ip->ip_hl << 2) + UDP_HDR_LEN)
-		return;
+		return 0;
 
 	ip_addr_t templateIp;
 	int res = inet_pton(AF_INET, tmpl->name, &(templateIp));
@@ -2567,7 +2567,7 @@ handle_udp_packet(struct template *tmpl, void *wrapper)
 	if (!unicast) {
 		/* If this isn't a template for a real honeypot instance, return */
 		if (res != 1)
-			return;
+			return 0;
 
 		uint32_t bcastAddress = ntohl(templateIp);
 		for (i = 0; i < 32 - tmpl->addrbits; i++)
@@ -2585,7 +2585,7 @@ handle_udp_packet(struct template *tmpl, void *wrapper)
 		}
 
 		if (!isBroadcast)
-			return;
+			return 0;
 
 		/* Replace the broadcast address with our template address */
 		// xxx: This means scripts can't tell if the packet was to a bcast address or not. Does it matter for UDP?
@@ -2608,7 +2608,7 @@ handle_udp_packet(struct template *tmpl, void *wrapper)
 	data = (u_char *)(pkt + (ip->ip_hl*4) + UDP_HDR_LEN);
 	dlen = ntohs(ip->ip_len) - (ip->ip_hl << 2) - UDP_HDR_LEN;
 	if (dlen != (ntohs(udp->uh_ulen) - UDP_HDR_LEN))
-		return;
+		return 0;
 
 	portnum = ntohs(udp->uh_dport);
 	if (honeyd_block(tmpl, IP_PROTO_UDP, portnum))
@@ -2625,7 +2625,7 @@ handle_udp_packet(struct template *tmpl, void *wrapper)
 						honeyd_contoa(&honeyd_udp.conhdr));
 				goto closed;
 			} else {
-				return;
+				return 0;
 			}
 		}
 
@@ -2638,7 +2638,7 @@ handle_udp_packet(struct template *tmpl, void *wrapper)
 			if (!isBroadcast)
 				goto closed;
 			else
-				return;
+				return 0;
 		}
 
 		con->tmpl = template_ref(tmpl);
@@ -2654,7 +2654,7 @@ handle_udp_packet(struct template *tmpl, void *wrapper)
 
 	/* Add the data to the incoming buffers */
 	udp_add_readbuf(con, data, dlen);
-	return;
+	return 0;
 
  closed:
 	honeyd_log_probe(honeyd_logfp, IP_PROTO_UDP, &honeyd_udp.conhdr,
@@ -2673,12 +2673,13 @@ handle_udp_packet(struct template *tmpl, void *wrapper)
 	print_spoof("udp_recv_cb after", spoof);
 
 	icmp_error_send(tmpl, &addr, ICMP_UNREACH, ICMP_UNREACH_PORT, ip, spoof);
-	return;
+	return 0;
 
  justlog:
 	honeyd_setudp(&honeyd_udp, ip, udp, INITIATED_BY_EXTERNAL);
 	honeyd_log_probe(honeyd_logfp, IP_PROTO_UDP, &honeyd_udp.conhdr,
 		pktlen, 0, NULL);
+	return 0;
 }
 
 
@@ -2686,9 +2687,7 @@ void
 udp_recv_cb(struct template *tmpl, u_char *pkt, u_short pktlen)
 {
 	struct ip_hdr *ip = NULL;
-	struct udp_hdr *udp;
 	ip = (struct ip_hdr *)pkt;
-	udp = (struct udp_hdr *)(pkt + (ip->ip_hl << 2));
 
 	if (pktlen < (ip->ip_hl << 2) + UDP_HDR_LEN)
 		return;
