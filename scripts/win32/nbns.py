@@ -1,6 +1,7 @@
 import sys
 import binascii
 import socket
+import os
 
 #Returns the name that our IP address is allocated to in the names_alloc file
 #	returns empty string if not present
@@ -34,26 +35,44 @@ def IsAllocated(names_path, name):
 #	by adding an entry in the names_alloc file
 #	returns the chosen name on success, empty string on failure
 def AddNameAllocation(names_path, our_IP):
-	fd = open(names_path)
-	line = fd.readline()
-	while line:
-		if(not IsAllocated(names_path, line)):
-			writeFD = open(names_path + "_alloc", "a")
-			writeFD.write(line.rstrip('\n') + "," + our_IP)
-			return line
+	try:
+		fd = open(names_path)
 		line = fd.readline()
-	return ""
+		while line:
+			if not IsAllocated(names_path, line):
+				writeFD = open(names_path + "_alloc", "a")
+				writeFD.write(line.rstrip('\n') + "," + our_IP)
+				return line
+			line = fd.readline()
+		return ""
+	except IOError:
+		return ""
 
 #Decodes a "First Level" encoded string
 def FirstLevelDecode(encoded_str):
-	return ""
+	decoded = ""
+	i = 0
+	while i + 1 < len(encoded_str):
+		char1 = (ord(encoded_str[i]) - 0x41) << 4
+		char2 = ord(encoded_str[i+1]) - 0x41
+		decoded += chr(char1 + char2)
+		i += 2
+	return decoded
+
 
 our_IP = sys.argv[1]
-names_path = sys.argv[2]
+honeyd_home = ""
+if("HONEYD_HOME" in os.environ):
+	honeyd_home = os.getenv("HONEYD_HOME")
 
-our_name = GetAllocatedName(names_path, our_IP)
+#the name of the "names" file is in the file at the second parameter
+fd = open(sys.argv[2])
+names_file = fd.readline().split(" ", 1)[1].rstrip("\n")
+names_path = honeyd_home + names_file
+
+our_name = GetAllocatedName(names_path, our_IP).upper()
 if(our_name == ""):
-	our_name = AddNameAllocation(names_path, our_IP)
+	our_name = AddNameAllocation(names_path, our_IP).upper()
 	if(our_name == ""):
 		sys.exit(0)
 
@@ -98,6 +117,11 @@ while i != '\x00':
 	i = sys.stdin.read(1)
 	name += i
 
+original_name = name
+name = FirstLevelDecode(name)
+name = name.strip("\0")
+name = name.strip()
+
 #Type
 query_type = sys.stdin.read(2)
 
@@ -124,7 +148,7 @@ if query_type == '\x00\x20':
 	#additional RRs
 	reponse_packet += '\x00\x00'
 	#netbios name (parroted back)
-	reponse_packet += name_start + name
+	reponse_packet += name_start + original_name
 	#type == NB
 	reponse_packet += '\x00\x20'
 	#class == IN
@@ -138,10 +162,9 @@ if query_type == '\x00\x20':
 	#Our address
 	reponse_packet += socket.inet_aton(our_IP)
 	sys.stdout.write(reponse_packet)
-	sys.exit(0)
 
 #If this is a reverse request
-if query_type == '\x00\x21':
+elif query_type == '\x00\x21':
 	#Begin forging a response
 	reponse_packet = trans_ID
 	#flags
@@ -155,7 +178,7 @@ if query_type == '\x00\x21':
 	#additional RRs
 	reponse_packet += '\x00\x00'	
 	#netbios name (parroted back)
-	reponse_packet += name_start + name
+	reponse_packet += name_start + original_name
 	#Type == NBSTAT
 	reponse_packet += '\x00\x21'
 	#class == IN
@@ -174,7 +197,4 @@ if query_type == '\x00\x21':
 	#Empty fields at end (46 bytes)
 	reponse_packet += '\x00' * 46
 	sys.stdout.write(reponse_packet)
-	sys.exit(0)
-
-sys.exit(0)
 
