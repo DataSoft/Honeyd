@@ -502,7 +502,7 @@ class IPPResponseUDP:
     # Generate dynamically
     filePath = os.getenv('HOME') + '/.config/honeyd/IPP/' + self.file
     if 'HONEYD_HOME' in os.environ:
-      filePath = os.getenv('HONEYD_HOME') + '/IPP/' + self.file
+      filePath = os.getenv('HONEYD_HOME') + 'IPP/' + self.file
     try:
       f = open(filePath, 'r')
     except IOError as e:

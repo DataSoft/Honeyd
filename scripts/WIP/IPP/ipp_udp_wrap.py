@@ -10,10 +10,13 @@ if __name__ == "__main__":
     sys.exit(1)
   debug = False
   
-  filePath = os.getenv('HOME') + '/.config/honeyd/IPP/'
+  filePath = os.getenv('HOME') + '/.config/honeyd/IPP'
   if 'HONEYD_HOME' in os.environ:
-    filePath = os.getenv('HONEYD_HOME') + '/IPP/'
+    filePath = os.getenv('HONEYD_HOME') + 'IPP/'
     
+  if not os.path.exists(filePath):
+    os.makedirs(filePath)
+
   if len(sys.argv) == 3:
     debug = True if sys.argv[2] == '--debug' or sys.argv[2] == '-d' else False
     
@@ -34,7 +37,8 @@ if __name__ == "__main__":
       test = open(path, 'r')
       break
     except IOError:
-      sys.stderr.write('Could not find ' + mib)
+      sys.stderr.write('Could not find ' + filePath + mib + ': ' + e.strerror + '\n')
+      sys.exit(1)
   
   snmpmessagelength = int(hexlify(sys.stdin.read(2)[1]), 16)
   snmpversionlength = int(hexlify(sys.stdin.read(2)[1]), 16)
