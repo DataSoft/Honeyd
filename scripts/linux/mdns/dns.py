@@ -2,17 +2,15 @@ import sys
 import struct
 import binascii
 
-# From RFC1035, meant to be & with m_flags[0]
+# From RFC1035, meant to be & with m_flags
 BITMASK_QR = 1 << 7
 BITMASK_OPCODE = 0xF << 3
 BITMASK_AA = 1 << 2
 BITMASK_TC = 1 << 1
 BITMASK_RD = 1 << 0
 
-# From RFC1035, meant to be & with m_flags[1]
-BITMASK_RA = 1 << 7
-BITMASK_RCODE = 0x7 << 4
-BITMASK_Z = 0x0F
+BITMASK_RA = 1 << 15
+BITMASK_RCODE = 0x7 << 12
 
 QR_QUERY = 0
 QR_RESPONSE = 1
@@ -29,6 +27,10 @@ RCODE_REFUSED = 4
 
 class DNSHeader(object):
 	def __init__(self):
+		self.qdcount = 0
+		self.ancount = 0
+		self.nscount = 0
+		self.arcount = 0
 		self.questions = []
 		self.answers = []
 	
@@ -42,38 +44,35 @@ class DNSHeader(object):
 	
 	@property
 	def qr(self):
-		return int(ord(self._flags[0]) & BITMASK_QR != 0)
+		return int(self._flags & BITMASK_QR != 0)
 
 	@property
 	def opcode(self):
-		return int(ord(self._flags[0]) & BITMASK_OPCODE)
+		return int(self._flags & BITMASK_OPCODE)
 
 	@property
 	def aa(self):
-		return int(ord(self._flags[0]) & BITMASK_AA != 0)
+		return int(self._flags & BITMASK_AA != 0)
 
 	@property
 	def tc(self):
-		return int(ord(self._flags[0]) & BITMASK_TC != 0)
+		return int(self._flags & BITMASK_TC != 0)
 	
 	@property
 	def rd(self):
-		return int(ord(self._flags[0]) & BITMASK_RD != 0)
+		return int(self._flags & BITMASK_RD != 0)
 	
 	@property
 	def ra(self):
-		return int(ord(self._flags[1]) & BITMASK_RA != 0)
+		return int(self._flags & BITMASK_RA != 0)
 	
 	@property
 	def rcode(self):
-		return int(ord(self._flags[1]) & BITMASK_RCODE)
+		return int(self._flags & BITMASK_RCODE)
 	
 
 	def readPacket(self, stream):
-		self.transactionID = stream.read(2)
-		self.flags = stream.read(2)
-
-		self.qdcount, self.ancount, self.nscount, self.arcount = struct.unpack('!HHHH', stream.read(8))
+		self.transactionID, self.flags, self.qdcount, self.ancount, self.nscount, self.arcount = struct.unpack('!HHHHHH', stream.read(12))
 
 		# Extract the question section
 		for i in range(0,self.qdcount):
@@ -95,7 +94,12 @@ class DNSHeader(object):
 			self.questions.append(question)
 
 	def writePacket(self, stream):
+		self.qdcount = len(self.questions)
+		self.ancount = len(self.answers)
 		stream.write(struct.pack('!HHHHHH', self.transactionID, self.flags, self.qdcount, self.ancount, self.nscount, self.arcount))
+		for answer in self.answers:
+			stream.write(answer.packedString())
+		
 
 class DNSQuestion:
 	def __init__(self):
@@ -106,8 +110,27 @@ class DNSQuestion:
 class DNSResourceRecord:
 	def __init(self):
 		self.name = ""
-		self.type = ""
-		self.dataclass = ""
-		self.ttl = ""
-		self.rdlength = ""
+		self.type = 0
+		self.dataclass = 0
+		self.ttl = 0
+		self.rdlength = 0
 		self.rdata = ""
+
+	def packedString(self):
+		returnString = ""
+
+		locals = self.name.split(".")
+		for local in locals:
+			returnString += struct.pack('!B', len(local))
+			returnString += struct.pack('!' + str(len(local)) + 's', local)
+		returnString += struct.pack('!B', 0)
+
+		returnString += struct.pack('!H', self.type)
+		returnString += struct.pack('!H', self.dataclass)
+		returnString += struct.pack('!I', self.ttl)
+		returnString += struct.pack('!H', self.rdlength)
+		returnString += struct.pack('!' + str(self.rdlength) + 's', self.rdata)
+
+		return returnString
+		
+
