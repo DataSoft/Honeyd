@@ -55,6 +55,7 @@
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <pwd.h>
 #include <string.h>
 #include <syslog.h>
 #include <signal.h>
@@ -524,6 +525,64 @@ honeyd_init(void)
 
 	stats_network.input_bytes = count_new();
 	stats_network.output_bytes = count_new();
+
+	//set environment variable for scripts to use
+	char *sudo_user = getenv("SUDO_USER");
+	int uid = 0;
+	char *home_path = NULL;
+
+	//Try getting the "SUDO_USER".
+	//If it doesn't exist (not running with sudo), then just default to using the current user
+	struct passwd *pass = getpwnam(sudo_user);
+	if(pass == NULL)
+	{
+		pass = getpwuid(getuid());
+		if(pass == NULL)
+		{
+			syslog(LOG_ERR, "%s: Cannot find a valid user to run as, is your system okay?!",  __func__);
+			exit(EXIT_FAILURE);
+		}
+	}
+	uid = pass->pw_uid;
+	home_path = pass->pw_dir;
+
+	char config_suffix[] = "/.config";
+	char honeyd_suffix[] = "/honeyd/";
+	char *full_path = malloc(strlen(home_path) + strlen(config_suffix) + strlen(honeyd_suffix));
+	strcpy(full_path, home_path);
+	strcat(full_path, config_suffix);
+
+	//Try to make ~/.config/
+	if(mkdir(full_path, S_IRWXU|S_IRWXO) != 0)
+	{
+		if(errno != EEXIST)
+		{
+			perror("xxxDEBUGxxx bad 1\n");
+		}
+	}
+
+	strcat(full_path, honeyd_suffix);
+	//Try to make ~/.config/honeyd
+	if(mkdir(full_path, S_IRWXU|S_IRWXO) != 0)
+	{
+		if(errno != EEXIST)
+		{
+			perror("xxxDEBUGxxx bad 2\n");
+		}
+	}
+	if(chown(full_path, uid, 0) != 0)
+	{
+		perror("xxxDEBUGxxx bad 3\n");
+	}
+	if(chmod(full_path, S_IRWXU|S_IRWXO))
+	{
+		perror("xxxDEBUGxxx bad 4\n");
+	}
+
+	if(setenv("HONEYD_HOME", full_path, 1))
+	{
+		perror("xxxDEBUGxxx bad 5\n");
+	}
 }
 
 #ifdef HAVE_PYTHON
@@ -2466,7 +2525,7 @@ struct packet_wrapper {
 	u_char unicast;
 };
 
-void
+int
 handle_udp_packet(struct template *tmpl, void *wrapper)
 {
 	u_char *pkt;
@@ -2494,7 +2553,7 @@ handle_udp_packet(struct template *tmpl, void *wrapper)
 	udp = (struct udp_hdr *)(pkt + (ip->ip_hl << 2));
 
 	if (pktlen < (ip->ip_hl << 2) + UDP_HDR_LEN)
-		return;
+		return 0;
 
 	ip_addr_t templateIp;
 	int res = inet_pton(AF_INET, tmpl->name, &(templateIp));
@@ -2508,7 +2567,7 @@ handle_udp_packet(struct template *tmpl, void *wrapper)
 	if (!unicast) {
 		/* If this isn't a template for a real honeypot instance, return */
 		if (res != 1)
-			return;
+			return 0;
 
 		uint32_t bcastAddress = ntohl(templateIp);
 		for (i = 0; i < 32 - tmpl->addrbits; i++)
@@ -2526,7 +2585,7 @@ handle_udp_packet(struct template *tmpl, void *wrapper)
 		}
 
 		if (!isBroadcast)
-			return;
+			return 0;
 
 		/* Replace the broadcast address with our template address */
 		// xxx: This means scripts can't tell if the packet was to a bcast address or not. Does it matter for UDP?
@@ -2549,7 +2608,7 @@ handle_udp_packet(struct template *tmpl, void *wrapper)
 	data = (u_char *)(pkt + (ip->ip_hl*4) + UDP_HDR_LEN);
 	dlen = ntohs(ip->ip_len) - (ip->ip_hl << 2) - UDP_HDR_LEN;
 	if (dlen != (ntohs(udp->uh_ulen) - UDP_HDR_LEN))
-		return;
+		return 0;
 
 	portnum = ntohs(udp->uh_dport);
 	if (honeyd_block(tmpl, IP_PROTO_UDP, portnum))
@@ -2566,7 +2625,7 @@ handle_udp_packet(struct template *tmpl, void *wrapper)
 						honeyd_contoa(&honeyd_udp.conhdr));
 				goto closed;
 			} else {
-				return;
+				return 0;
 			}
 		}
 
@@ -2579,7 +2638,7 @@ handle_udp_packet(struct template *tmpl, void *wrapper)
 			if (!isBroadcast)
 				goto closed;
 			else
-				return;
+				return 0;
 		}
 
 		con->tmpl = template_ref(tmpl);
@@ -2595,7 +2654,7 @@ handle_udp_packet(struct template *tmpl, void *wrapper)
 
 	/* Add the data to the incoming buffers */
 	udp_add_readbuf(con, data, dlen);
-	return;
+	return 0;
 
  closed:
 	honeyd_log_probe(honeyd_logfp, IP_PROTO_UDP, &honeyd_udp.conhdr,
@@ -2614,12 +2673,13 @@ handle_udp_packet(struct template *tmpl, void *wrapper)
 	print_spoof("udp_recv_cb after", spoof);
 
 	icmp_error_send(tmpl, &addr, ICMP_UNREACH, ICMP_UNREACH_PORT, ip, spoof);
-	return;
+	return 0;
 
  justlog:
 	honeyd_setudp(&honeyd_udp, ip, udp, INITIATED_BY_EXTERNAL);
 	honeyd_log_probe(honeyd_logfp, IP_PROTO_UDP, &honeyd_udp.conhdr,
 		pktlen, 0, NULL);
+	return 0;
 }
 
 
@@ -2627,9 +2687,7 @@ void
 udp_recv_cb(struct template *tmpl, u_char *pkt, u_short pktlen)
 {
 	struct ip_hdr *ip = NULL;
-	struct udp_hdr *udp;
 	ip = (struct ip_hdr *)pkt;
-	udp = (struct udp_hdr *)(pkt + (ip->ip_hl << 2));
 
 	if (pktlen < (ip->ip_hl << 2) + UDP_HDR_LEN)
 		return;
