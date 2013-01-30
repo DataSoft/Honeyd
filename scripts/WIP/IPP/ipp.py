@@ -500,10 +500,14 @@ class IPPResponseUDP:
     res = 3 * [0]
     filemax = 0    
     # Generate dynamically
-    filePath = os.getenv('HOME') + '/.config/honeyd/scripts/WIP/IPP/' + self.file
+    filePath = os.getenv('HOME') + '/.config/honeyd/IPP/' + self.file
     if 'HONEYD_HOME' in os.environ:
-      filePath = os.getenv('HONEYD_HOME') + '/scripts/WIP/IPP/' + self.file
-    f = open(filePath, 'r')
+      filePath = os.getenv('HONEYD_HOME') + '/IPP/' + self.file
+    try:
+      f = open(filePath, 'r')
+    except IOError as e:
+      sys.stderr.write('Cannot open file ' + filePath + ': ' + e.strerror)
+      sys.exit(1)
     lines = f.readlines()
     if getorgetnext == 0:
       for line in lines:

@@ -8,7 +8,6 @@ import argparse
 import math
 import subprocess
 import xml.etree.ElementTree as xmlm
-from os.path import expanduser
 
 def indent(elem, level=0, step=0):
   """
@@ -130,7 +129,18 @@ if __name__ == '__main__':
   #scriptname = ''
   keep = False
 
-  temp = expanduser('~') + '/.config/nova/config/templates/scripts.xml'
+  temp = os.getenv('HOME') + '/.config/nova/config/templates/scripts.xml'
+
+  prefix = os.getenv('HOME') + '/.config/honeyd/IPP/'
+  
+  if not os.path.exists(prefix):
+    try:
+      os.makedirs(prefix)
+    except IOError as e:
+      print 'Could not make directory ' + prefix + ': ' + e.strerror
+      sys.exit(1)
+    except OSError as e:
+      print 'Directory ' + prefix + ' exists'
 
   parser = argparse.ArgumentParser(description='snmpwalk an IP address for its MIB data within the 1.3.6.1.2 and 1.3.6.1.4 subtrees, and create a CSV file for honeyd scripts to use.')
   parser.add_argument('-i', '--ip', help='The IP Address for snmpscrape to get MIB data from', required=True)
@@ -149,20 +159,20 @@ if __name__ == '__main__':
   # within the python argparse lib to help with dependent
   # arguments, but they only consider mutually exclusive ones.
   ip = args.ip
-  ofilename = args.ofile
+  ofilename = prefix + args.ofile
   if args.keep:
     keep = True
   if args.name: # and args.results_name:
     matchname = ' '.join(args.name)
     #scriptname = ' '.join(args.results_name)
-  else:
-    parser.error('If -n is used, -r RESULTS_NAME must be supplied as well')
+  #else:
+    #parser.error('If -n is used, -r RESULTS_NAME must be supplied as well')
   if args.script_path:
     scriptpath = args.script_path
     
   # Write out the outputs of the 1.3.6.1.2 subtree and the 1.3.6.1.4
   # subtree of the target ip address
-  path = 'temp.' + ip + '.txt'
+  path = prefix + 'temp.' + ip + '.txt'
   f = open(path,'w+')
   f.write(subprocess.check_output(['snmpwalk','-Cc','-Os','-c','public','-v','1',str(ip),'1.3.6.1.2'],
                           stderr=subprocess.STDOUT))
@@ -175,7 +185,11 @@ if __name__ == '__main__':
   if restructure[-1] == 'End of MIB\n':
     del restructure[-1]
   
-  replacement = open(ofilename + '.txt', 'w+')
+  try:
+    replacement = open(ofilename + '.txt', 'w+')
+  except IOError as e:
+    print 'Could not open file ' + ofilename + ': ' + e.strerror
+    sys.exit(1)
     
   # In this block, we're restructuring the lines returned from snmpwalk 
   # to be consistent with the values and names used in the ipp.py script

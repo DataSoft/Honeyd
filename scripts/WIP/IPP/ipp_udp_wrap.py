@@ -10,14 +10,19 @@ if __name__ == "__main__":
     sys.exit(1)
   debug = False
   
-  filePath = os.getenv('HOME') + '/.config/honeyd/config/scripts/WIP/IPP/'
+  filePath = os.getenv('HOME') + '/.config/honeyd/IPP/'
   if 'HONEYD_HOME' in os.environ:
-    filePath = os.getenv('HONEYD_HOME') + '/scripts/WIP/IPP/'
+    filePath = os.getenv('HONEYD_HOME') + '/IPP/'
     
   if len(sys.argv) == 3:
     debug = True if sys.argv[2] == '--debug' or sys.argv[2] == '-d' else False
     
-  file = open(sys.argv[1], 'r')
+  try:
+    file = open(sys.argv[1], 'r')
+  except IOError as e:
+    sys.stderr.write('Could not open file ' + file + ': ' + e.strerror + '\n')
+    sys.exit(1)
+    
   getfilename = file.readlines()
   for line in getfilename:
     splitline = line.split(' ')
