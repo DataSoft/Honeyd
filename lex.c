@@ -752,7 +752,8 @@ int linenos[MAX_INCLUDE_DEPTH];
 char *filenames[MAX_INCLUDE_DEPTH];
 int includes_index = 0;
 
-#line 756 "lex.c"
+#define YY_NO_INPUT 1
+#line 757 "lex.c"
 
 #define INITIAL 0
 #define incl 1
@@ -812,8 +813,6 @@ extern int hydwrap (void );
 #endif
 #endif
 
-    static void yyunput (int c,char *buf_ptr  );
-    
 #ifndef yytext_ptr
 static void yy_flex_strncpy (char *,yyconst char *,int );
 #endif
@@ -940,9 +939,9 @@ YY_DECL
 	register char *yy_cp, *yy_bp;
 	register int yy_act;
     
-#line 82 "lex.l"
+#line 85 "lex.l"
 
-#line 946 "lex.c"
+#line 945 "lex.c"
 
 	if ( !(yy_init) )
 		{
@@ -1027,369 +1026,369 @@ do_action:	/* This label is used only to access EOF actions. */
 
 case 1:
 YY_RULE_SETUP
-#line 83 "lex.l"
+#line 86 "lex.l"
 { return CREATE; }
 	YY_BREAK
 case 2:
 YY_RULE_SETUP
-#line 84 "lex.l"
+#line 87 "lex.l"
 { return ADD; }
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
-#line 85 "lex.l"
+#line 88 "lex.l"
 { return PORT; }
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
-#line 86 "lex.l"
+#line 89 "lex.l"
 { return BIND; }
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
-#line 87 "lex.l"
+#line 90 "lex.l"
 { return CLONE; }
 	YY_BREAK
 case 6:
 YY_RULE_SETUP
-#line 88 "lex.l"
+#line 91 "lex.l"
 { return FILTERED; }
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
-#line 89 "lex.l"
+#line 92 "lex.l"
 { return OPEN; }
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
-#line 90 "lex.l"
+#line 93 "lex.l"
 { return CLOSED; }
 	YY_BREAK
 case 9:
 YY_RULE_SETUP
-#line 91 "lex.l"
+#line 94 "lex.l"
 { return DEFAULT; }
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
-#line 92 "lex.l"
+#line 95 "lex.l"
 { return ACTION; }
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
-#line 93 "lex.l"
+#line 96 "lex.l"
 { return SET; }
 	YY_BREAK
 case 12:
 YY_RULE_SETUP
-#line 94 "lex.l"
+#line 97 "lex.l"
 { return PERSONALITY; }
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
-#line 95 "lex.l"
+#line 98 "lex.l"
 { return RANDOM; }
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
-#line 96 "lex.l"
+#line 99 "lex.l"
 { return ANNOTATE; }
 	YY_BREAK
 case 15:
 YY_RULE_SETUP
-#line 97 "lex.l"
+#line 100 "lex.l"
 { return NO; }
 	YY_BREAK
 case 16:
 YY_RULE_SETUP
-#line 98 "lex.l"
+#line 101 "lex.l"
 { return FINSCAN; }
 	YY_BREAK
 case 17:
 YY_RULE_SETUP
-#line 99 "lex.l"
+#line 102 "lex.l"
 { return FRAGMENT; }
 	YY_BREAK
 case 18:
 YY_RULE_SETUP
-#line 100 "lex.l"
+#line 103 "lex.l"
 { return DROP; }
 	YY_BREAK
 case 19:
 YY_RULE_SETUP
-#line 101 "lex.l"
+#line 104 "lex.l"
 { return OLD; }
 	YY_BREAK
 case 20:
 YY_RULE_SETUP
-#line 102 "lex.l"
+#line 105 "lex.l"
 { return NEW; }
 	YY_BREAK
 case 21:
 YY_RULE_SETUP
-#line 103 "lex.l"
+#line 106 "lex.l"
 { return PROXY; }
 	YY_BREAK
 case 22:
 YY_RULE_SETUP
-#line 104 "lex.l"
+#line 107 "lex.l"
 {return BROADCAST;}
 	YY_BREAK
 case 23:
 YY_RULE_SETUP
-#line 105 "lex.l"
+#line 108 "lex.l"
 { return UPTIME; }
 	YY_BREAK
 case 24:
 YY_RULE_SETUP
-#line 106 "lex.l"
+#line 109 "lex.l"
 { return DROPRATE; }
 	YY_BREAK
 case 25:
 YY_RULE_SETUP
-#line 107 "lex.l"
+#line 110 "lex.l"
 { return IN; }
 	YY_BREAK
 case 26:
 YY_RULE_SETUP
-#line 108 "lex.l"
+#line 111 "lex.l"
 { return SYN; }
 	YY_BREAK
 case 27:
 YY_RULE_SETUP
-#line 109 "lex.l"
+#line 112 "lex.l"
 { return UID; }
 	YY_BREAK
 case 28:
 YY_RULE_SETUP
-#line 110 "lex.l"
+#line 113 "lex.l"
 { return GID; }
 	YY_BREAK
 case 29:
 YY_RULE_SETUP
-#line 111 "lex.l"
+#line 114 "lex.l"
 { return ROUTE; }
 	YY_BREAK
 case 30:
 YY_RULE_SETUP
-#line 112 "lex.l"
+#line 115 "lex.l"
 { return ENTRY; }
 	YY_BREAK
 case 31:
 YY_RULE_SETUP
-#line 113 "lex.l"
+#line 116 "lex.l"
 { return NET; }
 	YY_BREAK
 case 32:
 YY_RULE_SETUP
-#line 114 "lex.l"
+#line 117 "lex.l"
 { return LINK; }
 	YY_BREAK
 case 33:
 YY_RULE_SETUP
-#line 115 "lex.l"
+#line 118 "lex.l"
 { return UNREACH; }
 	YY_BREAK
 case 34:
 YY_RULE_SETUP
-#line 116 "lex.l"
+#line 119 "lex.l"
 { return LATENCY; }
 	YY_BREAK
 case 35:
 YY_RULE_SETUP
-#line 117 "lex.l"
+#line 120 "lex.l"
 { return BANDWIDTH; }
 	YY_BREAK
 case 36:
 YY_RULE_SETUP
-#line 118 "lex.l"
+#line 121 "lex.l"
 { yylval.number = 1000; return NUMBER; }
 	YY_BREAK
 case 37:
 YY_RULE_SETUP
-#line 119 "lex.l"
+#line 122 "lex.l"
 { yylval.number = 1000000; return NUMBER; }
 	YY_BREAK
 case 38:
 YY_RULE_SETUP
-#line 120 "lex.l"
+#line 123 "lex.l"
 { return MS; }
 	YY_BREAK
 case 39:
 YY_RULE_SETUP
-#line 121 "lex.l"
+#line 124 "lex.l"
 { return LOSS; }
 	YY_BREAK
 case 40:
 YY_RULE_SETUP
-#line 122 "lex.l"
+#line 125 "lex.l"
 { return SUBSYSTEM; }
 	YY_BREAK
 case 41:
 YY_RULE_SETUP
-#line 123 "lex.l"
+#line 126 "lex.l"
 { return TEMPLATE; }
 	YY_BREAK
 case 42:
 YY_RULE_SETUP
-#line 124 "lex.l"
+#line 127 "lex.l"
 { return OPTION; }
 	YY_BREAK
 case 43:
 YY_RULE_SETUP
-#line 125 "lex.l"
+#line 128 "lex.l"
 { return TO; }
 	YY_BREAK
 case 44:
 YY_RULE_SETUP
-#line 126 "lex.l"
+#line 129 "lex.l"
 { return ON; }
 	YY_BREAK
 case 45:
 YY_RULE_SETUP
-#line 127 "lex.l"
+#line 130 "lex.l"
 { return DHCP; }
 	YY_BREAK
 case 46:
 YY_RULE_SETUP
-#line 128 "lex.l"
+#line 131 "lex.l"
 { return SHARED; }
 	YY_BREAK
 case 47:
 YY_RULE_SETUP
-#line 129 "lex.l"
+#line 132 "lex.l"
 { return RESTART; }
 	YY_BREAK
 case 48:
 YY_RULE_SETUP
-#line 130 "lex.l"
+#line 133 "lex.l"
 { return NETWORK; }
 	YY_BREAK
 case 49:
 YY_RULE_SETUP
-#line 131 "lex.l"
+#line 134 "lex.l"
 { return TUNNEL; }
 	YY_BREAK
 case 50:
 YY_RULE_SETUP
-#line 132 "lex.l"
+#line 135 "lex.l"
 { return TARPIT; }
 	YY_BREAK
 case 51:
 YY_RULE_SETUP
-#line 133 "lex.l"
+#line 136 "lex.l"
 { return SPOOF; }
 	YY_BREAK
 case 52:
 YY_RULE_SETUP
-#line 134 "lex.l"
+#line 137 "lex.l"
 { return FROM; }
 	YY_BREAK
 case 53:
 YY_RULE_SETUP
-#line 135 "lex.l"
+#line 138 "lex.l"
 { return DELETE; }
 	YY_BREAK
 case 54:
 YY_RULE_SETUP
-#line 136 "lex.l"
+#line 139 "lex.l"
 { yylval.number = IP_PROTO_TCP;
 		  curtype = SOCK_STREAM; return PROTO; }
 	YY_BREAK
 case 55:
 YY_RULE_SETUP
-#line 138 "lex.l"
+#line 141 "lex.l"
 { yylval.number = IP_PROTO_UDP;
 		  curtype = SOCK_DGRAM; return PROTO; }
 	YY_BREAK
 case 56:
 YY_RULE_SETUP
-#line 140 "lex.l"
+#line 143 "lex.l"
 { yylval.number = IP_PROTO_ICMP; return PROTO; }
 	YY_BREAK
 case 57:
 YY_RULE_SETUP
-#line 141 "lex.l"
+#line 144 "lex.l"
 { return DYNAMIC; }
 	YY_BREAK
 case 58:
 YY_RULE_SETUP
-#line 142 "lex.l"
+#line 145 "lex.l"
 { return SOURCE; }
 	YY_BREAK
 case 59:
 YY_RULE_SETUP
-#line 143 "lex.l"
+#line 146 "lex.l"
 { return LIST; }
 	YY_BREAK
 case 60:
 YY_RULE_SETUP
-#line 144 "lex.l"
+#line 147 "lex.l"
 { return IP; }
 	YY_BREAK
 case 61:
 YY_RULE_SETUP
-#line 145 "lex.l"
+#line 148 "lex.l"
 { return OS; }
 	YY_BREAK
 case 62:
 YY_RULE_SETUP
-#line 146 "lex.l"
+#line 149 "lex.l"
 { return USE; }
 	YY_BREAK
 case 63:
 YY_RULE_SETUP
-#line 147 "lex.l"
+#line 150 "lex.l"
 { return IF; }
 	YY_BREAK
 case 64:
 YY_RULE_SETUP
-#line 148 "lex.l"
+#line 151 "lex.l"
 { return OTHERWISE; }
 	YY_BREAK
 case 65:
 YY_RULE_SETUP
-#line 149 "lex.l"
+#line 152 "lex.l"
 { return BETWEEN; }
 	YY_BREAK
 case 66:
 YY_RULE_SETUP
-#line 150 "lex.l"
+#line 153 "lex.l"
 { return TIME; }
 	YY_BREAK
 case 67:
 YY_RULE_SETUP
-#line 151 "lex.l"
+#line 154 "lex.l"
 { return INTERNAL; }
 	YY_BREAK
 case 68:
 YY_RULE_SETUP
-#line 152 "lex.l"
+#line 155 "lex.l"
 { return MAXFDS; }
 	YY_BREAK
 case 69:
 YY_RULE_SETUP
-#line 153 "lex.l"
+#line 156 "lex.l"
 { return ETHERNET; }
 	YY_BREAK
 case 70:
 YY_RULE_SETUP
-#line 154 "lex.l"
+#line 157 "lex.l"
 { return DEBUG; }
 	YY_BREAK
 case 71:
 YY_RULE_SETUP
-#line 155 "lex.l"
+#line 158 "lex.l"
 { BEGIN(incl); }
 	YY_BREAK
 case 72:
 YY_RULE_SETUP
-#line 156 "lex.l"
+#line 159 "lex.l"
 /* eat the whitespace */
 	YY_BREAK
 case 73:
 YY_RULE_SETUP
-#line 157 "lex.l"
+#line 160 "lex.l"
 { /* got the include file name */
 		  if (includes_index >= MAX_INCLUDE_DEPTH) {
 			  yyerror("Includes nested too deeply");
@@ -1412,7 +1411,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case YY_STATE_EOF(INITIAL):
 case YY_STATE_EOF(incl):
-#line 176 "lex.l"
+#line 179 "lex.l"
 {
 		  if (--includes_index < 0)
 			  yyterminate();
@@ -1427,88 +1426,88 @@ case YY_STATE_EOF(incl):
 	YY_BREAK
 case 74:
 YY_RULE_SETUP
-#line 187 "lex.l"
+#line 190 "lex.l"
 { yylval.string = strdup(hydtext); return IPSTRING; }
 	YY_BREAK
 case 75:
 YY_RULE_SETUP
-#line 188 "lex.l"
+#line 191 "lex.l"
 { yylval.number = atoi(hydtext); return NUMBER; }
 	YY_BREAK
 case 76:
 YY_RULE_SETUP
-#line 189 "lex.l"
+#line 192 "lex.l"
 { yylval.floatp = atof(hydtext); return FLOAT; }
 	YY_BREAK
 case 77:
 YY_RULE_SETUP
-#line 190 "lex.l"
+#line 193 "lex.l"
 { yylval.string = strdup(hydtext); return STRING; }
 	YY_BREAK
 case 78:
 /* rule 78 can match eol */
 YY_RULE_SETUP
-#line 191 "lex.l"
+#line 194 "lex.l"
 { yylval.string = strdup(hydtext); return CMDSTRING; }
 	YY_BREAK
 case 79:
 YY_RULE_SETUP
-#line 192 "lex.l"
+#line 195 "lex.l"
 { return DOT; }
 	YY_BREAK
 case 80:
 YY_RULE_SETUP
-#line 193 "lex.l"
+#line 196 "lex.l"
 { return DASH; }
 	YY_BREAK
 case 81:
 YY_RULE_SETUP
-#line 194 "lex.l"
+#line 197 "lex.l"
 { return EQUAL; }
 	YY_BREAK
 case 82:
 YY_RULE_SETUP
-#line 195 "lex.l"
+#line 198 "lex.l"
 { return COLON; }
 	YY_BREAK
 case 83:
 YY_RULE_SETUP
-#line 196 "lex.l"
+#line 199 "lex.l"
 { return SLASH; }
 	YY_BREAK
 case 84:
 YY_RULE_SETUP
-#line 197 "lex.l"
+#line 200 "lex.l"
 { ; }
 	YY_BREAK
 case 85:
 /* rule 85 can match eol */
 YY_RULE_SETUP
-#line 198 "lex.l"
+#line 201 "lex.l"
 { lineno++;}
 	YY_BREAK
 case 86:
 YY_RULE_SETUP
-#line 199 "lex.l"
+#line 202 "lex.l"
 { ; }
 	YY_BREAK
 case 87:
 /* rule 87 can match eol */
 YY_RULE_SETUP
-#line 200 "lex.l"
+#line 203 "lex.l"
 { lineno++; }
 	YY_BREAK
 case 88:
 YY_RULE_SETUP
-#line 201 "lex.l"
+#line 204 "lex.l"
 { yyerror("illegal token"); }
 	YY_BREAK
 case 89:
 YY_RULE_SETUP
-#line 202 "lex.l"
+#line 205 "lex.l"
 ECHO;
 	YY_BREAK
-#line 1512 "lex.c"
+#line 1511 "lex.c"
 
 	case YY_END_OF_BUFFER:
 		{
@@ -1833,43 +1832,6 @@ static int yy_get_next_buffer (void)
 	yy_is_jam = (yy_current_state == 337);
 
 	return yy_is_jam ? 0 : yy_current_state;
-}
-
-    static void yyunput (int c, register char * yy_bp )
-{
-	register char *yy_cp;
-    
-    yy_cp = (yy_c_buf_p);
-
-	/* undo effects of setting up hydtext */
-	*yy_cp = (yy_hold_char);
-
-	if ( yy_cp < YY_CURRENT_BUFFER_LVALUE->yy_ch_buf + 2 )
-		{ /* need to shift things up to make room */
-		/* +2 for EOB chars. */
-		register int number_to_move = (yy_n_chars) + 2;
-		register char *dest = &YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[
-					YY_CURRENT_BUFFER_LVALUE->yy_buf_size + 2];
-		register char *source =
-				&YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[number_to_move];
-
-		while ( source > YY_CURRENT_BUFFER_LVALUE->yy_ch_buf )
-			*--dest = *--source;
-
-		yy_cp += (int) (dest - source);
-		yy_bp += (int) (dest - source);
-		YY_CURRENT_BUFFER_LVALUE->yy_n_chars =
-			(yy_n_chars) = YY_CURRENT_BUFFER_LVALUE->yy_buf_size;
-
-		if ( yy_cp < YY_CURRENT_BUFFER_LVALUE->yy_ch_buf + 2 )
-			YY_FATAL_ERROR( "flex scanner push-back overflow" );
-		}
-
-	*--yy_cp = (char) c;
-
-	(yytext_ptr) = yy_bp;
-	(yy_hold_char) = *yy_cp;
-	(yy_c_buf_p) = yy_cp;
 }
 
 #ifndef YY_NO_INPUT
@@ -2504,7 +2466,7 @@ void hydfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 202 "lex.l"
+#line 205 "lex.l"
 
 
 #ifndef hydwrap
