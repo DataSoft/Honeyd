@@ -79,6 +79,9 @@ int includes_index = 0;
 
 %}
 
+%option nounput
+%option noinput
+
 %%
 create		{ return CREATE; }
 add		{ return ADD; }
