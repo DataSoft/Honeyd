@@ -6,14 +6,32 @@ import binascii
 
 from pprint import pprint
 
+sys.path.append("/usr/share/honeyd/scripts/lib/")
+from names import GetAllocatedName, IsAllocated, AddNameAllocation
+
 import dns
 
 
 # TODO read in name from config file
-hostname = "foo.local"
 honeypotIp = os.getenv("HONEYD_IP_DST")
 
-sys.stderr.write("Our ip was " + honeypotIp + "\n")
+our_IP = sys.argv[1]
+honeyd_home = ""
+if("HONEYD_HOME" in os.environ):
+	honeyd_home = os.getenv("HONEYD_HOME")
+
+fd = open(sys.argv[2])
+names_file = fd.readline().split(" ", 1)[1].rstrip("\n")
+names_path = honeyd_home + names_file
+
+our_name = GetAllocatedName(names_path, our_IP).upper()
+if(our_name == ""):
+	our_name = AddNameAllocation(names_path, our_IP).upper()
+	if(our_name == ""):
+		sys.stderr.write("Unable to get mdns name")
+		sys.exit(0)
+hostname = our_name + ".local"
+
 
 def reply(requestPacket):
 	replyPacket = dns.DNSHeader()
@@ -31,8 +49,6 @@ def reply(requestPacket):
 	replyPacket.answers.append(rr)
 
 	replyPacket.writePacket(sys.stdout)
-	sys.stderr.write("REPLIED!\n")
-
 
 
 packet = dns.DNSHeader()
@@ -47,11 +63,11 @@ if (packet.qdcount == 0):
 	sys.exit()
 
 
-pprint(vars(packet), sys.stderr)
+#pprint(vars(packet), sys.stderr)
 for question in packet.questions:
-	pprint(vars(question), sys.stderr)
+	#pprint(vars(question), sys.stderr)
 	
-	if (question.qname == hostname):
+	if (question.qname.upper() == hostname):
 		
 		reply(packet)
 
