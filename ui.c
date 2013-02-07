@@ -278,11 +278,13 @@ ui_handler(int fd, short what, void *arg)
 	size_t length;
 	char *line;
 
-	while((line = evbuffer_readln(mybuf, &length, EVBUFFER_EOL_LF)) != NULL);
+	line = evbuffer_readln(mybuf, &length, EVBUFFER_EOL_LF);
+	while(line != NULL)
 	{
 		ui_handle_command(client->outbuf, line);
 
 		evbuffer_drain(mybuf, length);
+		line = evbuffer_readln(mybuf, &length, EVBUFFER_EOL_LF);
 	}
 
 	ui_write_prompt(client);
