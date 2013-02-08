@@ -947,7 +947,7 @@ ui : LIST TEMPLATE
 
 		trace_inspect($3, evbuf);
 
-		yyprintf("%s", EVBUFFER_DATA(evbuf));
+		yyprintf("%s", evbuffer_pullup(evbuf, -1));
 
 		evbuffer_free(evbuf);
 	} else {
