@@ -713,15 +713,15 @@ static const yytype_uint16 yyrline[] =
        0,   156,   156,   157,   158,   159,   160,   161,   162,   163,
      164,   165,   166,   169,   175,   180,   185,   195,   200,   211,
      229,   237,   246,   263,   291,   315,   343,   349,   357,   364,
-     372,   380,   390,   408,   414,   434,   440,   451,   462,   472,
-     483,   497,   503,   510,   516,   522,   553,   566,   579,   594,
-     595,   597,   598,   599,   601,   607,   627,   648,   660,   667,
-     677,   691,   699,   725,   741,   756,   762,   768,   777,   784,
-     790,   796,   803,   811,   818,   822,   827,   828,   833,   834,
-     839,   840,   844,   849,   850,   859,   870,   881,   893,   909,
-     913,   921,   925,   929,   933,   939,   960,   963,   970,   973,
-     980,   983,   989,  1002,  1010,  1018,  1026,  1034,  1042,  1049,
-    1071
+     372,   380,   390,   408,   414,   438,   444,   455,   466,   476,
+     487,   501,   507,   514,   520,   526,   557,   570,   583,   598,
+     599,   601,   602,   603,   605,   611,   631,   652,   664,   671,
+     681,   695,   703,   729,   745,   760,   766,   772,   781,   788,
+     794,   800,   807,   815,   822,   826,   831,   832,   837,   838,
+     843,   844,   848,   853,   854,   863,   874,   885,   897,   913,
+     917,   925,   929,   933,   937,   943,   964,   967,   974,   977,
+     984,   987,   993,  1006,  1014,  1022,  1030,  1038,  1046,  1053,
+    1075
 };
 #endif
 
@@ -2149,8 +2149,12 @@ yyreduce:
 		/*** small patch to make sure the ethernet adress is used ***/
 		/*** even if none were set in the default template ***/
 		struct addr addr;
-		if(addr_aton((yyvsp[(2) - (4)].tmpl)->name, &addr) != -1)
+		struct in_addr inp;
+		if(inet_aton((yyvsp[(2) - (4)].tmpl)->name, &inp) == 0)
+		{
+			addr_pack(&addr, ADDR_TYPE_IP, IP_ADDR_BITS, &inp.s_addr, IP_ADDR_LEN);
 			template_post_arp((yyvsp[(2) - (4)].tmpl), &addr);
+		}
 		/*** end patch ***/
 		free ((yyvsp[(4) - (4)].string));
 
@@ -2161,7 +2165,7 @@ yyreduce:
   case 35:
 
 /* Line 1806 of yacc.c  */
-#line 435 "parse.y"
+#line 439 "parse.y"
     {
 		if ((yyvsp[(2) - (4)].tmpl) == NULL || (yyvsp[(4) - (4)].number) == 0)
 			break;
@@ -2172,7 +2176,7 @@ yyreduce:
   case 36:
 
 /* Line 1806 of yacc.c  */
-#line 441 "parse.y"
+#line 445 "parse.y"
     {
 		if ((yyvsp[(2) - (5)].tmpl) == NULL)
 			break;
@@ -2188,7 +2192,7 @@ yyreduce:
   case 37:
 
 /* Line 1806 of yacc.c  */
-#line 452 "parse.y"
+#line 456 "parse.y"
     {
 		if ((yyvsp[(2) - (5)].tmpl) == NULL)
 			break;
@@ -2204,7 +2208,7 @@ yyreduce:
   case 38:
 
 /* Line 1806 of yacc.c  */
-#line 463 "parse.y"
+#line 467 "parse.y"
     {
 		if ((yyvsp[(2) - (4)].tmpl) == NULL)
 			break;
@@ -2219,7 +2223,7 @@ yyreduce:
   case 39:
 
 /* Line 1806 of yacc.c  */
-#line 473 "parse.y"
+#line 477 "parse.y"
     {
 		if ((yyvsp[(2) - (4)].tmpl) == NULL)
 			break;
@@ -2235,7 +2239,7 @@ yyreduce:
   case 40:
 
 /* Line 1806 of yacc.c  */
-#line 484 "parse.y"
+#line 488 "parse.y"
     {
 		if ((yyvsp[(2) - (6)].tmpl) == NULL)
 			break;
@@ -2253,7 +2257,7 @@ yyreduce:
   case 41:
 
 /* Line 1806 of yacc.c  */
-#line 498 "parse.y"
+#line 502 "parse.y"
     {
 		if ((yyvsp[(2) - (3)].pers) == NULL)
 			break;
@@ -2264,7 +2268,7 @@ yyreduce:
   case 42:
 
 /* Line 1806 of yacc.c  */
-#line 504 "parse.y"
+#line 508 "parse.y"
     {
 		if ((yyvsp[(2) - (3)].pers) == NULL)
 			break;
@@ -2275,7 +2279,7 @@ yyreduce:
   case 43:
 
 /* Line 1806 of yacc.c  */
-#line 511 "parse.y"
+#line 515 "parse.y"
     {
 		if (router_start(&(yyvsp[(3) - (3)].addr), NULL) == -1)
 			yyerror("Defining entry point failed: %s",
@@ -2286,7 +2290,7 @@ yyreduce:
   case 44:
 
 /* Line 1806 of yacc.c  */
-#line 517 "parse.y"
+#line 521 "parse.y"
     {
 		if (router_start(&(yyvsp[(3) - (5)].addr), &(yyvsp[(5) - (5)].addr)) == -1)
 			yyerror("Defining entry point failed: %s",
@@ -2297,7 +2301,7 @@ yyreduce:
   case 45:
 
 /* Line 1806 of yacc.c  */
-#line 523 "parse.y"
+#line 527 "parse.y"
     {
 		struct router *r, *newr;
 		struct addr defroute;
@@ -2333,7 +2337,7 @@ yyreduce:
   case 46:
 
 /* Line 1806 of yacc.c  */
-#line 554 "parse.y"
+#line 558 "parse.y"
     {
 		struct router *r;
 
@@ -2351,7 +2355,7 @@ yyreduce:
   case 47:
 
 /* Line 1806 of yacc.c  */
-#line 567 "parse.y"
+#line 571 "parse.y"
     {
 		struct router *r;
 
@@ -2369,7 +2373,7 @@ yyreduce:
   case 48:
 
 /* Line 1806 of yacc.c  */
-#line 580 "parse.y"
+#line 584 "parse.y"
     {
 		struct router *r;
 
@@ -2388,42 +2392,42 @@ yyreduce:
   case 49:
 
 /* Line 1806 of yacc.c  */
-#line 594 "parse.y"
+#line 598 "parse.y"
     { (yyval.number) = 1; }
     break;
 
   case 50:
 
 /* Line 1806 of yacc.c  */
-#line 595 "parse.y"
+#line 599 "parse.y"
     { (yyval.number) = 0; }
     break;
 
   case 51:
 
 /* Line 1806 of yacc.c  */
-#line 597 "parse.y"
+#line 601 "parse.y"
     { (yyval.fragp) = FRAG_DROP; }
     break;
 
   case 52:
 
 /* Line 1806 of yacc.c  */
-#line 598 "parse.y"
+#line 602 "parse.y"
     { (yyval.fragp) = FRAG_OLD; }
     break;
 
   case 53:
 
 /* Line 1806 of yacc.c  */
-#line 599 "parse.y"
+#line 603 "parse.y"
     { (yyval.fragp) = FRAG_NEW; }
     break;
 
   case 54:
 
 /* Line 1806 of yacc.c  */
-#line 602 "parse.y"
+#line 606 "parse.y"
     {
 		if (addr_pton((yyvsp[(1) - (1)].string), &(yyval.addr)) < 0)
 			yyerror("Illegal IP address %s", (yyvsp[(1) - (1)].string));
@@ -2434,7 +2438,7 @@ yyreduce:
   case 55:
 
 /* Line 1806 of yacc.c  */
-#line 608 "parse.y"
+#line 612 "parse.y"
     {
 		struct addrinfo ai, *aitop;
 
@@ -2458,7 +2462,7 @@ yyreduce:
   case 56:
 
 /* Line 1806 of yacc.c  */
-#line 628 "parse.y"
+#line 632 "parse.y"
     {
 		char src[25];
 		struct addr b;
@@ -2483,7 +2487,7 @@ yyreduce:
   case 57:
 
 /* Line 1806 of yacc.c  */
-#line 649 "parse.y"
+#line 653 "parse.y"
     {
 		if (curtype == -1) {
 			yyerror("Bad port type");
@@ -2499,7 +2503,7 @@ yyreduce:
   case 58:
 
 /* Line 1806 of yacc.c  */
-#line 661 "parse.y"
+#line 665 "parse.y"
     {
 		memset(&(yyval.action), 0, sizeof((yyval.action)));
 		(yyval.action).action = (yyvsp[(2) - (2)].string);
@@ -2511,7 +2515,7 @@ yyreduce:
   case 59:
 
 /* Line 1806 of yacc.c  */
-#line 668 "parse.y"
+#line 672 "parse.y"
     {
 		memset(&(yyval.action), 0, sizeof((yyval.action)));
 		(yyvsp[(2) - (2)].string)[strlen((yyvsp[(2) - (2)].string)) - 1] = '\0';
@@ -2526,7 +2530,7 @@ yyreduce:
   case 60:
 
 /* Line 1806 of yacc.c  */
-#line 678 "parse.y"
+#line 682 "parse.y"
     {
 #ifdef HAVE_PYTHON
 		memset(&(yyval.action), 0, sizeof((yyval.action)));
@@ -2545,7 +2549,7 @@ yyreduce:
   case 61:
 
 /* Line 1806 of yacc.c  */
-#line 692 "parse.y"
+#line 696 "parse.y"
     {
 		memset(&(yyval.action), 0, sizeof((yyval.action)));
 		(yyval.action).status = PORT_PROXY;
@@ -2558,7 +2562,7 @@ yyreduce:
   case 62:
 
 /* Line 1806 of yacc.c  */
-#line 700 "parse.y"
+#line 704 "parse.y"
     {
 		memset(&(yyval.action), 0, sizeof((yyval.action)));
 		(yyval.action).status = PORT_PROXY;
@@ -2589,7 +2593,7 @@ yyreduce:
   case 63:
 
 /* Line 1806 of yacc.c  */
-#line 726 "parse.y"
+#line 730 "parse.y"
     {
 		char proxy[1024];
 		memset(&(yyval.action), 0, sizeof((yyval.action)));
@@ -2610,7 +2614,7 @@ yyreduce:
   case 64:
 
 /* Line 1806 of yacc.c  */
-#line 742 "parse.y"
+#line 746 "parse.y"
     {
 		char proxy[1024];
 		memset(&(yyval.action), 0, sizeof((yyval.action)));
@@ -2630,7 +2634,7 @@ yyreduce:
   case 65:
 
 /* Line 1806 of yacc.c  */
-#line 757 "parse.y"
+#line 761 "parse.y"
     {
 		memset(&(yyval.action), 0, sizeof((yyval.action)));
 		(yyval.action).status = PORT_FILTERED;
@@ -2641,7 +2645,7 @@ yyreduce:
   case 66:
 
 /* Line 1806 of yacc.c  */
-#line 763 "parse.y"
+#line 767 "parse.y"
     {
 		memset(&(yyval.action), 0, sizeof((yyval.action)));
 		(yyval.action).status = PORT_CLOSED;
@@ -2652,7 +2656,7 @@ yyreduce:
   case 67:
 
 /* Line 1806 of yacc.c  */
-#line 769 "parse.y"
+#line 773 "parse.y"
     {
 		memset(&(yyval.action), 0, sizeof((yyval.action)));
 		(yyval.action).status = PORT_OPEN;
@@ -2664,7 +2668,7 @@ yyreduce:
   case 68:
 
 /* Line 1806 of yacc.c  */
-#line 778 "parse.y"
+#line 782 "parse.y"
     {
 		(yyval.tmpl) = template_find((yyvsp[(1) - (1)].string));
 		if ((yyval.tmpl) == NULL)
@@ -2676,7 +2680,7 @@ yyreduce:
   case 69:
 
 /* Line 1806 of yacc.c  */
-#line 785 "parse.y"
+#line 789 "parse.y"
     {
 		(yyval.tmpl) = template_find("template");
 		if ((yyval.tmpl) == NULL)
@@ -2687,7 +2691,7 @@ yyreduce:
   case 70:
 
 /* Line 1806 of yacc.c  */
-#line 791 "parse.y"
+#line 795 "parse.y"
     {
 		(yyval.tmpl) = template_find("default");
 		if ((yyval.tmpl) == NULL)
@@ -2698,7 +2702,7 @@ yyreduce:
   case 71:
 
 /* Line 1806 of yacc.c  */
-#line 797 "parse.y"
+#line 801 "parse.y"
     {
 		(yyval.tmpl) = template_find(addr_ntoa(&(yyvsp[(1) - (1)].addr)));
 		if ((yyval.tmpl) == NULL)
@@ -2709,7 +2713,7 @@ yyreduce:
   case 72:
 
 /* Line 1806 of yacc.c  */
-#line 804 "parse.y"
+#line 808 "parse.y"
     {
 		(yyvsp[(1) - (1)].string)[strlen((yyvsp[(1) - (1)].string)) - 1] = '\0';
 		(yyval.pers) = personality_find((yyvsp[(1) - (1)].string)+1);
@@ -2722,7 +2726,7 @@ yyreduce:
   case 73:
 
 /* Line 1806 of yacc.c  */
-#line 812 "parse.y"
+#line 816 "parse.y"
     {
 		(yyval.pers) = personality_random();
 		if ((yyval.pers) == NULL)
@@ -2733,7 +2737,7 @@ yyreduce:
   case 74:
 
 /* Line 1806 of yacc.c  */
-#line 819 "parse.y"
+#line 823 "parse.y"
     {
 		(yyval.floatp) = (yyvsp[(1) - (1)].floatp);
 	}
@@ -2742,7 +2746,7 @@ yyreduce:
   case 75:
 
 /* Line 1806 of yacc.c  */
-#line 823 "parse.y"
+#line 827 "parse.y"
     {
 		(yyval.floatp) = (yyvsp[(1) - (1)].number);
 	}
@@ -2751,14 +2755,14 @@ yyreduce:
   case 76:
 
 /* Line 1806 of yacc.c  */
-#line 827 "parse.y"
+#line 831 "parse.y"
     { (yyval.number) = 0; }
     break;
 
   case 77:
 
 /* Line 1806 of yacc.c  */
-#line 829 "parse.y"
+#line 833 "parse.y"
     {
 		(yyval.number) = (yyvsp[(2) - (3)].number);
 	}
@@ -2767,14 +2771,14 @@ yyreduce:
   case 78:
 
 /* Line 1806 of yacc.c  */
-#line 833 "parse.y"
+#line 837 "parse.y"
     { (yyval.number) = 0; }
     break;
 
   case 79:
 
 /* Line 1806 of yacc.c  */
-#line 835 "parse.y"
+#line 839 "parse.y"
     {
 		(yyval.number) = (yyvsp[(2) - (2)].floatp) * 100;
 	}
@@ -2783,14 +2787,14 @@ yyreduce:
   case 80:
 
 /* Line 1806 of yacc.c  */
-#line 839 "parse.y"
+#line 843 "parse.y"
     { (yyval.number) = 0; }
     break;
 
   case 81:
 
 /* Line 1806 of yacc.c  */
-#line 841 "parse.y"
+#line 845 "parse.y"
     {
 		(yyval.number) = (yyvsp[(2) - (3)].number) * (yyvsp[(3) - (3)].number);
 	}
@@ -2799,7 +2803,7 @@ yyreduce:
   case 82:
 
 /* Line 1806 of yacc.c  */
-#line 845 "parse.y"
+#line 849 "parse.y"
     {
 		(yyval.number) = (yyvsp[(2) - (2)].number);
 	}
@@ -2808,14 +2812,14 @@ yyreduce:
   case 83:
 
 /* Line 1806 of yacc.c  */
-#line 849 "parse.y"
+#line 853 "parse.y"
     { memset(&(yyval.drop), 0, sizeof((yyval.drop))); }
     break;
 
   case 84:
 
 /* Line 1806 of yacc.c  */
-#line 851 "parse.y"
+#line 855 "parse.y"
     {
 		if ((yyvsp[(6) - (7)].number) <= (yyvsp[(3) - (7)].number))
 			yyerror("Incorrect thresholds. First number needs to "
@@ -2828,7 +2832,7 @@ yyreduce:
   case 85:
 
 /* Line 1806 of yacc.c  */
-#line 860 "parse.y"
+#line 864 "parse.y"
     {
 		struct honeyd_plugin_cfg cfg;
 
@@ -2844,7 +2848,7 @@ yyreduce:
   case 86:
 
 /* Line 1806 of yacc.c  */
-#line 871 "parse.y"
+#line 875 "parse.y"
     {
 		struct honeyd_plugin_cfg cfg;
 
@@ -2860,7 +2864,7 @@ yyreduce:
   case 87:
 
 /* Line 1806 of yacc.c  */
-#line 882 "parse.y"
+#line 886 "parse.y"
     {
 		struct honeyd_plugin_cfg cfg;
 
@@ -2876,7 +2880,7 @@ yyreduce:
   case 88:
 
 /* Line 1806 of yacc.c  */
-#line 894 "parse.y"
+#line 898 "parse.y"
     {
 		struct honeyd_plugin_cfg cfg;
 		char path[MAXPATHLEN];
@@ -2895,7 +2899,7 @@ yyreduce:
   case 89:
 
 /* Line 1806 of yacc.c  */
-#line 910 "parse.y"
+#line 914 "parse.y"
     {
 	template_list_glob(buffer, "*");
 }
@@ -2904,7 +2908,7 @@ yyreduce:
   case 90:
 
 /* Line 1806 of yacc.c  */
-#line 914 "parse.y"
+#line 918 "parse.y"
     {
 	(yyvsp[(3) - (3)].string)[strlen((yyvsp[(3) - (3)].string))-1] = '\0';
 
@@ -2917,7 +2921,7 @@ yyreduce:
   case 91:
 
 /* Line 1806 of yacc.c  */
-#line 922 "parse.y"
+#line 926 "parse.y"
     {
 	template_list_glob(buffer, (yyvsp[(3) - (3)].string));
 }
@@ -2926,7 +2930,7 @@ yyreduce:
   case 92:
 
 /* Line 1806 of yacc.c  */
-#line 926 "parse.y"
+#line 930 "parse.y"
     {
 	template_subsystem_list_glob(buffer, "*");
 }
@@ -2935,7 +2939,7 @@ yyreduce:
   case 93:
 
 /* Line 1806 of yacc.c  */
-#line 930 "parse.y"
+#line 934 "parse.y"
     {
 	template_subsystem_list_glob(buffer, (yyvsp[(3) - (3)].string));
 }
@@ -2944,7 +2948,7 @@ yyreduce:
   case 94:
 
 /* Line 1806 of yacc.c  */
-#line 934 "parse.y"
+#line 938 "parse.y"
     {
 	(yyvsp[(3) - (3)].string)[strlen((yyvsp[(3) - (3)].string))-1] = '\0';
 	template_subsystem_list_glob(buffer, (yyvsp[(3) - (3)].string)+1);
@@ -2955,7 +2959,7 @@ yyreduce:
   case 95:
 
 /* Line 1806 of yacc.c  */
-#line 940 "parse.y"
+#line 944 "parse.y"
     {
 	if (strcasecmp((yyvsp[(2) - (3)].string), "fd") == 0) {
 		yyprintf("%d: %d\n", (yyvsp[(3) - (3)].number), fdshare_inspect((yyvsp[(3) - (3)].number)));
@@ -2966,7 +2970,7 @@ yyreduce:
 
 		trace_inspect((yyvsp[(3) - (3)].number), evbuf);
 
-		yyprintf("%s", EVBUFFER_DATA(evbuf));
+		yyprintf("%s", evbuffer_pullup(evbuf, -1));
 
 		evbuffer_free(evbuf);
 	} else {
@@ -2979,7 +2983,7 @@ yyreduce:
   case 96:
 
 /* Line 1806 of yacc.c  */
-#line 960 "parse.y"
+#line 964 "parse.y"
     {
 	(yyval.number) = 0;
 }
@@ -2988,7 +2992,7 @@ yyreduce:
   case 97:
 
 /* Line 1806 of yacc.c  */
-#line 964 "parse.y"
+#line 968 "parse.y"
     {
 	(yyval.number) = 1;
 }
@@ -2997,7 +3001,7 @@ yyreduce:
   case 98:
 
 /* Line 1806 of yacc.c  */
-#line 970 "parse.y"
+#line 974 "parse.y"
     {
 	(yyval.number) = 0;
 }
@@ -3006,7 +3010,7 @@ yyreduce:
   case 99:
 
 /* Line 1806 of yacc.c  */
-#line 974 "parse.y"
+#line 978 "parse.y"
     {
 	(yyval.number) = 1;
 }
@@ -3015,7 +3019,7 @@ yyreduce:
   case 100:
 
 /* Line 1806 of yacc.c  */
-#line 980 "parse.y"
+#line 984 "parse.y"
     {
 	(yyval.number) = 0;
 }
@@ -3024,7 +3028,7 @@ yyreduce:
   case 101:
 
 /* Line 1806 of yacc.c  */
-#line 984 "parse.y"
+#line 988 "parse.y"
     {
 	(yyval.number) = PORT_TARPIT;
 }
@@ -3033,7 +3037,7 @@ yyreduce:
   case 102:
 
 /* Line 1806 of yacc.c  */
-#line 990 "parse.y"
+#line 994 "parse.y"
     {
 		pf_osfp_t fp;
 		(yyvsp[(4) - (4)].string)[strlen((yyvsp[(4) - (4)].string)) - 1] = '\0';
@@ -3051,7 +3055,7 @@ yyreduce:
   case 103:
 
 /* Line 1806 of yacc.c  */
-#line 1003 "parse.y"
+#line 1007 "parse.y"
     {
 		if (((yyval.condition).match_arg = malloc(sizeof(struct addr))) == NULL)
 			yyerror("Out of memory");
@@ -3064,7 +3068,7 @@ yyreduce:
   case 104:
 
 /* Line 1806 of yacc.c  */
-#line 1011 "parse.y"
+#line 1015 "parse.y"
     {
 		if (((yyval.condition).match_arg = malloc(sizeof(struct addr))) == NULL)
 			yyerror("Out of memory");
@@ -3077,7 +3081,7 @@ yyreduce:
   case 105:
 
 /* Line 1806 of yacc.c  */
-#line 1019 "parse.y"
+#line 1023 "parse.y"
     {
 		if (((yyval.condition).match_arg = malloc(sizeof(struct condition_time))) == NULL)
 			yyerror("Out of memory");
@@ -3090,7 +3094,7 @@ yyreduce:
   case 106:
 
 /* Line 1806 of yacc.c  */
-#line 1027 "parse.y"
+#line 1031 "parse.y"
     {
 		if (((yyval.condition).match_arg = malloc(sizeof(struct addr))) == NULL)
 			yyerror("Out of memory");
@@ -3103,7 +3107,7 @@ yyreduce:
   case 107:
 
 /* Line 1806 of yacc.c  */
-#line 1035 "parse.y"
+#line 1039 "parse.y"
     {
 		(yyval.condition).match_arg = 0;
 		(yyval.condition).match = condition_match_otherwise;
@@ -3114,7 +3118,7 @@ yyreduce:
   case 108:
 
 /* Line 1806 of yacc.c  */
-#line 1043 "parse.y"
+#line 1047 "parse.y"
     {
 		(yyval.timecondition).tm_start = (yyvsp[(2) - (4)].time);
 		(yyval.timecondition).tm_end = (yyvsp[(4) - (4)].time);
@@ -3124,7 +3128,7 @@ yyreduce:
   case 109:
 
 /* Line 1806 of yacc.c  */
-#line 1050 "parse.y"
+#line 1054 "parse.y"
     {
 		int ispm = -1;
 		int hour, minute;
@@ -3151,7 +3155,7 @@ yyreduce:
   case 110:
 
 /* Line 1806 of yacc.c  */
-#line 1072 "parse.y"
+#line 1076 "parse.y"
     {
 		char *time = (yyvsp[(1) - (1)].string) + 1;
 		time[strlen(time)-1] = '\0';
@@ -3171,7 +3175,7 @@ yyreduce:
 
 
 /* Line 1806 of yacc.c  */
-#line 3175 "parse.c"
+#line 3179 "parse.c"
       default: break;
     }
   /* User semantic actions sometimes alter yychar, and that requires
@@ -3402,7 +3406,7 @@ yyreturn:
 
 
 /* Line 2067 of yacc.c  */
-#line 1087 "parse.y"
+#line 1091 "parse.y"
 
 
 static void

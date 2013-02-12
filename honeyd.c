@@ -530,10 +530,14 @@ honeyd_init(void)
 	char *sudo_user = getenv("SUDO_USER");
 	int uid = 0;
 	char *home_path = NULL;
+	struct passwd *pass = NULL;
 
 	//Try getting the "SUDO_USER".
 	//If it doesn't exist (not running with sudo), then just default to using the current user
-	struct passwd *pass = getpwnam(sudo_user);
+	if(sudo_user != NULL)
+	{
+		pass = getpwnam(sudo_user);
+	}
 	if(pass == NULL)
 	{
 		pass = getpwuid(getuid());
