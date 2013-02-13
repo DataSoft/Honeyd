@@ -45,9 +45,10 @@ module for libdnet.  You might need Python 2.4 for the best results.
 
 To build honeyd, run the following commands:
 
+$ ./autogen.sh
 $ ./configure
 $ make
-$ make install
+$ sudo make install
 
 If your compilation stops due to Python related errors, you can try to
 run configure as
