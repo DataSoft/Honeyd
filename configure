@@ -2902,7 +2902,7 @@ fi
 
 # Define the identity of the package.
  PACKAGE=honeyd
- VERSION=1.6a
+ VERSION=1.6b
 
 
 cat >>confdefs.h <<_ACEOF
