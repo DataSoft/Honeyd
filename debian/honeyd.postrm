@@ -1,0 +1,55 @@
+#!/bin/sh
+set -e
+
+
+HONEYUSER=honeyd
+
+case "$1" in
+       purge)
+       	# Remove all log and configuration files
+  	for DIR in /etc/honeypot /var/log/honeypot ; do
+		[ -d $DIR ]  && find $DIR \( -type f -o -type l \) -exec rm -f {} \;
+	done
+	# File created by honeyd 
+	[ -f /usr/share/honeyd/webserver/server.pyc ] && 
+		rm -f /usr/share/honeyd/webserver/server.pyc
+
+        # find first and last SYSTEM_UID numbers
+         for LINE in `grep SYSTEM_UID /etc/adduser.conf | grep -v "^#"`; do
+            case $LINE in
+               FIRST_SYSTEM_UID*)
+                  FIST_SYSTEM_UID=`echo $LINE | cut -f2 -d '='`
+               ;;
+               LAST_SYSTEM_UID*)
+                  LAST_SYSTEM_UID=`echo $LINE | cut -f2 -d '='`
+               ;;
+               *)
+               ;;
+            esac
+         done
+         # remove  system account if necessary
+         if [ -n "$FIST_SYSTEM_UID" ] && [ -n "$LAST_SYSTEM_UID" ]; then
+            if USERID=`getent passwd $HONEYUSER | cut -f 3 -d ':'`; then
+               if [ -n "$USERID" ]; then
+                  if [ "$FIST_SYSTEM_UID" -le "$USERID" ] && \
+                     [ "$USERID" -le "$LAST_SYSTEM_UID" ]; then
+                        deluser --quiet $HONEYUSER || true
+                  fi
+               fi
+            fi
+         fi
+
+        ;;
+       remove|upgrade|failed-upgrade|abort-install|abort-upgrade|disappear)
+
+
+        ;;
+
+    *)
+        echo "postrm called with unknown argument \`$1'" >&2
+        exit 1
+
+esac
+
+#DEBHELPER#
+exit 0
