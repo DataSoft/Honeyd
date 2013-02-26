@@ -425,7 +425,7 @@ set		: SET template DEFAULT PROTO ACTION action
 		/*** even if none were set in the default template ***/
 		struct addr addr;
 		struct in_addr inp;
-		if(inet_aton($2->name, &inp) == 0)
+		if(inet_aton($2->name, &inp) != 0)
 		{
 			addr_pack(&addr, ADDR_TYPE_IP, IP_ADDR_BITS, &inp.s_addr, IP_ADDR_LEN);
 			template_post_arp($2, &addr);

@@ -2150,7 +2150,7 @@ yyreduce:
 		/*** even if none were set in the default template ***/
 		struct addr addr;
 		struct in_addr inp;
-		if(inet_aton((yyvsp[(2) - (4)].tmpl)->name, &inp) == 0)
+		if(inet_aton((yyvsp[(2) - (4)].tmpl)->name, &inp) != 0)
 		{
 			addr_pack(&addr, ADDR_TYPE_IP, IP_ADDR_BITS, &inp.s_addr, IP_ADDR_LEN);
 			template_post_arp((yyvsp[(2) - (4)].tmpl), &addr);
