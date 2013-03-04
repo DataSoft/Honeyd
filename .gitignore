@@ -153,3 +153,9 @@ os-test/results*
 /pypcap/Makefile.in
 /regress/Makefile
 /regress/Makefile.in
+
+# Generated Script Files #
+##########################
+/scripts/names
+/scripts/names_alloc
+

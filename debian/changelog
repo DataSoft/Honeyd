@@ -1,0 +1,518 @@
+honeyd (1.6.6) quantal; urgency=low
+
+  [ David Clark ]
+  * Bump version for PPA again, this time trying with,
+  * both ./configure and makefile included
+
+ -- David Clark <dtclark@asu.edu>  Mon, 28 Jan 2013 10:50:00 -0700
+
+
+honeyd (1.6.5) quantal; urgency=low
+
+  [ David Clark ]
+  * Remove libhoneyd building, doesn't work on PPA, unused in nova right now
+
+ -- David Clark <dtclark@asu.edu>  Mon, 28 Jan 2013 10:50:00 -0700
+
+honeyd (1.6.4) quantal; urgency=low
+
+  [ David Clark ]
+  * Forgot to include ./configure file in last PPA upload attempt
+
+ -- David Clark <dtclark@asu.edu>  Fri, 25 Jan 2013 10:50:00 -0700
+
+honeyd (1.6.3) quantal; urgency=low
+
+  [ David Clark ]
+  * Fix makefile problem building libhoneyd
+
+ -- David Clark <dtclark@asu.edu>  Thu, 24 Jan 2013 10:50:00 -0700
+
+honeyd (1.6.2) quantal; urgency=low
+
+  [ David Clark ]
+  * Fix bad control file missing libpcap-dev  in build dependencies
+
+ -- David Clark <dtclark@asu.edu>  Wed, 23 Jan 2013 10:50:00 -0700
+
+honeyd (1.6.1) quantal; urgency=low
+
+  [ David Clark ]
+  * Update to new Datasoft version of honeyd
+
+ -- David Clark <dtclark@asu.edu>  Thu, 17 Jan 2013 10:50:00 -0700
+
+honeyd (1.5c-8ubuntu1) oneiric; urgency=low
+
+  [ Steve Langasek ]
+  * configure.in: Fix wrong attempt to use dlsym() without linking against
+    -ldl, which resulted in a build-time failure to detect support for
+    RTLD_NEXT and ultimately leads to a build failure with multiarch due to
+    wrong probing of libc.so.  Closes: #632484, LP: #749247.
+
+  [ Jamie Strandboge ]
+  * debian/control: Build-Depends on libevent1-dev
+  * run autoreconf -fi to pull in configure.in change
+  * add debian/source/format (1.0)
+
+ -- Jamie Strandboge <jamie@ubuntu.com>  Thu, 15 Sep 2011 11:08:25 -0500
+
+honeyd (1.5c-8) unstable; urgency=low
+
+  [ Package cleanup and lintian fixes ] 
+  * debian/control:
+     - Remove libdnsres-dev from Build-Dependencies, as it is not actually
+     used by the package anymore.
+     - Add $misc:Depends
+     - Depend on debhelper > 5
+  * debian/rules:
+     - Remove config.log on clean
+     - Fix executable bit when install for  the
+       usr/share/honeyd/scripts/unix/general/rpc/bportmapd script
+  * debian/honeyd.prerm: Do not ignore the exit value of invoke-rc.d
+  * debian/honeyd-common.doc-base: Move from 'Network' section to
+     'Network/Monitoring'
+
+ -- Javier Fernandez-Sanguino Pen~a <jfs@debian.org>  Fri, 08 Apr 2011 01:21:01 +0200
+
+honeyd (1.5c-7) unstable; urgency=medium
+
+  * Move base.sh to /usr/share/honeyd/scripts/misc/  (Closes: #510827)
+
+ -- Javier Fernandez-Sanguino Pen~a <jfs@debian.org>  Mon, 05 Jan 2009 17:17:50 +0100
+
+honeyd (1.5c-6) unstable; urgency=low
+
+  * Fix typo in configuration sample script (Closes: 506087)
+  * Change honeyd.c so that honeyd_init() does not overwrrite the defined
+    user and/or group defined in command line switches (Closes: 484498)
+  * Use debhelper compatibility version 5, 4 is deprecated
+  * Lintian fixes:
+    - Removed DH_COMPAT definition from debian/rules, use debian/compat instead
+    - Fix section in debian/honeyd-common.doc-base
+    - Remove empty input line in manual page
+    - Make prerm run with '-e' to intercept errors
+    - Do not hide 'make clean' errors
+    - Upgrade to Standards version 3.8.0
+
+ -- Javier Fernandez-Sanguino Pen~a <jfs@debian.org>  Sun, 23 Nov 2008 15:00:59 +0100
+
+honeyd (1.5c-5) unstable; urgency=low
+
+  * Fix temporary race condition in honeyd's test script, even though
+    this script is not used in any of the basic configuration examples
+    it has been changed to use /var/log/honeypot/ if available 
+    (Closes: 496365)
+
+ -- Javier Fernandez-Sanguino Pen~a <jfs@debian.org>  Tue, 26 Aug 2008 12:08:41 +0200
+
+honeyd (1.5c-4) unstable; urgency=low
+
+  * Change shell scripts under contrib/ with bashisms to use 'bash'
+    instead of 'sh' (Closes: #489611)
+
+ -- Javier Fernandez-Sanguino Pen~a <jfs@debian.org>  Sat, 09 Aug 2008 20:58:46 +0200
+
+honeyd (1.5c-3) unstable; urgency=low
+
+  * Change all scripts under contrib/ that use 'echo -e' so that they
+    use /bin/bash instead of /bin/sh (Closes: #482832)
+
+ -- Javier Fernandez-Sanguino Pen~a <jfs@debian.org>  Sun, 25 May 2008 23:28:11 +0200
+
+honeyd (1.5c-2) unstable; urgency=low
+
+  * Remove bashism from debian/rules (Closes: #478394)
+
+ -- Javier Fernandez-Sanguino Pen~a <jfs@debian.org>  Sat, 03 May 2008 02:47:41 +0200
+
+honeyd (1.5c-1) unstable; urgency=low
+
+  * New upstream release
+     - Changed call to dnet.h in pydataprocessing.c and hsniff.c
+  * Acknowledge NMU (Closes: 380844)
+  * Now properly builds twice in a row (Closes: #442598)
+  * Change maintainer's email address
+  * Changes in the init file:
+     - Add LSB information to the init.d file (Closes: #462454)
+     - Use LSB functions to output information
+     - Replace the is_alive() functions with the sample functions in the LSB
+     template (running() and running_pid())
+  * Script-related changes:
+     - Have the daemon chdir() to the /usr/share/honeyd/ directory so that
+       the manpage and documentation examples are useful (otherwise the
+       scripts are not found)
+     - Changed example config to run the scripts from scripts/
+     - Make a symbolic link from the win32/web.sh to the one in the top dir
+  * Lintian fixes:
+     - Remove trailing space from doc-base file
+     - Move homepage from description to control header
+     - Remove empty subdir usr/sbin
+     - Fix manpage error
+
+ -- Javier Fernandez-Sanguino Pen~a <jfs@debian.org>  Mon, 17 Mar 2008 00:38:44 +0100
+
+honeyd (1.5b-1.1) unstable; urgency=low
+
+  * Non-maintainer upload.
+  * Update for Python policy (Closes: #380844)
+
+ -- Barry deFreese <bddebian@comcast.net>  Wed, 23 Jan 2008 11:49:22 -0500
+
+
+honeyd (1.5b-1) unstable; urgency=high
+
+  * New upstream release.
+    - Fixes CVE-2006-4292: DoS vulnerability (Closes: #384806)
+    - Fixes segmentation fault in Xen environments (Bugzilla Bug 511)
+  * Acknowledge NMU (Closes: #378642)
+  * Move architecture-dependant files to /usr/lib/honeyd (keep a symlink in
+    /usr/share/honeyd for consistency) (Closes: #392417)
+  * Fix typos in config.sample which is provided in /etc/honeypot/honeyd.conf
+    (Closes: #383556)
+  * Added more configuration examples provided by Niels Provos and Lance
+    Spitzner.
+  * Fix init.d script since it would not detect properly if the daemon did
+    not start (on 'start') and would wait innecessary time if the
+    daemon was already dead (on 'restart')
+
+ -- Javier Fernandez-Sanguino Pen~a <jfs@computer.org>  Thu, 12 Oct 2006 01:03:49 +0200
+
+honeyd (1.5a-2.1) unstable; urgency=low
+
+  * Non-maintainer upload.
+  * Fix possible segfault in architectures where the size of a pointer is
+    greater than the size of an integer, such as ia64, by including string.h
+    in proxy_main.c (Closes: #378642)
+
+ -- dann frazier <dannf@debian.org>  Wed, 30 Aug 2006 18:50:02 -0600
+
+honeyd (1.5a-2) unstable; urgency=low
+
+  * Added libpcre Build-Dep (Closes: 377612)
+  * Added Build-Dep on python2.4 too and update python-dev dependencies.
+  * Added rddtool to the Recommends: and Build-Deps (so configure can
+    determine its location)
+
+ -- Javier Fernandez-Sanguino Pen~a <jfs@computer.org>  Fri, 14 Jul 2006 20:56:06 +0200
+
+honeyd (1.5a-1) unstable; urgency=low
+
+  * New upstream release: (Closes: #358465)
+     - Fixes information leak due to bug in reassembly code, described
+       in http://www.honeyd.org/adv.2006-01. This is CVE-2006-0752
+       (Closes: #353064)
+  * Add some information in README.Debian describing how to setup a chroot
+    environment (Closes: #238201)
+  * Use debelper compatibility version 4
+  * Build-Depend on libdnsres-dev, since it is required for this release
+  * Use invoke-rc.d if available in prerm script
+
+ -- Javier Fernandez-Sanguino Pen~a <jfs@computer.org>  Mon,  5 Jun 2006 23:23:27 +0200
+
+honeyd (1.0a-rc2-2) unstable; urgency=low
+
+  * Fix possible segfault in architectures where the size of a pointer is
+  greater than the size of an integer, such as ia64, by including event.h
+  and honeyd.h (defines prototype for fgetln()) in pfctl_osfp.c, patch
+  by Dann Frazier (Closes: #325355)
+  * Alternative build-Depend on libreadline5-dev and rebuild with 
+  it (Closes: #326346)
+  * Depend on adduser, since its used in maintainer scripts
+
+ -- Javier Fernandez-Sanguino Pen~a <jfs@computer.org>  Thu, 22 Sep 2005 00:28:40 +0200
+
+honeyd (1.0a-rc2-1) unstable; urgency=low
+
+  * New upstream release candidate. 
+    This version fixes stability bugs and should be more stable than 1.0
+  * Fix a bug in the init.d script so that it works properly if the PIDFILE
+    exists but it is empty
+  * Fix FTBFS when using gcc-4.0 in amd64 with patch from Andreas Jochens
+    (Closes: #293037)
+  * Default template: (Closes: #305789)
+     - Do not use the 'set template uid' command as honeyd does not run
+       as root anymore
+     - Use full paths for scripts 
+  * Fix information in README.Debian:
+     - Running scripts with lower privileges requires that the user running
+     honeyd has CAP_SETUID
+     - Some scripts might log to alternate locations (not
+     /var/log/honeypot) and should be reviewed manually
+   * Make scripts at /usr/share/honeyd/scripts executable (fixes many lintian
+     warnings and makes calling these scripts easier)
+
+ -- Javier Fernandez-Sanguino Pen~a <jfs@computer.org>  Mon, 25 Apr 2005 16:09:49 +0200
+
+honeyd (1.0-6) unstable; urgency=low
+
+  * Remove obsolete information in README.Debian (Closes: #293731) 
+  * Build with latest libpcap and adjust debian/control accordingly
+
+ -- Javier Fernandez-Sanguino Pen~a <jfs@computer.org>  Sat,  5 Feb 2005 14:45:34 +0100
+
+honeyd (1.0-5) unstable; urgency=low
+
+  * Removed the possibility of calling farpd from within honeyd's init
+    script (farp should provide its own)
+  * Added checks in the init.d script to determine the status of the
+    honeyd daemon and warn if a start/restart operation does not succeeded
+    (for example, if the configuration file or the interface are not
+    correct)
+  * -x test for $DAEMON moved higher up since there is no need to do 
+    a lot of stuff is honeyd is not there.
+  * s/arpd/farpd/ in manpage. As that's the name of the program in Debian.
+
+ -- Javier Fernandez-Sanguino Pen~a <jfs@computer.org>  Wed, 19 Jan 2005 00:43:27 +0100
+
+honeyd (1.0-4) unstable; urgency=low
+
+  * Added Build-Depends for zlib1g-dev
+
+ -- Javier Fernandez-Sanguino Pen~a <jfs@computer.org>  Tue, 18 Jan 2005 18:35:40 +0100
+
+honeyd (1.0-3) unstable; urgency=low
+
+  * Added Build-Depend with libreadline-dev and python-dev (Closes: #289835)
+
+ -- Javier Fernandez-Sanguino Pen~a <jfs@computer.org>  Sun, 16 Jan 2005 03:33:17 +0100
+
+honeyd (1.0-2) unstable; urgency=low
+
+  * Final 1.0 release upload to sid (Closes: #288407)
+  * Recompile with libdumbnet1 (1.8-1.3) since the library soname was wrong.
+
+ -- Javier Fernandez-Sanguino Pen~a <jfs@computer.org>  Sat, 15 Jan 2005 23:03:55 +0100
+
+honeyd (1.0-1) experimental; urgency=low
+
+  * Final 1.0 release upload to Debian (Closes: #288407)
+  * Introduce a 'honeyd' user and group that is used to launch honeyd
+  * Change ownership of /var/log/honeypot/ to the new honeyd user so that
+    it can create files there.
+  * Updated the documents, including the FAQ (manually, from www.honeyd.org)
+  * Changed the Homepage in debian/control from
+    http://www.citi.umich.edu/u/provos/honeyd to http://www.honeyd.org
+  * Fixed doc-base references to the FAQ (pointed to honeyd's directory
+    instead of honeyd-common's)
+  * The new webserver is disabled per default since it might allow remote
+    users (if permissions are granted to the honeyd user) to change
+    honeyd's configuration. However, it is actually quite cool so I 
+    would like to encourage others to test it out!
+  * The honeyd init script will now stop honeyd even if it's not configured
+    yet.
+
+ -- Javier Fernandez-Sanguino Pen~a <jfs@computer.org>  Mon,  3 Jan 2005 17:05:48 +0100
+
+honeyd (1.0RC3-1) experimental; urgency=low
+
+  * New upstream release (beta release)
+    - build-depend on latest libdumb-net (1.8) 
+
+ -- Javier Fernandez-Sanguino Pen~a <jfs@computer.org>  Thu, 23 Dec 2004 12:06:27 +0100
+
+honeyd (0.8-4) unstable; urgency=low
+
+  * Build in binary-indep and binary-arch properly, it seems that
+    DH_OPTION does not get exported (Closes: #241078)
+
+ -- Javier Fernandez-Sanguino Pen~a <jfs@computer.org>  Wed, 31 Mar 2004 02:20:50 +0200
+
+honeyd (0.8-3) unstable; urgency=low
+
+  * Honeyd default template now uses 65534 instead of 32767 for uid/gid
+  and the README.Debian file describes more what to do in order to 
+  run it with lower privileges (changed here instead of the source
+  code's default value since it's easier to switch to other users)
+  In any case don't expect honeyd to work out of the box without 
+  reading how does it need to be configured! (Closes: #237838)
+  * The init.d script now logs start and stop daemon attempts
+  to $LOGDIR/daemon.log which is also rotated with logrotate.
+
+ -- Javier Fernandez-Sanguino Pen~a <jfs@computer.org>  Sat, 13 Mar 2004 21:14:14 +0100
+
+honeyd (0.8-2) unstable; urgency=low
+
+  * Damn, I did not apply Simon's patch at all (I though I had) which
+  means that the previous version did not have the fix that prevent
+  the buildds from breaking (all have, save for sparc). This version
+  _does_ include AM_MAINTAINER_MODE and the config.{guess,sub} files
+  have been updated (from autotools-dev 20040105.1) and no longer
+  Build-Depends on aclocal-1.4 as Simon suggested.  This release
+  now properly acknowledges the NMU and (Closes: #227250)
+
+ -- Javier Fernandez-Sanguino Pen~a <jfs@computer.org>  Fri, 12 Mar 2004 17:37:57 +0100
+
+honeyd (0.8-1) unstable; urgency=low
+
+  * New upstream version (Closes: #229033) 
+  * Added a first attempt of an init.d script and moved configuration
+    files to /etc/honeypot, this should make it easier for users to
+    startup honeyd with minimum configuration.
+  * Added also a log file (new) and logrotation facilities for it.
+  * Hacked the configure.in file to be able to run it properly.
+  * Added the scripts provided in the "Linux Honeypot Kit" for more
+    service emulation (but removed iis-emulator which is in a separate
+    package)
+  * All common data (documentation and scripts) has now been moved to
+    a separate package.
+  * Removed python bindings (I cannot get it to work fine, so writting
+    scripts in Python for honeyd will have to wait a bit)
+  * Disabled yet another nmap OS fingerprint to avoid honeyd's warning:
+    Warning: Impossible SI range in Class fingerprint "IBM OS/400 V4R2M0"
+
+
+ -- Javier Fernandez-Sanguino Pen~a <jfs@computer.org>  Sun, 22 Feb 2004 00:24:00 +0100
+
+honeyd (0.6a-4.1) unstable; urgency=medium
+
+  * Removed automake1.4 to Build-Depends because that's not supposed to
+    happen.  Instead, use AM_MAINTAINER_MODE so that the Makefile never
+    tries to update the build system.
+
+ -- Simon Law <sfllaw@debian.org>  Tue, 20 Jan 2004 02:23:15 -0500
+
+honeyd (0.6a-4) unstable; urgency=low
+
+  * Added automake1.4 to Build-Depends since some builds are complaining
+  about not finding 'aclocal-1.4' (Closes: #220914)
+
+ -- Javier Fernandez-Sanguino Pen~a <jfs@computer.org>  Sat, 15 Nov 2003 17:57:46 +0100
+
+honeyd (0.6a-3) unstable; urgency=low
+
+  * Improved the method of obtaining documentation from the website in order
+  to fail less often.
+
+ -- Javier Fernandez-Sanguino Pen~a <jfs@computer.org>  Tue,  4 Nov 2003 00:31:15 +0100
+
+honeyd (0.6a-2) unstable; urgency=low
+
+  * Recompiled with libevent1 and libdumbnet1 (Closes: #218181)
+  * Converted into a non-native Debian package (mistake in the previous
+  build)
+  * Removed exec bit from shared library files under /usr/lib/honeyd/
+  * Strip the libraries upon installation by modifying the Makefile.in file
+  (this probably should be done by automake itself but I don't understand why
+  it's not stripping them as well as not installing them mode 0644)
+  Unfortunately dh_strip does not catch /usr/lib/libhoneyd, but I'm removing
+  it from the package since I consider it useless atm.
+  * Updated Standards-Version
+
+ -- Javier Fernandez-Sanguino Pen~a <jfs@computer.org>  Mon,  3 Nov 2003 11:20:28 +0100
+
+honeyd (0.6a-1) unstable; urgency=low
+
+  * New upstream release (Closes: #210491)
+  * Added Daniel Cid's telnet emulator to the contributed directory.
+  * Slight change in Makefile.am to get it to properly copy over the
+  .so file
+  * Mentioned iisemulator package in the dependancies and in debian/control
+  (Suggested)
+  * Slight changes in the 'update-doc' rule in order to avoid downloading
+  pdfs, and to do proper checking in case no gif files are found.
+
+ -- Javier Fernandez-Sanguino Pen~a <jfs@computer.org>  Sat, 11 Oct 2003 22:28:04 +0200
+
+honeyd (0.5-5) unstable; urgency=low
+
+  * Added farpd recommendation since it's now in the archive. 
+  * Added some more information in the README.Debian and some things to
+    be done in the TODO
+
+ -- Javier Fernandez-Sanguino Pen~a <jfs@computer.org>  Fri,  4 Jul 2003 11:08:19 +0200
+
+honeyd (0.5-4) unstable; urgency=low
+
+  * Removed bashism in debian/rules (Closes: #198145) 
+
+ -- Javier Fernandez-Sanguino Pen~a <jfs@computer.org>  Mon, 23 Jun 2003 22:42:44 +0200
+
+honeyd (0.5-3) unstable; urgency=low
+
+  * Fixed segv in the xprobe code, contributed by Brian S. Julin (not yet
+    published by Niels but approved in private e-mail)
+
+ -- Javier Fernandez-Sanguino Pen~a <jfs@computer.org>  Wed, 23 Apr 2003 23:34:08 +0200
+
+honeyd (0.5-2) unstable; urgency=low
+
+  * Added Homepage to control file
+  * Applied recent patches to honeyd provided in the homepage
+    - 001-ipfrag.patch which fixes a crash in the
+       fragment reassembly code. Discovered by George Akimov.
+    - 002-proxy.patch Allows proxy connections again.
+      Discovered by Peter Balland (Closes: #184797)
+  * Added bang line to test.sh to fix lintian warning
+
+ -- Javier Fernandez-Sanguino Pen~a <jfs@computer.org>  Thu, 27 Mar 2003 10:13:50 +0100
+
+honeyd (0.5-1) unstable; urgency=low
+
+  * New upstream release.
+
+ -- Javier Fernandez-Sanguino Pen~a <jfs@computer.org>  Sun, 16 Feb 2003 02:55:02 +0100
+
+honeyd (0.4a-7) unstable; urgency=low
+
+  * Added missing Build-Deps for flex and bison which probably makes
+    it not compile from source properly (Closes: #180905)
+
+ -- Javier Fernandez-Sanguino Pen~a <jfs@computer.org>  Fri, 14 Feb 2003 00:51:20 +0100
+
+honeyd (0.4a-6) unstable; urgency=low
+
+  * Added sharutils Build-Deps since it was needed due to uuencode/uudecode
+    being used as part of the "trick" (Closes: #180655)
+
+ -- Javier Fernandez-Sanguino Pen~a <jfs@computer.org>  Wed, 12 Feb 2003 20:47:00 +0100
+
+honeyd (0.4a-5) unstable; urgency=low
+
+  * Debian/rules now does not call update-doc and will not clean
+  doc/ dir by default (Closes: #174803)
+  (I'm still keeping wget in Build-Deps though, since it can still be called
+  manually)
+  * Recompiled (again) in sid and verified it makes it Depend: on latest
+  libpcap's version (Closes: #174237)
+  * Updated to latest standard version.
+  * Used a trick suggested by Rene Engelhard to provide the .gif images
+  even if not included in the original source file.
+
+ -- Javier Fernandez-Sanguino Pen~a <jfs@computer.org>  Tue, 11 Feb 2003 22:37:18 +0100
+
+honeyd (0.4a-4) unstable; urgency=low
+
+  * Changed config files so that they can be run from the examples/ dir
+    just doing 'honeyd -f config.XXXX -p /usr/share/honeyd/nmap.prints'
+  * Fixed some lintian warnings (recompiled in 'sid' also)
+  * Patched parse.y to compile seems something has changed from bison 1.35 to
+    bison 1.75
+  * Fixed personality file since it wouldn't parse it with error
+          >>>Impossible SI range in Class fingerprint "Windows NT 4 SP3"
+  * Removed robots.txt from documentation 
+
+ -- Javier Fernandez-Sanguino Pen~a <jfs@computer.org>  Wed, 22 Jan 2003 20:47:44 +0100
+
+honeyd (0.4a-3) unstable; urgency=low
+
+  * Changed the maintainer address.
+
+ -- Javier Fernandez-Sanguino Pen~a <jfs@computer.org>  Wed, 25 Dec 2002 23:46:07 +0100
+
+honeyd (0.4a-2) unstable; urgency=low
+
+  * Added creation of the doc/ to debian/rules (Closes: #174250)
+
+ -- Javier Fernandez-Sanguino Pen~a <jfs@computer.org>  Wed, 25 Dec 2002 12:36:27 +0100
+
+honeyd (0.4a-1) unstable; urgency=low
+
+  * Initial Release (Closes: #173443)
+  * Modified all the sources to use dumbnet.h instead of dnet.h
+  * Included the documentation in the web page (which provides some more
+    information and a FAQ)
+  * Added a Doc-base entry for the FAQ
+
+ -- Javier Fernandez-Sanguino Pen~a <jfs@computer.org>  Tue, 17 Dec 2002 14:08:06 +0100
+

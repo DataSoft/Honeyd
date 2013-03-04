@@ -1,0 +1,153 @@
+#!/usr/bin/make -f
+# Sample debian/rules that uses debhelper.
+# GNU copyright 1997 to 1999 by Joey Hess.
+
+# Uncomment this to turn on verbose mode.
+#export DH_VERBOSE=1
+
+# This is the debhelper compatibility version to use.
+# export DH_COMPAT=5
+
+# These are used for cross-compiling and for saving the configure script
+# from having to guess our platform (since we know it already)
+DEB_HOST_GNU_TYPE   ?= $(shell dpkg-architecture -qDEB_HOST_GNU_TYPE)
+DEB_BUILD_GNU_TYPE  ?= $(shell dpkg-architecture -qDEB_BUILD_GNU_TYPE)
+
+
+ifneq (,$(findstring debug,$(DEB_BUILD_OPTIONS)))
+	CFLAGS += -g
+endif
+ifeq (,$(findstring nostrip,$(DEB_BUILD_OPTIONS)))
+	INSTALL_PROGRAM += -s
+endif
+
+config.status: configure
+	dh_testdir
+	# Add here commands to configure the package.
+	./configure --host=$(DEB_HOST_GNU_TYPE) --build=$(DEB_BUILD_GNU_TYPE) --prefix=/usr --mandir=\$${prefix}/share/man --infodir=\$${prefix}/share/info
+
+# We do this in order to prevent dpkg-source from breaking
+fix-doc:
+	cd doc/ && for i in *.uu; do uudecode $$i; done
+	touch fix-doc
+
+build: build-stamp fix-doc
+
+clean-doc:
+	-rm -f doc/*
+
+update-doc:
+	if [ ! -d doc ] ; then mkdir doc ; fi
+	cd doc && /usr/bin/wget --proxy=off -L -nd -A html,png,gif -k --no-parent -q -m -r -l 1  http://www.citi.umich.edu/u/provos/honeyd/
+	find doc -type f -a \( -name "*.gif" -o -name "*.png" \) | \
+	while read file ; do cat doc/`basename $$file` | uuencode `basename $$file` > doc/`basename $$file`.uu ; done
+	-rm -f doc/robots.txt doc/*.gif doc/*.png
+
+build-stamp:  config.status
+	dh_testdir
+
+	# Add here commands to compile the package.
+	$(MAKE)
+
+	touch build-stamp
+
+clean:
+	dh_testdir
+	dh_testroot
+	rm -f build-stamp fix-doc stamp-h.in config.log
+
+	[ ! -f Makefile ] || $(MAKE) distclean
+# These need to be removed from the doc dir if they are 
+# retrieved using wget
+	-rm -f doc/*.gif
+# This one does not get properly removed by the clean target
+	-rm -f webserver/server.pyc
+# Overwrrite configuration routines with the ones available in the system
+	-test -r /usr/share/misc/config.sub && \
+	  cp -f /usr/share/misc/config.sub config.sub
+	-test -r /usr/share/misc/config.guess && \
+	  cp -f /usr/share/misc/config.guess config.guess
+
+
+	dh_clean
+
+install: build
+	dh_testdir
+	dh_testroot
+	dh_clean -k
+	dh_installdirs
+
+	$(MAKE) install prefix=$(CURDIR)/debian/honeyd/usr \
+# Relocate configuration files
+	for file in nmap.assoc nmap-mac-prefixes nmap-os-db xprobe2.conf pf.os config.sample;\
+	do \
+	   mv $(CURDIR)/debian/honeyd/usr/share/honeyd/$$file $(CURDIR)/debian/honeyd/etc/honeypot ; \
+	   (cd  $(CURDIR)/debian/honeyd/usr/share/honeyd/ && ln -s /etc/honeypot/$$file . ) ; \
+	done
+	mv $(CURDIR)/debian/honeyd/etc/honeypot/config.sample  \
+		$(CURDIR)/debian/honeyd/etc/honeypot/honeyd.conf 
+	
+	# Redundant
+	-rm -f $(CURDIR)/debian/honeyd/usr/share/honeyd/README
+	# Dangling symlink
+	-rm -f $(CURDIR)/debian/honeyd/usr/share/honeyd/config.sample
+	# Fix executable bit:
+	#chmod a+x $(CURDIR)/debian/honeyd-common/usr/share/honeyd/scripts/unix/general/rpc/bportmapd
+        # Relocate base.sh
+	#mkdir $(CURDIR)/debian/honeyd-common/usr/share/honeyd/scripts/misc
+	#mv $(CURDIR)/debian/honeyd-common/usr/share/honeyd/scripts/base.sh \
+    #        $(CURDIR)/debian/honeyd-common/usr/share/honeyd/scripts/misc
+	#find $(CURDIR)/debian/honeyd-common/usr/share/honeyd/scripts/ -name "*.sh" -exec chmod 755 {} \;
+	#find $(CURDIR)/debian/honeyd-common/usr/share/honeyd/scripts/ -name "*.pl" -exec chmod 755 {} \;
+# This one is redundant
+	#-rm -f $(CURDIR)/debian/honeyd-common/usr/share/honeyd/scripts/web.sh
+	#cd  $(CURDIR)/debian/honeyd-common/usr/share/honeyd/scripts/ && ln -s win32/web.sh .
+
+
+# Build architecture-independent files here.
+binary-indep: DH_OPTIONS=-i
+binary-indep: build install
+# We have nothing to do by default.
+	dh_testdir 
+	dh_testroot
+	dh_installdocs -i -phoneyd-common doc/*.html doc/*.gif
+	dh_installchangelogs  -i
+	dh_link -i
+	dh_compress -i
+	dh_fixperms -i
+	dh_installdeb -i
+	dh_gencontrol -i
+	dh_md5sums -i
+	dh_builddeb -i
+
+# Build architecture-dependent files here.
+binary-arch: DH_OPTIONS=-a
+binary-arch: build install
+	dh_testdir
+	dh_testroot
+#	dh_installdebconf
+	dh_installdocs  -a
+	dh_installexamples -a -phoneyd debian/config.localhost sample-config/*
+	dh_installinit -a -phoneyd --no-start -r -- stop 20 0 6 .
+	dh_installmenu -a
+	DH_OPTIONS=-phoneyd dh_installdirs etc/logrotate.d
+	install -m644 debian/honeyd.logrotate $(CURDIR)/debian/honeyd/etc/logrotate.d/honeyd
+	dh_installcron -a
+	dh_installman -a
+#	dh_undocumented -a
+	dh_installchangelogs -a
+	dh_pysupport -a $(CURDIR)/debian/tmp/usr/share/honeyd/webserver
+	dh_link -a
+	dh_strip -a
+	dh_compress -a
+	dh_fixperms -a
+	dh_installdeb -a
+	dh_shlibdeps -a
+	dh_gencontrol -a
+	dh_md5sums -a
+	dh_builddeb -a
+
+binary: binary-indep binary-arch
+.PHONY: build clean binary-indep binary-arch binary install 
+
+

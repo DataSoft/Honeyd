@@ -460,7 +460,7 @@ port_encapsulation_free(struct port_encapsulate *tmp)
 	struct port *port = tmp->port;
 
 	TAILQ_REMOVE(&port->pending, tmp, next);
-	event_del(&tmp->ev);
+	event_del(tmp->ev);
 	
 	/* Remove the reference to the pending connection */
 	if (tmp->hdr != NULL)
@@ -698,6 +698,10 @@ template_clone(const char *newname, const struct template *tmpl,
 
 			/* Register this mac address as our own */
 			template_post_arp(newtmpl, &addr);
+
+			newtmpl->honeypot_instance = 1;
+		} else {
+			newtmpl->honeypot_instance = 0;
 		}
 	}
 
@@ -713,6 +717,8 @@ template_clone(const char *newname, const struct template *tmpl,
 	newtmpl->drop_synrate = tmpl->drop_synrate;
 	newtmpl->flags = tmpl->flags;
 	newtmpl->spoof = tmpl->spoof;
+	newtmpl->addrbits = tmpl->addrbits;
+	newtmpl->honeypot_instance = tmpl->honeypot_instance;
 
 	/* We need to remove this when cloning */
 	newtmpl->flags &= ~TEMPLATE_DYNAMIC_CHILD;
@@ -1099,8 +1105,8 @@ template_delay_cb(int fd, short which, void *arg)
 void
 template_test_parse_error(char *line, struct evbuffer *evbuf)
 {
-	char *p = (char*)EVBUFFER_DATA(evbuf);
-	size_t off = EVBUFFER_LENGTH(evbuf);
+	char *p = (char*)evbuffer_pullup(evbuf, -1);
+	size_t off = evbuffer_get_length(evbuf);
 	p[off - 1] = '\0';
 	syslog(LOG_ERR, "parse_line \"%s\" failed: %s",line,p);
 	exit(EXIT_FAILURE);

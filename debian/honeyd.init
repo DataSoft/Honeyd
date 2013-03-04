@@ -1,0 +1,242 @@
+#!/bin/sh -e
+#
+### BEGIN INIT INFO
+# Provides:          honeyd
+# Required-Start:
+# Required-Stop:     $remote_fs $syslog
+# Default-Start:
+# Default-Stop:      
+# Short-Description: Service to simulate hosts and networks
+# Description:       Daemon that provides a way to fully simulate 
+#                    virtual hosts on a network and any type of 
+#                    service running in those hosts.
+### END INIT INFO
+#
+# /etc/init.d/honeyd
+#
+# Originally written by Miquel van Smoorenburg <miquels@drinkel.ow.org>.
+# Modified for Debian GNU/Linux by Ian Murdock <imurdock@gnu.ai.mit.edu>.
+# Modified for honeyd by Javier Fernandez-Sanguino <jfs@debian.org> 
+
+
+PATH=/bin:/usr/bin:/sbin:/usr/sbin
+# Daemon locations
+DAEMON=/usr/bin/honeyd
+# Daemon names
+NAME=honeyd
+# Pidfiles
+PIDFILE=/var/run/honeyd.pid
+# Labels
+LABEL="Honeyd daemon"
+DEFAULT=/etc/default/honeyd
+LOGDIR="/var/log/honeypot"
+DAEMONLOG="$LOGDIR/daemon.log"
+# time to wait for daemons death, in seconds
+DODTIME=5
+# Users to run the daemons as
+DAEMONUSER=honeyd
+
+# Defaults (should be changed in the 
+# /etc/default/honeyd file, not here)
+RUN="no"
+OPTIONS=""
+INTERFACE=""
+
+# Note: You should not need to modify anything below this.
+test -x $DAEMON || exit 0
+
+. /lib/lsb/init-functions
+
+
+if [ "$(id -u)" != "0" ]
+then
+  echo "You must be root to start, stop or restart \"$LABEL\"." >&2
+  exit 1
+fi
+
+running_pid() {
+# Check if a given process pid's cmdline matches a given name
+    pid=$1
+    name=$2
+    [ -z "$pid" ] && return 1
+    [ ! -d /proc/$pid ] &&  return 1
+    cmd=`cat /proc/$pid/cmdline | tr "\000" "\n"|head -n 1 |cut -d : -f 1`
+    # Is this the expected server
+    [ "$cmd" != "$name" ] &&  return 1
+    return 0
+}
+
+running() {
+# Check if the process is running looking at /proc
+# (works for all users)
+    ret=1
+    if [ -r "$PIDFILE" ] ; then
+        pid=`cat $PIDFILE`
+        running_pid $pid $DAEMON && ret=0
+    else
+# No pidfile (or not readable), probably no daemon present
+        procname=`/bin/ps h -C $DAEMON -U $DAEMONUSER`
+	[ -n "$procname" ] && ret=0
+    fi
+    return $ret
+}
+
+not_configured () {
+        log_failure_msg "Not configured, will not be started"
+        if [ "$1" != "stop" ]
+        then
+                log_failure_msg "Please configure the daemon, edit $DEFAULT and set the \"RUN\" variable"
+        fi
+        log_end_msg 1
+        exit 1
+}
+
+
+# Read config (will override defaults)
+# and check if it is configured
+if [ -f "$DEFAULT" ] ; then
+        . $DEFAULT
+fi
+
+trap "" 1
+trap "" 15
+
+# This is the network in which honeyd will work
+DAEMONOPTS="-f /etc/honeypot/honeyd.conf -l $LOGDIR/honeyd.log"
+DAEMONOPTS="$DAEMONOPTS -p /etc/honeypot/nmap.prints"
+DAEMONOPTS="$DAEMONOPTS -a /etc/honeypot/nmap.assoc"
+DAEMONOPTS="$DAEMONOPTS -0 /etc/honeypot/pf.os"
+DAEMONOPTS="$DAEMONOPTS -x /etc/honeypot/xprobe2.conf"
+# Does the user exist?
+if getent passwd | grep -q "^$DAEMONUSER:"; then
+        DAEMONUID=`getent passwd |grep "^$DAEMONUSER:" | awk -F : '{print $3}'`
+        DAEMONGID=`getent passwd |grep "^$DAEMONUSER:" | awk -F : '{print $4}'`
+	DAEMONOPTS="$DAEMONOPTS -u $DAEMONUID -g $DAEMONGID"
+fi
+
+if [ -z "$DAEMONUID" ] ; then
+    log_failure_msg "The user $DAEMONUSER, required to run $NAME does not exist."
+    exit 1
+fi
+
+# Extra options (given by the user in /etc/default files)
+DAEMONOPTS="$DAEMONOPTS $OPTIONS"
+
+# Have we defined an interface?
+if [ "x$INTERFACE" != "x" ];
+then
+	INTERFACE="-i $INTERFACE"
+fi
+
+
+start()
+{
+    if [ "x$RUN" != "xyes" ] ; then
+        not_configured
+    fi
+    date=`date -R`
+    echo "$date - Starting honeyd" >>$LOGDIR/daemon.log
+    start-stop-daemon --quiet --start --pidfile "$PIDFILE" \
+        --exec $DAEMON --chdir /usr/share/honeyd/ \
+    	-- $DAEMONOPTS $INTERFACE $NETWORK >>$LOGDIR/daemon.log 2>&1
+}
+
+stop()
+{
+    date=`date -R`
+    echo "$date - Stopping honeyd" >>$LOGDIR/daemon.log
+    start-stop-daemon --quiet --stop --pidfile $PIDFILE --oknodo \
+    	--exec $DAEMON >>$DAEMONLOG 2>&1
+}
+
+case "$1" in
+  start)
+    log_daemon_msg "Starting $LABEL" "$NAME"
+    if running ; then
+        log_progress_msg "apparently already running"
+        log_end_msg 0
+        exit 0
+    else
+        start
+        if running ; then
+            log_end_msg 0
+        else
+    	    log_failure_msg "ERROR while starting please check $DAEMONLOG"
+            log_end_msg 1
+        fi
+    fi
+    ;;
+  stop)
+    log_daemon_msg "Stopping $LABEL" "$NAME"
+    if running ; then
+        stop
+        log_end_msg $?
+    else 
+        log_progress_msg "apparently not running"
+        log_end_msg 0
+        exit 0
+    fi
+    ;;
+  restart)
+    log_daemon_msg "Restarting $LABEL" "$NAME"
+    if running ; then
+        stop
+        [ -n "$DODTIME" ] && sleep "$DODTIME"s
+    fi
+    if running ; then
+    	    log_failure_msg "Daemon did not stop (please check $DAEMONLOG)."
+            exit 1
+    else
+        start
+        if running ; then
+            log_end_msg 0
+            exit 0
+        else
+    	    log_failure_msg "ERROR while starting please check $DAEMONLOG"
+            log_end_msg 1
+        fi
+    fi
+    ;;
+  status)
+    log_daemon_msg "Checking status of $LABEL" "$NAME"
+    if [ "x$RUN" != "xyes" ] ; then
+         log_progress_msg "not configured"
+         log_end_msg 1
+         exit 1
+    fi
+    if running ; then
+         log_end_msg 0
+    else
+         log_progress_msg "apparently not running"
+         log_end_msg 1
+         exit 1
+    fi
+    ;;
+  reload|force-reload)
+    log_daemon_msg "Reloading $LABEL" "$NAME"
+    if [ "x$RUN" != "xyes" ] ; then
+        not_configured
+    fi
+    if running ; then
+	start-stop-daemon --stop --pidfile $PIDFILE --signal 1 --exec $DAEMON
+	if running ; then
+            log_end_msg 0
+	 else
+            log_progress_msg "did not reload properly, check $ERRORLOG"
+            log_end_msg 1
+            exit 1
+	 fi
+    else
+      log_progress_msg "Cannot reload as it is not running"
+      log_end_msg 1
+      exit 1
+    fi
+    ;;
+  *)
+    N=/etc/init.d/$NAME
+    echo "Usage: $N {start|stop|restart|reload|status}"
+    exit 1
+    ;;
+esac
+
+exit 0

@@ -1,0 +1,39 @@
+# Defaults for honeyd initscript
+
+# Master system-wide honeyd switch. The initscript
+# will not run if it is not set to yes.
+RUN="no"
+
+
+# Default options.
+# Interface to listen on (if unset honeyd will select
+# an interface himself) 
+# Note: Use only one! if you wish to use
+# more than one use multiple -i in OPTIONS
+INTERFACE=""
+
+# Network Honeyd will listen for. IF this is not set
+# Honeyd will claim _all_ IP addresses set on the configured
+# interface (which is probably _not_ what you want)
+# This "sane" default will prevent you from doing it.
+NETWORK=10.0.0.0/8
+
+# You can set some other options here for example:
+# Notice that some of the options are already defined in the
+# init.d script and you shouldn't use them here
+# This includes: -f, -l, -p, -x and -a.
+# Other options are available.
+# This is the default since the webserver uses
+# no authentication and could potentially disclose internal
+# information (and provide a remote user to edit honeyd's
+# configuration).
+OPTIONS="--disable-webserver"
+ 
+# Remove --disable-webserver if you want
+# to start up the web server. You will need to ask honeyd
+# to fix the permissions of the document root.
+# NOTE: You will not be able to manipulate honeyd's configuration
+# unless you grant the honeyd user write permission on the 
+# configuration files at /etc/honeypot/
+#OPTIONS="--fix-webserver-permissions"
+

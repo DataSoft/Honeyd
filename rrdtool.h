@@ -44,6 +44,8 @@ struct rrdtool_command {
 
 #define MAX_RRD_DATASRCS	100
 
+struct event_base *rrdtool_libevent_base;
+
 struct rrdtool_drv {
 	int fd;
 	pid_t pid;
@@ -53,7 +55,7 @@ struct rrdtool_drv {
 	struct timeval tv_started;
 	struct bufferevent *evb;
 
-	struct event ev_timeout;
+	struct event *ev_timeout;
 	
 	TAILQ_HEAD(rrdtoolq, rrdtool_command) commands;
 };

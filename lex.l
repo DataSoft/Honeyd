@@ -79,6 +79,9 @@ int includes_index = 0;
 
 %}
 
+%option nounput
+%option noinput
+
 %%
 create		{ return CREATE; }
 add		{ return ADD; }
@@ -101,6 +104,7 @@ drop		{ return DROP; }
 old		{ return OLD; }
 new		{ return NEW; }
 proxy		{ return PROXY; }
+broadcast {return BROADCAST;}
 uptime		{ return UPTIME; }
 droprate	{ return DROPRATE; }
 in		{ return IN; }

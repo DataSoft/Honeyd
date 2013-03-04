@@ -1,0 +1,414 @@
+<!-- NAME: header.tpl -->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+  <head>
+<title> Honeyd Frequently Asked Questions </title>
+<link rel="stylesheet" type="text/css" href="/styles/layout.css">
+</head>
+<body>
+    <div class="header">
+      <div class="subtitle">
+	Monkey.org Developments
+      </div>
+      <div class="title">
+	Honeyd Frequently Asked Questions
+      </div>
+    </div>
+<!-- END: header.tpl -->
+<!-- NAME: main.tpl -->
+<table cellspacing="0" cellpadding="0" width="95%">
+<tr><td valign="top" width="22%" bgcolor="#eeeeee">
+<!-- NAME: nav.tpl -->
+<div class=nav>
+<h4>Honeyd&nbsp;Resources</h4>
+<p>
+<a href="/index.php">Main</a><br>
+<a href="/release.php">Download Releases</a><br>
+<a href="/general.php">General&nbsp;Information</a>&nbsp;[<a href="http://www.citi.umich.edu/u/provos/honeyd/">Mirror</a>]<br>
+<a href="/faq.php">Frequently&nbsp;Asked&nbsp;Questions</a><br>
+<a href="/configuration.php">Sample&nbsp;Configurations</a><br>
+<a href="/tools.php">Tools</a>&nbsp;-&nbsp;<a href="/contrib.php">Service&nbsp;Scripts</a><br>
+<a href="/live.php">Live Statistics</a> - <font color="red">New</font><br>
+<a href="/links.php">Links, Press, etc.</a><br>
+<a href="/archive.php/">Mailing List Archive</a>&nbsp;-&nbsp;<font color="red">New</font><br>
+<a href="/thanks.php">Acknowledgments</a><br>
+</p>
+</div>
+<div style="margin: 2px; margin-bottom: 0.75em">
+<script type="text/javascript"><!--
+google_ad_client = "pub-1815792813539608";
+google_ad_width = 250;
+google_ad_height = 250;
+google_ad_format = "250x250_as";
+google_ad_channel ="6891309656";
+google_color_border = "aaaadd";
+google_color_bg = "ddddee";
+google_color_link = "0000FF";
+google_color_url = "008000";
+google_color_text = "000000";
+//--></script>
+<script type="text/javascript"
+  src="http://pagead2.googlesyndication.com/pagead/show_ads.js">
+</script><br>
+</div>
+<div class=nav>
+<h4>Honeyd&nbsp;Research</h4>
+<p>
+<a href="/worms.php">Immunization&nbsp;Against&nbsp;Worms</a><br>
+<a href="/spam.php">Understanding Spam</a><br>
+<a href="/performance.php">Performance</a><br>
+</p>
+</div>
+<div class=nav>
+<h4>Honeypot&nbsp;Resources</h4>
+<p>
+<a href="/background.php">Honeypot&nbsp;Background</a><br>
+<a href="/concepts.php">Honeypot&nbsp;Concepts</a><br>
+</p>
+</div>
+<div class=nav>
+<h4>Happy Hacking</h4>
+<p>
+<a href="http://www.citi.umich.edu/u/provos/wishlists/amazon.html"><strong>Reduce wishlists</strong></a><br>
+<a href="https://secure.paypal.com/xclick/business=provos@citi.umich.edu&item_name=Tip+for+Honeyd+-+Thanks.&return=http://www.honeyd.org/">Leave&nbsp;a&nbsp;tip&nbsp;with&nbsp;PayPal</a><br>
+</p>
+</div>
+<div class=nav>
+<h4><a href="http://www.citi.umich.edu/u/provos/wishlists/amazon.html">Support&nbsp;Honeyd</a></h4>
+<p>
+<font color="#101044" size="+0.5">
+<form method="get" action="http://www.amazon.com/exec/obidos/external-search">
+<table border="0" cellpadding="1" cellspacing="0" align="center" bgcolor="#ccccee">
+<tr border="0">
+<td bgcolor="#ccccee" align="right" valign="middle"><font face="verdana,arial,helvetica" size="-2"><B>Search:</B></font></TD>
+<td bgcolor="#CCCCEE" align="left" valign="middle"><font face="verdana,arial,helvetica" size="-2">
+<SELECT NAME="mode">
+<OPTION VALUE="books">Books
+<OPTION VALUE="music">Music
+<OPTION VALUE="dvd">DVD
+<OPTION VALUE="toys">Toys & Games
+<OPTION VALUE="videogames">Computer Games
+<OPTION VALUE="electronics">Electronics
+<OPTION VALUE="software">Software
+<OPTION VALUE="photo">Camera & Photo
+<OPTION VALUE="pc-hardware">Computers
+</select>
+</font></td></tr>
+<tr border="0" cellpadding="0" cellspacing="0">
+<TD BGCOLOR="#CCCCEE" align="RIGHT" valign="middle">
+<font face="verdana,arial,helvetica" size="-2"><B>Keywords:</B></font></TD>
+<td bgcolor="#ccccee" align="left" valign="middle">
+<font face="verdana,arial,helvetica" size="-2">
+<INPUT TYPE="text" NAME="keyword" SIZE="10" VALUE="">
+<INPUT TYPE="hidden" NAME="tag" VALUE="honeyd-20">
+<INPUT TYPE="submit" width="21" height="21" border="0" value="Go" name="Go" align="absmiddle">
+</font></td></TR>
+</table></form>
+</p>
+<h5><a href="http://www.amazon.com/exec/obidos/redirect-home/honeyd-20">Search Amazon</a></h5>
+</div>
+<!-- END: nav.tpl -->
+
+</td><td valign="top" bgcolor="#eeeeee">
+&nbsp;
+</td><td valign="top" bgcolor="#eeeeee">
+<div class="faq">
+Here are some frequently encountered problems and questions when
+running Honeyd.  Parts of this FAQ have been contributed by Shaheem Motlekar.<ul><li><a href="#what">What is Honeyd?</a></li>
+<li><a href="#list">Is there a list of all operating systems I can emulate with Honeyd?</a></li>
+<li><a href="#scripts">Where can I get more scripts to emulate services in Honeyd?</a></li>
+<li><a href="#samples">Where can I get sample configuration templates for Honeyd?</a></li>
+<li><a href="#fast">What's the fastest way to get up and running with Honeyd?</a></li>
+<li><a href="#configure_error">What do I do if configure fails when checking for addr_cmp in libdnet?</a></li>
+<li><a href="#compile_error">Why do I get errors when compiling Honeyd?</a></li>
+<li><a href="#personalities">Why does Honeyd not know any personalities?</a></li>
+<li><a href="#windows_port">Is there a Windows version of Honeyd?</a></li>
+<li><a href="#no_answer">Honeyd does not seem to answer to any packets.  What is going wrong?</a></li>
+<li><a href="#localhost">How do I test Honeyd without a network?</a></li>
+<li><a href="#existing">Is it possible to run Honeyd on an exisiting IP address?</a></li>
+<li><a href="#networking">How do I use Honeyd's networking features?</a></li>
+<li><a href="#logformat">How do I interpret the fields in Honeyd's packet log?</a></li>
+<li><a href="#interfaces">How do I make Honeyd listen to network traffic on specified interfaces?</a></li>
+<li><a href="#badaddr">Why does Honeyd terminate with "bad interface configuration: not IP?"</a></li>
+<li><a href="#warning">Why do I receive warnings about 'Impossible SI range in Class fingerprint' when running Honeyd?</a></li>
+<li><a href="#windows">Why does Honeyd 0.5 running on Windows fail to detect the network interface?</a></li>
+<li><a href="#autoconf">I think that I have installed the latest version of autoconf.  Which version do I need?</a></li>
+<li><a href="#solaris">When compiling Honeyd under Solaris, I get duplicated symbols.  What do I need to do?</a></li>
+</ul><p><a name="what">
+<h3>What is Honeyd?</h3>
+Honeyd is a small daemon that runs both on UNIX-like and Windows platforms.
+It is used to create multiple virtual honeypots on a single machine.
+Entire networks can be simulated using honeyd. Honeyd can be
+configured to run a range of services like FTP, HTTP, or SMTP.
+Furthermore, a personality can be configured to simulate a
+certain operating system. Honeyd allows
+a single host to claim as many as 65536 IP addresses.
+</a><p>
+<a name="list">
+<h3>Is there a list of all operating systems I can emulate with Honeyd?</h3>
+Honeyd emulates operating systems by responding with appropriate
+packets to Nmap and Xprobe fingerprinting packets. Thus the list of
+operating systems that honeyd emulates can be found in <em>nmap.prints</em>
+and <em>xprobe2.conf</em>.
+</a><p>
+<a name="scripts">
+<h3>Where can I get more scripts to emulate services in Honeyd?</h3>
+Scripts are used in Honeyd to simulate a particular service like
+telnet, http and smtp. Honeyd comes with scripts for a set of default
+services. In order to simulate other services, people from the security
+community have contributed scripts for other services. These include
+telnet, pop, IIS among others.
+<p>
+These scripts can be downloaded from the following website:
+<ul>
+<li><a href="/contrib.php">http://www.honeyd.org/contrib.php</a></li>
+</ul>
+</a><p>
+<a name="samples">
+<h3>Where can I get sample configuration templates for Honeyd?</h3>
+Configuration templates provide a quick way to get your Honeyd up and
+running. Sample configuration templates can be found at
+<ul><li>
+<a href="http://www.honeyd.org/configuration.php">http://www.honeyd.org/configuration.php</a>
+</li></ul>
+</a><p>
+<a name="fast">
+<h3>What's the fastest way to get up and running with Honeyd?</h3>
+For Linux, you could use the precompiled version of Honeyd available as
+toolkit from <a href="http://www.tracking-hackers.com/solutions/honeyd/">http://www.tracking-hackers.com/solutions/honeyd/</a>. It
+contains a collection of scripts and ready to use templates that you
+can customize to your needs.
+</a><p>
+<a name="configure_error">
+<h3>What do I do if configure fails when checking for addr_cmp in libdnet?</h3>
+Make sure that you have the latest version of <a href="http://libdnet.sourceforge.net/">libdnet</a>.  After installing lidnet you might
+have to run
+<dl><dd>
+<pre>
+# ldconfig -m /usr/local/lib
+</pre>
+</dd></dl>
+to update your list of shared libraries.  Also, make sure that <code>/usr/local/lib</code> has been added to <code>/etc/ld.so.conf</code>.
+</a><p>
+<a name="compile_error">
+<h3>Why do I get errors when compiling Honeyd?</h3>
+Some people do not have Python development libraries installed and
+the compilation of pyextend.c fails.  Try running configure as follows:
+<dl><dd>
+<pre>
+$ ./configure --without-python
+</pre>
+</dd></dl>
+<p>
+Sometimes autoconf generates the following errors.
+<dl><dd>
+<pre>
+$ make
+cd . && aclocal
+cd . && automake --foreign Makefile
+cd . && autoconf
+autoconf: Undefined macros:
+configure.in:145:AC_FUNC_FORK
+configure.in:147:AC_FUNC_MALLOC
+configure.in:177:AC_CONFIG_FILES([Makefile])
+configure.in:3:AC_CONFIG_SRCDIR(honeyd.c)
+make: *** [configure] Error 1
+</pre>
+</dd></dl>
+<p>
+To fix this you need to install a newer version of autoconf.  I do not
+know why automake causes everything to be regenerated.
+</a><p>
+<a name="personalities">
+<h3>Why does Honeyd not know any personalities?</h3>
+When starting honeyd on the sample configuration file, you get the
+following error:
+<dl><dd><pre>
+config.sample:2: Unknown personality "AIX 4.0 - 4.2"
+config.sample:4: Unknown personality "AIX 4.0 - 4.2"
+honeyd: parsing configuration file failed
+</pre></dd></dl>
+This means that you did not specify the correct name of the
+Fingerprint in your configuration file.  You should check check the <b>Fingerprint:</b> line in
+the Nmap database and make sure that the Honeyd's configuration matches that
+name precisely.  To get a list of fingerprints, execute the following command:
+<dl><dd><pre>
+grep "^Fingerprint" nmap.prints | more
+</pre></dd></dl>
+<p>
+It is also possible that you did not install the nmap fingerprint database.
+In that case, you need to specify a fingerprint file on the command
+line.  Start honeyd like this:
+<dl><dd><pre>
+./honeyd -d -p nmap.prints -f config.sample -i fxp0
+</pre></dd></dl>
+</a><p>
+<a name="windows_port">
+<h3>Is there a Windows version of Honeyd?</h3>
+Honeyd 0.5 has been ported to Windows by Mike Davis.  See also,
+<a href="#windows">Why does Honeyd 0.5 running on Windows fail to detect the network interface?</a>.
+</a><p>
+<a name="no_answer">
+<h3>Honeyd does not seem to answer to any packets.  What is going wrong?</h3>
+Honeyd does not intercept any network traffic.  It is your
+responsibility to direct network traffic towards the Honeyd machine.
+<p>
+There are three different methods to direct traffic to Honeyd:
+<ul>
+<li>Add a route on your router that directs parts of your network to Honeyd.</li>
+<li>Use proxy-arp so that your hosts answers arp requests for IP addresses that Honeyd should control.</li>
+<li>Use arpd to get Honeyd to respond to all unused IP addresses on your network.  This often causes DHCP to stop working.</li>
+</ul>
+</a><p>
+<a name="localhost">
+<h3>How do I test Honeyd without a network?</h3>
+Since Honeyd 0.4, it is possible to interact with Honeyd over the
+software loopback network interface.
+<p>
+Use <a href="config/config.localhost">config.localhost</a>, and type the following
+commands to start Honeyd:
+<dl><dd><pre>
+$ route -n add -net 10.0.0.0/8 127.0.0.1
+$ ./honeyd -d -p nmap.prints -f config.localhost -i lo0 10.0.0.0/8
+</pre></dd></dl>
+Now, it is possible to use commands like
+<dl><dd><pre>
+$ traceroute -n 10.3.0.10
+</pre></dd></dl>
+or nmap, etc.
+<p>
+On a Linux system, the route command might have to look like:
+<dl><dd><pre>
+$ route -n add -net 10.0.0.0/8 lo0
+</pre></dd></dl>
+</a><p>
+<a name="existing">
+<h3>Is it possible to run Honeyd on an exisiting IP address?</h3>
+Honeyd normally requires its own IP address space.  If only one
+IP address is available on a dial-up modem or DSL line, it is
+still possible to use Honeyd for certain ports by enabling NAT.
+<p>
+Use your NAT (iptables, ipf, pf, etc.) to forward traffic to
+a Honeyd machine running behind the NAT on a private IP address
+space.  The traffic is forwarded by port redirection, <em>i.e.</em>
+a port for the one existing IP address is redirected to the virtual
+IP address of a Honeyd host and a corresponding port on that virtual
+machine.
+</a><p>
+<a name="networking">
+<h3>How do I use Honeyd's networking features?</h3>
+For sample configurations, you can check out <a href="http://www.honeyd.org/configuration.php">http://www.honeyd.org/configuration.php</a>.  A tutorial
+for using Honeyd to simulate routers and virtual networks is available at
+<a href="http://www.paladion.net/papers/simulating_networks_with_honeyd.pdf">http://www.paladion.net/papers/simulating_networks_with_honeyd.pdf</a>.
+</a><p>
+<a name="logformat">
+<h3>How do I interpret the fields in Honeyd's packet log?</h3>
+The <b>-l</b> option in Honeyd creates a flow log for all
+connections and packet seen by Honeyd.  Example, entries look
+like this:
+<dl><dd><pre>
+2004-01-07-14:36:58.7132 tcp(6) - 252.214.169.203 2064 192.168.27.180 21: 48 S [MacOS 8.0-8.6 OTTCP]
+2004-01-07-15:26:40.0209 tcp(6) - 244.233.22.102 61891 172.162.8.180 21: 60 S [FreeBSD 5.0-5.1 ]
+2004-01-07-16:48:30.1212 tcp(6) S 192.168.21.135 33395 172.162.8.91 80 [Linux 2.6 ]
+2004-01-07-16:48:41.4929 tcp(6) S 10.173.240.67 22110 192.168.14.178 81 [Windows XP SP1]
+</pre></dd></dl>
+<ul>
+<li>
+The first field contains the time that the event happened in sub-second
+resolution. </li>
+<li>The second field lists the protocol, for example <b>tcp</b>, <b>udp</b>,
+or <b>icmp</b>.</li>
+<li>The third field may either be <b>S</b> which indicates the start of
+a new connection, <b>E</b> the end of a connection or <b>-</b> if a
+packet does not belong to any connection.  For <b>E</b>, Honeyd logs
+the amount of data received and sent at the end of the line.</li>
+<li>The next four fields represent the connection four tuple:
+&lt;src ip, src port, dst ip, dst port&gt;.</li>
+<li>For TCP packets that are not part of a connection, Honeyd logs
+the packet size and TCP flags after the colon.</li>
+<li>Comments like operating system identification via passive fingerprinting
+are appended to the end of the line.</li>
+</ul>
+</a><p>
+<a name="interfaces">
+<h3>How do I make Honeyd listen to network traffic on specified interfaces?</h3>
+All you need to do is run Honeyd with a config file and specify the
+interfaces on which Honeyd should listen, for example
+<dl><dd><pre>
+./honeyd -f honeyd.conf -i eth1 -i eth2
+</pre></dd></dl>
+</a><p>
+<a name="badaddr">
+<h3>Why does Honeyd terminate with "bad interface configuration: not IP?"</h3>
+Honeyd analyzes the address type of its listening interface.  If no
+IP address has been assigned to the interface, it will generate
+the error message: <em>bad interface configuration: not IP</em>.
+<p>
+Assign an IP address to the interface to solve this problem.
+</a><p>
+<a name="warning">
+<h3>Why do I receive warnings about 'Impossible SI range in Class fingerprint' when running Honeyd?</h3>
+These warnings result from inconsistent entries in Nmap's fingerprint
+database.  It is possible that the TCP Sequence number generator and
+the corresponding numerical ranges in the Fingerprint do not agree.
+<p>
+It is safe to ignore these warnings.
+</a><p>
+<a name="windows">
+<h3>Why does Honeyd 0.5 running on Windows fail to detect the network interface?</h3>
+Some people have been getting the following warning when running Honeyd 0.5
+on Windows:
+<dl><dd><pre>
+intf_get: no such device or address
+</pre></dd></dl>
+This problem might result from running vmware and can be resolved by
+downloading a new zip file of <a href="http://www.citi.umich.edu/u/provos/honeyd/honeyd-0.5a-win32.zip">Honeyd 0.5-win32</a>.  The <a href="http://www.securityprofiling.com/honeyd/honeyd.shtml">Windows port of Honeyd 0.5</a> was done by Mike Davis.
+</a><p>
+<a name="autoconf">
+<h3>I think that I have installed the latest version of autoconf.  Which version do I need?</h3>
+You need at least the following version:
+<dl><dd><pre> 
+$ autoconf --version
+autoconf (GNU Autoconf) 2.52
+Written by David J. MacKenzie.
+</pre></dd></dl> 
+Future releases of honeyd will hopefully work again with the older version
+of autoconf.
+</a><p>
+<a name="solaris">
+<h3>When compiling Honeyd under Solaris, I get duplicated symbols.  What do I need to do?</h3>
+Sometimes, libpcap seems to be linked with exported yacc symbols:
+<dl><dd><pre>
+gcc  -Wall -g  -o honeyd  honeyd.o command.o parse.o lex.o config.o
+personality.o util.o ipfrag.o router.o tcp.o udp.o -L/usr/local/lib -levent
+-L/usr/local/lib -lpcap -L/usr/local/lib -ldnet
+parse.o: Definition of symbol `_yylhs' (multiply defined)
+parse.o: Definition of symbol `_yylen' (multiply defined)
+</pre></dd></dl>
+Recompiling pcap with bison instead of yacc seems to solve this problem.
+This problem has been solved in recent Honeyd releases.
+</a><p>
+<p>
+<hr>
+If your question is not answered here, please let me know.
+</div>
+</td><td valign="top" bgcolor="#eeeeee">
+&nbsp;
+</td></tr>
+<!-- END: main.tpl -->
+<!-- NAME: footer.tpl -->
+<tr><td class="footer" bgcolor="#eeeeee" colspan="4">
+<hr>
+<center>
+<font size="-1">
+Last modified: December 20 2004 09:17:55 AM
+<br>
+Copyright (c) 1999-2004 by <a href="http://www.citi.umich.edu/u/provos/">Niels Provos</a><br>
+Don't access my <a href="/xxx.music/">pirated music</a>.
+</font><br>
+</center>
+</td></tr>
+</table>
+</body>
+</html>
+<!-- END: footer.tpl -->

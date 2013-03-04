@@ -1,0 +1,93 @@
+#! /bin/sh
+# postinst script for honeyd
+
+set -e
+
+# Configurable information
+HONEYUSERGROUP="honeyd"
+HONEYUSER="honeyd"
+# Set to empty if you want it to be set by --system
+#HONEYUID=400
+HONEYUID=
+# Set to empty if you want it to be set by --system
+#HONEYGID=400
+HONEYGID=
+HONEYHOME=/var/log/honeypot
+__created_user=0
+__created_group=0
+
+# TODO: Consider adding a debconf question if the HONEYUSERGROUP or
+# HONEYUSER exist. 
+
+case "$1" in
+    configure)
+    	if ! getent group | grep -q "^$HONEYUSERGROUP:" ; then
+    	  echo -n "Adding group $HONEYUSERGROUP.."
+	  if [ -n "$HONEYGID" ] ; then
+	  addgroup --quiet --system --gid $HONEYGID $HONEYUSERGROUP
+	  else
+	  addgroup --quiet --system $HONEYUSERGROUP
+	  fi
+	  echo "..done"
+	  __created_group=1
+	fi
+    	if ! getent passwd | grep -q "^$HONEYUSER:"; then
+    	  echo -n "Adding user $HONEYUSER.."
+	  if [ -n "$HONEYUID" ] ; then
+	  adduser --quiet --system --home $HONEYHOME \
+			--gecos "Honeyd daemon" \
+			--disabled-login \
+			--disabled-password \
+			--no-create-home \
+			--ingroup $HONEYUSERGROUP \
+			--shell /bin/false \
+			--uid $HONEYUID \
+			$HONEYUSER
+	  else
+	  adduser --quiet --system --home $HONEYHOME \
+			--gecos "Honeyd daemon" \
+			--disabled-login \
+			--disabled-password \
+			--no-create-home \
+			--ingroup $HONEYUSERGROUP \
+			--shell /bin/false \
+			$HONEYUSER
+	  fi
+	  echo "..done"
+	  __created_user=1
+	fi
+
+	# TODO: This should only change ownerships if
+	# we have created the user, so we should check if it's 
+	# within the range given to admin users...
+        HONEYUID=`getent passwd |grep "^$HONEYUSER:" | awk -F : '{print $3}'`
+   	HONEYGID=`getent passwd |grep "^$HONEYUSER:" | awk -F : '{print $4}'`
+	# Setup the $HONEYHOME directory
+	for honeydir in $HONEYHOME ; do
+		if [ -d "$honeydir" ] && [ -n "$HONEYUID" ] && \
+			[ -n "$HONEYGID" ] ; then
+			__currentowner=`stat -c "%U" $honeydir`
+			if  [ "$__currentowner" != "$HONEYUSER" ]; then
+ 	  			echo -n "Granting ownership of $honeydir to $HONEYUSER.."
+				chown $HONEYUID:root $honeydir 
+			        chmod 0750 $honeydir 
+				echo "...done"
+			fi
+		fi
+	done
+
+    ;;
+
+    abort-upgrade|abort-remove|abort-deconfigure)
+
+    ;;
+
+    *)
+        echo "postinst called with unknown argument \`$1'" >&2
+        exit 1
+    ;;
+esac
+
+#DEBHELPER#
+
+exit 0

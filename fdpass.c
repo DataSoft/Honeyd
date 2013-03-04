@@ -98,7 +98,7 @@ send_fd(int socket, int fd, void *base, size_t len)
 }
 
 int
-receive_fd(int socket, void *base, size_t *len)
+receive_fd(int socket, void *base, socklen_t *len)
 {
 #if defined(HAVE_RECVMSG) && (defined(HAVE_ACCRIGHTS_IN_MSGHDR) || defined(HAVE_CONTROL_IN_MSGHDR))
 	struct msghdr msg;

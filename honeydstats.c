@@ -278,8 +278,7 @@ signature_process(struct evbuffer *evbuf)
 
 	if (checkpoint_fd != -1) {
 		evbuffer_drain(checkpoint_evbuf, -1);
-		evbuffer_add(checkpoint_evbuf,
-		    EVBUFFER_DATA(evbuf), EVBUFFER_LENGTH(evbuf));
+		evbuffer_add_buffer(checkpoint_evbuf, evbuf);
 	}
 
 	if (evtag_unmarshal_string(evbuf, SIG_NAME, &username) == -1)
@@ -303,8 +302,8 @@ signature_process(struct evbuffer *evbuf)
 		goto out;
 
 	/* Validate signature */
-	if (!hmac_verify(&user->hmac, digest, sizeof(digest),
-		EVBUFFER_DATA(tmp), EVBUFFER_LENGTH(tmp))) {
+	if (!hmac_verify(&user->hmac, digest, sizeof(digest), evbuffer_pullup(tmp, -1), evbuffer_get_length(tmp)))
+	{
 		syslog(LOG_WARNING, "Bad signature on data from user '%s'",
 		    username);
 		goto out;
@@ -352,7 +351,7 @@ signature_length(struct evbuffer *evbuf)
 	}
 
 	/* name */
-	if (evtag_peek_length(tmp, &tlen) == -1 || EVBUFFER_LENGTH(tmp) < tlen)
+	if (evtag_peek_length(tmp, &tlen) == -1 || evbuffer_get_length(tmp) < tlen)
 	{
 		evbuffer_free(tmp);
 		return -1;
@@ -362,7 +361,7 @@ signature_length(struct evbuffer *evbuf)
 	evbuffer_drain(tmp, tlen);
 
 	/* signature */
-	if (evtag_peek_length(tmp, &tlen) == -1 || EVBUFFER_LENGTH(tmp) < tlen)
+	if (evtag_peek_length(tmp, &tlen) == -1 || evbuffer_get_length(tmp) < tlen)
 	{
 		evbuffer_free(tmp);
 		return -1;
@@ -372,7 +371,7 @@ signature_length(struct evbuffer *evbuf)
 	evbuffer_drain(tmp, tlen);
 
 	/* data */
-	if (evtag_peek_length(tmp, &tlen) == -1 || EVBUFFER_LENGTH(tmp) < tlen)
+	if (evtag_peek_length(tmp, &tlen) == -1 || evbuffer_get_length(tmp) < tlen)
 	{
 		evbuffer_free(tmp);
 		return -1;
@@ -400,7 +399,7 @@ checkpoint_replay(int fd)
 		int length;
 
 		while ((length = signature_length(evbuf)) != -1 &&
-		    EVBUFFER_LENGTH(evbuf) >= length) {
+		    evbuffer_get_length(evbuf) >= length) {
 				signature_process(evbuf);
 		}
 	}

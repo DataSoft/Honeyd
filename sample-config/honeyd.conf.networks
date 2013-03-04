@@ -1,0 +1,208 @@
+
+           ###      Honeyd Configuration File    ###
+           ###   Sample Network Template Ver 0.8 ###
+                
+             # Last Updated: January 23, 2013 #
+
+#####################################################################
+###                                                               ###
+### This sample network configuration template builds a virtual   ###
+### network step-by-step. The network we simulate has multiple    ###
+### hops, two entry points, a GRE tunnel to a remote location     ###
+### and integrates external physical hosts to the virtual network.### 
+### The template builds the network in the accompanying paper:    ###
+### "Simulating Networks with Honeyd". The latest version of the  ###
+### paper is available at:                                        ###
+### www.paladion.net/papers/simulating_networks_with_honeyd.pdf   ###
+###                                                               ###
+###                                                               ###
+### Authors:    Roshen Chandran, Sangita Pakala                   ###
+###	        Paladion Networks [http://www.paladion.net]       ###
+###                                                               ###
+### Thanks to:  Niels Provos, Lance Spitzner, Ed Balas,           ###
+###             Laurent Oudot                                     ###
+#####################################################################
+
+
+#####################################################################
+### Start by creating an entry router for the network. Then add   ###
+### some IP addresses that are directly reachable from the router.###
+### Then add a new router connected to the first, and the IPs     ###
+### directly reachable from that. This is the essential strategy  ###
+### of building a virtual network.                                ###
+###                                                               ###
+### On the desktops in the LAN, point the default gateway to the  ###
+### entry router, or add a route to the virtual network via the   ###
+### entry router. Run arpd to respond to requests for 10.0.0.0/24 ###
+### network.                                                      ###
+###                                                               ###
+#####################################################################
+
+
+### To create the router at the entry point, use the 
+### route entry command and specify the IP address of 
+### the router and the network reachable through it.
+
+route entry 10.0.0.100 network 10.0.0.0/16
+
+ 
+### To specify the IP addresses directly reachable from 
+### a router, use the route link configuration. In the 
+### example below, we specify that the 10.0.1.0/24 
+### network is directly reachable from the 10.0.0.100 router.
+
+route 10.0.0.100 link 10.0.1.0/24
+
+
+### Add a new router connected to an existing router 
+### in the network by using the route add net 
+### directive. Specify the network range that can be 
+### reached by the new router and the IP address of the 
+### new router. In the example below, we add  
+### 10.0.1.100 as a new router that serves the 
+### 10.1.0.0/16 network and connected to the first 
+### router 10.0.0.100
+
+route 10.0.0.100 add net 10.1.0.0/16 10.0.1.100
+
+
+### Specify the range of IP addresses that are directly 
+### reachable from the new router with the route link 
+### configuration. Here, we indicate that 10.1.0.0/16 
+### is directly accessible from the router 10.0.1.100 we 
+### newly added
+
+route 10.0.1.100 link 10.1.0.0/16
+
+
+
+#####################################################################
+### Here we add another router connected to 10.0.1.100            ###
+### that can reach the 10.1.1.0/24 network. The new               ###
+### router takes the IP 10.1.0.100. Additionally, we              ### 
+### also specify the network characteristics of that              ### 
+### link using the latency, loss and bandwidth keywords.          ###
+#####################################################################
+
+route 10.0.1.100 add net 10.1.1.0/24 10.1.0.100 latency 50ms loss 0.1 bandwidth 1Mbps
+
+
+### With the route link configuration, we next 
+### specify that the 10.1.1.0/24 network is directly 
+### accessible from the 10.1.0.100 router.
+
+route 10.1.0.100 link 10.1.1.0/24
+
+
+
+#####################################################################
+### External physical machines can be integrated into the         ### 
+### virtual network topology of the honeynet. The bind            ###
+### to interface configuration is used to attach external         ### 
+### machines into the network. In our example here,               ###
+### the external machine at 10.1.1.53 is integrated               ###
+### into the virtual network through eth0.                        ###
+#####################################################################
+
+bind 10.1.1.53 to eth0
+
+
+
+#####################################################################
+### Multiple entry points may be defined in Honeyd for the        ###
+### virtual network by using additional route entry               ###
+### configurations. Here we add 10.0.0.200 as a new entry         ###
+### router and then define an entire network behind it.           ###
+#####################################################################
+
+route entry 10.0.0.200 network 10.2.0.0/16
+route 10.0.0.200 link 10.2.0.0/24
+route 10.0.0.200 add net 10.2.1.0/24 10.2.0.100
+route 10.2.0.100 link 10.2.1.0/24
+
+
+
+#####################################################################
+### We can setup GRE tunnels to other networks located across     ###
+### a WAN or the Internet by using the tunnel keyword. For        ###
+### simplicity we first create a dedicated router 172.20.254.1    ###
+### for the GRE tunneling. The 10.3.2.0/24 network containing     ###
+### honeypots is directly connected to this virtual router.       ###
+###                                                               ###
+### To setup a tunnel to the 10.3.1.0/24 network located          ###
+### across the WAN, we setup a tunnel with 172.20.254.1 and       ### 
+### 172.30.254.1 as the points of termination. The destination    ###
+### router should know how to decapsulate the GRE packets and     ###
+### route them to the 10.3.1.0/24 network. The source and         ###
+### destination are specified after the tunnel keyword of the     ###
+### route add net configuration line as follows.                  ###
+#####################################################################
+
+### Here're the configuration lines for setting up a GRE tunnel
+### Ensure that the remote router is setup for terminating the
+### tunnel. In the commented lines below, 172.30.254.1 is the 
+### remote router that terminates the tunnel. To setup your 
+### GRE tunnel, please use the appropriate IP addresses for your
+### network and uncomment the lines.
+
+#route entry 172.20.254.1 network 10.3.2.0/24
+#route 172.20.254.1 link 10.3.2.0/24
+#route 172.20.254.1 add net 10.3.1.0/24 tunnel 172.20.254.1 172.30.254.1
+
+
+
+#####################################################################
+### IP addresses are assigned to virtual hosts that we            ###
+### want to simulate within Honeyd with the bind                  ### 
+### configuration. Here, we bind the honeypot IPs                 ###
+### to a template called windows that we have defined.            ###
+#####################################################################
+
+### Windows NT4 web server
+create windows
+set windows personality "Windows NT 4.0 Server SP5-SP6"
+add windows tcp port 80 "perl scripts/iis-0.95/iisemul8.pl"
+add windows tcp port 139 open
+add windows tcp port 137 open
+add windows udp port 137 open
+add windows udp port 135 open
+set windows default tcp action closed
+set windows default udp action closed
+
+bind 10.0.1.51 windows
+bind 10.0.1.52 windows
+bind 10.1.0.51 windows
+bind 10.1.0.52 windows
+bind 10.1.1.51 windows
+bind 10.1.1.52 windows
+bind 10.2.0.51 windows
+bind 10.2.0.52 windows
+bind 10.2.1.51 windows
+bind 10.2.1.52 windows
+bind 10.3.2.51 windows
+bind 10.3.2.52 windows
+
+
+
+#####################################################################
+### The routers we have created in the virtual network            ###
+### also need to be bound to templates to model their             ###
+### behavior. We have created a template called router            ###
+### and bound the router IP addresses to that template.           ###
+#####################################################################
+
+### Cisco Router
+create router
+set router personality "Cisco IOS 11.3 - 12.0(11)"
+set router default tcp action closed
+set router default udp action closed
+add router tcp port 23 "/usr/bin/perl scripts/router-telnet.pl"
+set router uid 32767 gid 32767
+set router uptime 1327650
+
+bind 10.0.0.100 router
+bind 10.0.1.100 router
+bind 10.1.0.100 router
+bind 10.0.0.200 router
+bind 10.2.0.100 router
+bind 172.20.254.1 router

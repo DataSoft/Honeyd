@@ -55,6 +55,7 @@
 #include <event.h>
 #include <evdns.h>
 
+#include "honeydstats.h"
 #include "tagging.h"
 #include "histogram.h"
 #include "keycount.h"
@@ -67,7 +68,6 @@ char *spammer_report_file = NULL;
 char *country_report_file = NULL;
 
 static int checkpoint_doreplay;		/* externally set by honeydstats */
-static struct event ev_analyze;
 
 struct kctree oses;
 struct kctree ports;
@@ -288,12 +288,11 @@ void
 analyze_init(void)
 {
 	struct timeval tv;
-
-	evtimer_set(&ev_analyze, analyze_report_cb, &ev_analyze);
-
 	timerclear(&tv);
 	tv.tv_sec = ANALYZE_REPORT_INTERVAL; 
-	evtimer_add(&ev_analyze, &tv);
+
+	struct event *ev_analyze = evtimer_new(stats_libevent_base, analyze_report_cb, NULL);
+	evtimer_add(ev_analyze, &tv);
 
 	SPLAY_INIT(&oses);
 	SPLAY_INIT(&ports);
@@ -823,13 +822,14 @@ analyze_print_report()
 }
 
 void
-analyze_report_cb(int fd, short what, void *arg)
+analyze_report_cb(int fd, short what, void *unused)
 {
-	struct event *ev = arg;
 	struct timeval tv;
 
 	timerclear(&tv);
 	tv.tv_sec = ANALYZE_REPORT_INTERVAL;
+
+	struct event *ev = evtimer_new(stats_libevent_base, analyze_report_cb, NULL);
 	evtimer_add(ev, &tv);
 
 	analyze_print_report();

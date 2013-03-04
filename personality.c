@@ -70,7 +70,6 @@ int npersons;
 
 /* ET - global from honeyd.c */
 struct personate person_drop = {};
-static struct event personality_time_ev;
 static struct timeval tv_periodic;
 
 SPLAY_GENERATE(perstree, personality, node, perscompare);
@@ -79,15 +78,16 @@ SPLAY_GENERATE(perstree, personality, node, perscompare);
 SPLAY_GENERATE(xp_fprint_tree, xp_fingerprint, node, xp_fprint_compare);
 
 static void
-personality_time_evcb(int fd, short what, void *arg)
+personality_time_evcb(int fd, short what, void *unused)
 {
-	struct event *ev = arg;
 	struct timeval tv;
 
 	gettimeofday(&tv_periodic, NULL);
 
 	timerclear(&tv);
 	tv.tv_usec = 100000;	/* every 100 ms */
+
+	struct event *ev = evtimer_new(libevent_base, personality_time_evcb, NULL);
 	evtimer_add(ev, &tv);
 }
 
@@ -104,9 +104,7 @@ personality_init(void)
 	SPLAY_INIT(&personalities);
 
 	/* Start a timer that keeps track of the current system time */
-	evtimer_set(&personality_time_ev,
-	    personality_time_evcb, &personality_time_ev);
-	personality_time_evcb(-1, EV_TIMEOUT, &personality_time_ev);
+	personality_time_evcb(-1, EV_TIMEOUT, NULL);
 }
 
 struct personality *

@@ -34,6 +34,8 @@
 #define _STATS_
 
 #include <sha1.h>
+#include "honeyd.h"
+#include "tagging.h"
 
 struct record;
 
@@ -82,7 +84,7 @@ struct stats {
 	struct hashq hashes;
 	struct evbuffer *evbuf;
 
-	struct event ev_timeout;
+	struct event *ev_timeout;
 
 	uint8_t isactive:1,
 		needelete:1,
@@ -129,6 +131,8 @@ void stats_free(struct stats *);
 
 void stats_compress(struct evbuffer *evbuf);
 int stats_decompress(struct evbuffer *evbuf);
+
+void stats_measure_cb(int fd, short what, void *arg);
 
 void hmac_init(struct hmac_state *, const char *);
 int hmac_verify(const struct hmac_state *, u_char *sign, size_t signlen,
