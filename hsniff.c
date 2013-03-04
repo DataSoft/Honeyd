@@ -518,7 +518,6 @@ int
 main(int argc, char *argv[])
 {
 	extern int interface_dopoll;
-	struct event sigterm_ev, sigint_ev;
 	char *dev[HSNIFF_MAX_INTERFACES];
 	char **orig_argv;
 	char *osfp = PATH_HONEYDDATA "/pf.os";
