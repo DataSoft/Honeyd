@@ -35,6 +35,7 @@ hsniff
 *.rar
 *.tar
 *.zip
+*.orig
 
 # Logs and Databases #
 ######################
