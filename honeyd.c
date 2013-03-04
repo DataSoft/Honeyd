@@ -3483,8 +3483,6 @@ main(int argc, char *argv[])
 			break;
 		case 'm':
 			config.nmapMac = optarg;
-			printf("nmac: %s\n",config.nmapMac);
-
 			break;
 		case 0:
 			/* long option handled -- skip this one. */
