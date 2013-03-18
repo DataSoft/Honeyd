@@ -33,7 +33,7 @@ tar --exclude-vcs -zcf ../$PACKAGE.orig.tar.gz ../$PACKAGE
 cd ../$PACKAGE
 
 #Produce the debian package
-dpkg-buildpackage -us -uc
+dpkg-buildpackage -k7F9F2E1F
 
 # Use this to make a signed source package for the PPA
 #debuild -S -k7F9F2E1F
