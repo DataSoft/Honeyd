@@ -4,7 +4,7 @@ import socket
 import os
 
 sys.path.append("/usr/share/honeyd/scripts/lib/")
-from names import GetAllocatedName, IsAllocated, AddNameAllocation
+from names import AddNameAllocation
 
 
 #Decodes a "First Level" encoded string
@@ -29,11 +29,9 @@ fd = open(sys.argv[2])
 names_file = fd.readline().split(" ", 1)[1].rstrip("\n")
 names_path = honeyd_home + names_file
 
-our_name = GetAllocatedName(names_path, our_IP).upper()
+our_name = AddNameAllocation(names_path, our_IP).upper()
 if(our_name == ""):
-	our_name = AddNameAllocation(names_path, our_IP).upper()
-	if(our_name == ""):
-		sys.exit(0)
+	sys.exit(0)
 
 #Parse the NBNS header
 

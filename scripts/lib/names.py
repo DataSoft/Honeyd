@@ -1,45 +1,60 @@
+import sqlite3
 
-#Returns the name that our IP address is allocated to in the names_alloc file
+#Returns the name that our IP address is allocated to
 #	returns empty string if not present
 def GetAllocatedName(names_path, our_IP):
-	try:
-		fd = open(names_path + "_alloc")
-		line = fd.readline()
-		while line:
-			if(line.split(",", 1)[1] == our_IP):
-				return line.split(",", 1)[0]
-			line = fd.read
+	conn = InitializeDB(names_path)
+	cursor = conn.cursor()
+	cursor.execute("SELECT * FROM allocs WHERE IP=?", [our_IP])
+	row = cursor.fetchone()
+	if(row is None):
 		return ""
-	except IOError:
-		return ""
+	return row[1]
 
-#Searches for the given name in the names_alloc file
-#	returns true is present, false if not
-def IsAllocated(names_path, name):
-	try:
-		fd = open(names_path + "_alloc")
-		line = fd.readline()
-		while line:
-			if(line.split(",", 1)[0] == name):
-				return True
-			line = fd.readline()
-		return False
-	except IOError:
-		return False
-
-#Picks the next name from the names file and allocates it to ourself
+#Picks the next name from the names db and allocates it to ourself
 #	by adding an entry in the names_alloc file
 #	returns the chosen name on success, empty string on failure
 def AddNameAllocation(names_path, our_IP):
-	try:
-		fd = open(names_path)
-		line = fd.readline()
-		while line:
-			if not IsAllocated(names_path, line):
-				writeFD = open(names_path + "_alloc", "a")
-				writeFD.write(line.rstrip('\n') + "," + our_IP)
-				return line
-			line = fd.readline()
+	conn = InitializeDB(names_path)
+	cursor = conn.cursor()
+
+	#Check if we've already got a name for this IP
+	name = GetAllocatedName(names_path, our_IP)
+	if(name != ""):
+		return name
+		
+	#Get an unused name
+	cursor.execute("SELECT * FROM allocs WHERE IP is NULL")
+	row = cursor.fetchone()
+	if row is None:
 		return ""
-	except IOError:
-		return ""
+	name = row[1]
+	cursor.execute("UPDATE allocs SET IP=? WHERE name=?", [our_IP, name])
+	conn.commit()
+	return name
+
+#Add a list of new names to the names db
+def AddNames(names_path, names):
+	conn = InitializeDB(names_path)
+	cursor = conn.cursor()
+	for name in names:
+		try:
+			cursor.execute("INSERT INTO allocs(name) VALUES (?)", [name])
+		except sqlite3.IntegrityError:
+			pass
+	conn.commit()
+
+def InitializeDB(names_path):
+	conn = sqlite3.connect(names_path)
+	cursor = conn.cursor()
+	cursor.execute("select tbl_name from sqlite_master")
+	list_tables = cursor.fetchone()
+	if list_tables is None:
+		cursor.execute("CREATE TABLE allocs (IP text, name text UNIQUE)")
+		return conn
+	list_tables = list_tables[0]
+	if("allocs" not in list_tables):
+		cursor.execute("CREATE TABLE allocs (IP text, name text UNIQUE)")
+	conn.commit()
+	return conn
+

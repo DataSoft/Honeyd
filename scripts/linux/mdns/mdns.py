@@ -7,7 +7,7 @@ import binascii
 from pprint import pprint
 
 sys.path.append("/usr/share/honeyd/scripts/lib/")
-from names import GetAllocatedName, IsAllocated, AddNameAllocation
+from names import AddNameAllocation
 
 import dns
 
@@ -24,12 +24,10 @@ fd = open(sys.argv[2])
 names_file = fd.readline().split(" ", 1)[1].rstrip("\n")
 names_path = honeyd_home + names_file
 
-our_name = GetAllocatedName(names_path, our_IP).upper()
+our_name = AddNameAllocation(names_path, our_IP).upper()
 if(our_name == ""):
-	our_name = AddNameAllocation(names_path, our_IP).upper()
-	if(our_name == ""):
-		sys.stderr.write("Unable to get mdns name")
-		sys.exit(0)
+	sys.stderr.write("Unable to get mdns name")
+	sys.exit(0)
 hostname = our_name + ".local"
 
 
