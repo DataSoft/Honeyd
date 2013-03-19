@@ -9,7 +9,7 @@ def GetAllocatedName(names_path, our_IP):
 	row = cursor.fetchone()
 	if(row is None):
 		return ""
-	return row[1]
+	return row[1].encode('ascii','ignore')
 
 #Picks the next name from the names db and allocates it to ourself
 #	by adding an entry in the names_alloc file
@@ -31,7 +31,7 @@ def AddNameAllocation(names_path, our_IP):
 	name = row[1]
 	cursor.execute("UPDATE allocs SET IP=? WHERE name=?", [our_IP, name])
 	conn.commit()
-	return name
+	return name.encode('ascii','ignore')
 
 #Add a list of new names to the names db
 def AddNames(names_path, names):
