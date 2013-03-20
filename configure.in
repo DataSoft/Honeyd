@@ -71,6 +71,9 @@ AC_ARG_WITH(libpcap,
   elif test -f /usr/include/pcap/pcap.h; then
      PCAPINC="-I/usr/include/pcap"
      PCAPLIB="-lpcap"
+  elif test -f /usr/local/include/pcap/pcap.h; then
+     PCAPINC="-I/usr/local/include/pcap"
+     PCAPLIB="-lpcap"
   elif test -f /usr/include/pcap.h; then
      PCAPLIB="-lpcap"
   else
