@@ -2593,12 +2593,6 @@ handle_udp_packet(struct template *tmpl, void *wrapper)
 
 		if (!isBroadcast)
 			return 0;
-
-		/* Replace the broadcast address with our template address */
-		// xxx: This means scripts can't tell if the packet was to a bcast address or not. Does it matter for UDP?
-		if (isBroadcast) {
-			ip->ip_dst = templateIp;
-		}
 	}
 
 
@@ -2607,6 +2601,8 @@ handle_udp_packet(struct template *tmpl, void *wrapper)
 	 * that we can look at potential flags like local origination.
 	 */
 	honeyd_setudp(&honeyd_udp, ip, udp, INITIATED_BY_EXTERNAL);
+	if (isBroadcast)
+		honeyd_udp.conhdr.ip_dst = templateIp;
 	con = (struct udp_con *)SPLAY_FIND(tree, &udpcons, &honeyd_udp.conhdr);
 
 	hooks_dispatch(ip->ip_p, HD_INCOMING,
@@ -2684,6 +2680,8 @@ handle_udp_packet(struct template *tmpl, void *wrapper)
 
  justlog:
 	honeyd_setudp(&honeyd_udp, ip, udp, INITIATED_BY_EXTERNAL);
+	if (isBroadcast)
+		honeyd_udp.conhdr.ip_dst = templateIp;
 	honeyd_log_probe(honeyd_logfp, IP_PROTO_UDP, &honeyd_udp.conhdr,
 		pktlen, 0, NULL);
 	return 0;
