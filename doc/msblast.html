@@ -221,8 +221,8 @@ create default
 set default personality "Windows XP Pro"
 add default tcp port 135 open
 add default tcp port 4444 "/bin/sh scripts/4444.sh $ipsrc $ipdst"
-set default default tcp action block
-set default default udp action block
+set default default tcp action closed
+set default default udp action closed
 set default uid 32767 gid 32767
 </pre>
 </td></tr>

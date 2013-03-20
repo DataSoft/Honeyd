@@ -1,0 +1,11 @@
+Document: honeyd
+Title: Debian honeyd Frequently Asked Questions
+Author: Nivel Provos
+Abstract: This document provides some of the
+ the frequently encountered problems when running Honeyd.
+Section: Network/Monitoring
+
+
+Format: HTML
+Index: /usr/share/doc/honeyd-common/faq.html
+Files: /usr/share/doc/honeyd-common/faq.html

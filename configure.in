@@ -5,7 +5,7 @@ AC_CONFIG_SRCDIR(honeyd.c)
 AC_CANONICAL_SYSTEM
 AC_CANONICAL_HOST
 
-AM_INIT_AUTOMAKE(honeyd, 1.6a)
+AM_INIT_AUTOMAKE(honeyd, 1.6b)
 AM_CONFIG_HEADER(config.h)
 AM_MAINTAINER_MODE
 
@@ -70,6 +70,9 @@ AC_ARG_WITH(libpcap,
      PCAPLIB="-L${prefix}/lib -lpcap"
   elif test -f /usr/include/pcap/pcap.h; then
      PCAPINC="-I/usr/include/pcap"
+     PCAPLIB="-lpcap"
+  elif test -f /usr/local/include/pcap/pcap.h; then
+     PCAPINC="-I/usr/local/include/pcap"
      PCAPLIB="-lpcap"
   elif test -f /usr/include/pcap.h; then
      PCAPLIB="-lpcap"

@@ -26,19 +26,19 @@ add default udp port 135 open
 ###                                                             ###
 ### Port Behavior                                               ###
 ### TCP (default is Open)                                       ###
-###  - Open:   Respond with Syn/Ack, establish connection       ###
-###  - Block:  Drop packet and do not reply                     ###
-###  - Reset:  Respond with RST                                 ###
-###  - Tarpit: Sticky connection                                ###
+###  - open:   Respond with Syn/Ack, establish connection       ###
+###  - filtered:  Drop packet and do not reply                  ###
+###  - closed:  Respond with RST                                ###
+###  - tarpit: Sticky connection                                ###
 ###                                                             ###
 ### UDP (default is Closed)                                     ###
-###  - Open:  No response                                       ###
-###  - Block: Drop packet and do not reply                      ###
-###  - Reset: Respond with ICMP port error message              ###
+###  - open:  No response                                       ###
+###  - filtered: Drop packet and do not reply                   ###
+###  - closed: Respond with ICMP port error message             ###
 ###                                                             ###
 ### ICMP (default is Open)                                      ###
-###  - Open:  Reply to ICMP packets                             ###
-###  - Block: Drop packet and do not reply                      ###
+###  - open:  Reply to ICMP packets                             ###
+###  - closed: Drop packet and do not reply                      ###
 ###################################################################
 
 ### Tarpit Template
@@ -65,7 +65,7 @@ create win2k
 set win2k personality "Windows 2000 server SP2"
 set win2k default tcp action closed
 set win2k default udp action closed
-set win2k default icmp action filtered
+set win2k default icmp action closed
 set win2k uptime 3567
 set win2k droprate in 13
 add win2k tcp port 21 "sh scripts/win32/win2k/msftp.sh $ipsrc $sport $ipdst $dport"

@@ -91,6 +91,8 @@ clone		{ return CLONE; }
 filtered		{ return FILTERED; }
 open		{ return OPEN; }
 closed		{ return CLOSED; }
+block		{return FILTERED;}
+reset		{return CLOSED;}
 default		{ return DEFAULT; }
 action		{ return ACTION; }
 set		{ return SET; }

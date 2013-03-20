@@ -424,8 +424,12 @@ set		: SET template DEFAULT PROTO ACTION action
 		/*** small patch to make sure the ethernet adress is used ***/
 		/*** even if none were set in the default template ***/
 		struct addr addr;
-		if(addr_aton($2->name, &addr) != -1)
+		struct in_addr inp;
+		if(inet_aton($2->name, &inp) != 0)
+		{
+			addr_pack(&addr, ADDR_TYPE_IP, IP_ADDR_BITS, &inp.s_addr, IP_ADDR_LEN);
 			template_post_arp($2, &addr);
+		}
 		/*** end patch ***/
 		free ($4);
 
