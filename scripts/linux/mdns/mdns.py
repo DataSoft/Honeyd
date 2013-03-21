@@ -27,7 +27,7 @@ our_name = AddNameAllocation(names_path, honeypotIp).upper()
 if(our_name == ""):
 	sys.stderr.write("Unable to get mdns name")
 	sys.exit(0)
-hostname = our_name + ".local"
+hostname = our_name + ".LOCAL"
 
 
 def reply(requestPacket):
