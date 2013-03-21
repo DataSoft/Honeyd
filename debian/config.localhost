@@ -1,0 +1,50 @@
+route entry 10.0.0.1
+route 10.0.0.1 link 10.0.0.0/24
+route 10.0.0.1 add net 10.1.0.0/16 10.1.0.1 latency 55ms loss 0.1
+route 10.0.0.1 add net 10.2.0.0/16 10.2.0.1 latency 20ms loss 0.1
+route 10.0.0.1 add net 10.3.0.0/16 10.2.0.1 latency 20ms loss 0.1
+route 10.1.0.1 link 10.1.0.0/24
+route 10.2.0.1 link 10.2.0.0/24
+route 10.2.0.1 add net 10.3.0.0/16 10.3.0.1 latency 10ms loss 0.1
+route 10.3.0.1 link 10.3.0.0/16
+
+create routerone
+set routerone personality "Cisco 7206 running IOS 11.1(24)"
+set routerone default tcp action reset
+add routerone tcp port 23 "router-telnet.pl"
+
+create routertwo
+set routertwo personality "Cisco 762 Non-IOS Software release 4.1(2) or 766 ISDN router"
+set routertwo default tcp action reset
+add routertwo tcp port 23 "scripts/router-telnet.pl"
+
+# Example of a simple host template and its binding
+create default
+set default personality "FreeBSD 2.2.1-STABLE"
+set default default tcp action reset
+add default tcp port 80 "sh scripts/web.sh"
+add default tcp port 22 "sh scripts/test.sh"
+add default tcp port 113 reset
+add default tcp port 1 reset
+
+create allopen
+set allopen personality "NetBSD 1.5.2 running on a Commodore Amiga (68040 processor)"
+set allopen default tcp action open
+add allopen tcp port 80 "sh scripts/web.sh"
+add allopen tcp port 113 reset
+add allopen tcp port 1 reset
+
+create template
+set template personality "Check Point FireWall-1 4.0 SP-5 (IPSO build)"
+add template tcp port 80 "sh scripts/web.sh"
+add template tcp port 23 block
+add template tcp port 22 "sh scripts/test.sh"
+set template default tcp action reset
+
+bind 10.0.0.1 routerone
+bind 10.1.0.1 routertwo
+bind 10.2.0.1 routertwo
+bind 10.3.0.1 routerone
+bind 10.1.0.2 template
+bind 10.0.0.10 allopen
+bind 10.2.0.5 allopen

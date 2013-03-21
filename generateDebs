@@ -1,0 +1,41 @@
+#!/bin/bash
+
+set -e
+
+trap cleanup SIGINT
+
+echo -e "Remember to update debian/changelog with current version and notes."
+
+if [ -z $1 ]; then
+	echo "Must provide version number!"
+	exit
+else
+	VERSION=$1
+fi
+
+PACKAGE="honeyd-$VERSION"
+
+echo "Package name is $PACKAGE"
+
+
+# copy the files into a staging directory
+rm -rf ../$PACKAGE
+rm -f ../$PACKAGE.orig.tar.gz
+mkdir ../$PACKAGE
+cp -a $(ls -1) ../$PACKAGE
+
+#tarball it up!
+tar --exclude-vcs -zcf ../$PACKAGE.orig.tar.gz ../$PACKAGE
+
+#remove the staging directory
+#rm -rf $PACKAGE
+
+cd ../$PACKAGE
+
+#Produce the debian package
+dpkg-buildpackage -k7F9F2E1F
+
+# Use this to make a signed source package for the PPA
+#debuild -S -k7F9F2E1F
+
+

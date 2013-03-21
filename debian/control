@@ -1,0 +1,51 @@
+Source: honeyd
+Section: net
+Priority: optional
+Maintainer: Ubuntu Developers <ubuntu-devel-discuss@lists.ubuntu.com>
+XSBC-Original-Maintainer: Javier Fernandez-Sanguino Pen~a <jfs@debian.org>
+Build-Depends: debhelper (>> 5.0.0), automake, libevent-dev, libpcap-dev, libdumbnet-dev (>> 1.8), libevent-dev, wget, sharutils, flex, bison, libreadline5-dev | libreadline-dev, python-support (>= 0.5.3), zlib1g-dev, libpcre3-dev, rrdtool
+Standards-Version: 3.8.0
+Homepage: http://www.honeyd.org
+
+Package: honeyd
+Architecture: any
+Depends: adduser (>= 3.52), ${shlibs:Depends}, ${python:Depends}, ${misc:Depends}
+XB-Python-Version: ${python:Versions}
+Recommends: farpd, honeyd-common, rrdtool
+Suggests: iisemulator
+Homepage: http://www.honeyd.org
+Description:  Small daemon that creates virtual hosts simulating their services and behaviour
+ Honeyd is a small daemon that creates virtual hosts on a network. The
+ hosts can be configured to run arbitrary services, and their TCP
+ personality can be adapted so that they appear to be running certain
+ versions of operating systems. Honeyd enables a single host to claim
+ multiple addresses on a LAN for network simulation. It is possible to ping
+ the virtual machines, or to traceroute them. Any type of service on the
+ virtual machine can be simulated according to a simple configuration file.
+ Instead of simulating a service, it is also possible to proxy it to
+ another machine.
+ .
+ Features:
+     * Simulates thousands of virtual hosts at the same time.
+     * Configuration of arbitrary services via simple configuration file:
+        o Includes proxy connects.
+     * Simulates operating systems at TCP/IP stack level:
+        o Fools nmap and xprobe,
+        o Adjustable fragment reassembly policy,
+        o Adjustable FIN-scan policy.
+     * Simulation of arbitrary routing topologies:
+       o Configurable latency and packet loss.
+
+Package: honeyd-common
+Architecture: all
+Recommends: honeyd
+Depends: ${misc:Depends}
+Homepage: http://www.honeyd.org
+Description: Honeyd's honeypot documentation and scripts
+ Honeyd is a small daemon that creates virtual hosts on a network,
+ including OS fingerprinting personality and simulation of services
+ that are simulated by scripts.
+ .
+ This package provides honeyd's documentation and a number of scripts
+ useful to simulate services of different UNIX and Windows operating
+ systems: smtp, pop3, ftp, telnet, web server, ssh...

@@ -1,0 +1,81 @@
+honeyd for Debian
+-----------------
+
+I've added some of the contributed scripts at 
+http://www.citi.umich.edu/u/provos/honeyd/contrib.html
+
+However, some of the most complex ones (POP.emulator and issemul8) should
+probably be packaged separately [As a matter of fact issemul8 is packaged
+as 'iisemulator']
+
+Notice also that in order for honeyd to work you will probably need
+a user-space ARP daemon that answers requests for IP addresses
+which have been configured in honeyd. Such a daemon is provided in
+the 'farpd' package. You can also make honeyd work if it's setup
+as the default router on your environment for the networks you want 
+to simulate. The main point being that if you do not configure your
+environment or your honeyd host to have traffic directed to the networks
+you want to setup go through your honeyd host then your honeyd host
+will not get hit with any incoming traffic to those networks.
+
+Personality templates are provided under /usr/share/honeyd, and a sample
+configuration file under /usr/share/doc/honeyd/examples.
+
+Honeyd is provided with an init.d script but it is not active when 
+installed. 
+
+Restrictions
+------------
+
+Installing honeyd in a restricted environment is recommended.
+This should be done in order to prevent security issues specially when using
+the scripts provided. Notice that the scripts are low-interaction but
+they have _not_ been audited for security vulnerabilities.
+
+Some steps would include:
+
+1- created a jail for it (using chroot, user mode linux or your preferred 
+software of choice)
+2- run honeyd as a non-root user. The default configuration for honeyd
+in Debian uses the 'honeyd' user.
+3- run the scripts as a user with very low privileges. Notice that 
+you can only do this if honeyd runs as root or the user running it has the
+CAP_SETUID capability. If running as root this is done by modifying the
+default template provided with honeyd:
+----------------------------------------------------------------------
+set template uid 65534 gid 65534
+----------------------------------------------------------------------
+
+If you do run it as a low user you will have to grant it access to the
+log files in order for honeyd to properly work. Otherwise, no logfile
+will get written and honeyd might abort when trying to do so. This is
+usually setup automatically but you might want to review the permissions
+of /var/log/honeypot
+
+Notice that some scripts will write to a log file (in some cases it
+is hardcoded in the script, in other cases it needs to be defined in the
+LOG environment variable). Make sure you review what a script does before 
+using it in a honeypot environment and that it will have enough 
+privileges to work properly.
+
+Feedback, however, in order to improve this package is encouraged. 
+Please mail honeyd@packages.debian.org, or submit bugs using 'reportbug'
+
+Running in a chroot
+-------------------
+
+As described before, it is recommended that you run Honeyd in a
+restricted environment. If you plan to run Honeyd in a chroot environment
+you can use the 'makejail' software or just setup a minimal Debian
+system with 'debootstrap' and install Honeyd in it.
+
+For more information read the Debian Securing Manual, more specifically
+"General chroot and suid paranoia", available at 
+http://www.debian.org/doc/manuals/securing-debian-howto/ch-sec-services.en.html#s-chroot
+and "Making chrooted environments automatically", available at
+http://www.debian.org/doc/manuals/securing-debian-howto/ch-sec-services.en.html#s-auto-chroot
+
+-- Javier Fernandez-Sanguino Pen~a <jfs@computer.org>
+Mon,  5 Jun 2006 23:28:36 +0200
+
+

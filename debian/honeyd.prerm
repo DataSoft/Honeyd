@@ -1,0 +1,20 @@
+#!/bin/sh -e 
+
+if [ "$1" != "upgrade" ]; then
+
+	if [ -x "/etc/init.d/honeyd" ] ; then
+        	if [ -x "`which invoke-rc.d 2>/dev/null`" ]; then
+			invoke-rc.d honeyd stop || exit $?
+		else
+			/etc/init.d/honeyd stop || exit $?
+		fi
+	else
+                start-stop-daemon --stop --quiet --oknodo --exec /usr/bin/honeyd
+	fi
+fi
+
+
+#DEBHELPER#
+
+
+exit 0

@@ -1,7 +1,8 @@
 .\"
 .\" Copyright (c) 2002 Niels Provos <provos@citi.umich.edu>
+.\" Copyright (c) 2013 Datasoft Corp <nova@datasoft.com>
 .\"
-.Dd April 4, 2002
+.Dd February 13, 2013
 .Dt HONEYD 8
 .Sh NAME
 .Nm honeyd
@@ -247,6 +248,23 @@ If an IP address
 is not bound to a template, the actions specified in the
 .Va default
 template are executed.
+.Pp
+.Bd -literal
+The action keywords behave as follows,
+  ICMP
+    open   : respond to ICMP requests
+    closed : do not respond to ICMP requests
+
+  TCP
+    open     : respond with SYN/ACK and establish connections
+    closed   : respond with SYN/RST
+    filtered : do not respond at all
+
+  UDP
+    open     : same as UDP filtered
+    closed   : respond with ICMP Unreachable message
+    filtered : do not respond at all
+.Ed 
 .Pp
 Personalities need to be annotated before they are assigned to
 a template or an IP address.

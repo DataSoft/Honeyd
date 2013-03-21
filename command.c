@@ -238,6 +238,9 @@ cmd_environment(struct template *tmpl, struct tuple *hdr)
 	snprintf(line, sizeof(line), "%s", addr_ntoa(&addr));
 	setenv("HONEYD_IP_DST", line, 1);
 
+	snprintf(line, sizeof(line), "%s", tmpl->name);
+	setenv("HONEYD_TEMPLATE_NAME", line, 1);
+
 	snprintf(line, sizeof(line), "%d", hdr->sport);
 	setenv("HONEYD_SRC_PORT", line, 1);
 

@@ -2902,7 +2902,7 @@ fi
 
 # Define the identity of the package.
  PACKAGE=honeyd
- VERSION=1.6a
+ VERSION=1.6b
 
 
 cat >>confdefs.h <<_ACEOF
@@ -12448,6 +12448,9 @@ else
      PCAPLIB="-L${prefix}/lib -lpcap"
   elif test -f /usr/include/pcap/pcap.h; then
      PCAPINC="-I/usr/include/pcap"
+     PCAPLIB="-lpcap"
+  elif test -f /usr/local/include/pcap/pcap.h; then
+     PCAPINC="-I/usr/local/include/pcap"
      PCAPLIB="-lpcap"
   elif test -f /usr/include/pcap.h; then
      PCAPLIB="-lpcap"
