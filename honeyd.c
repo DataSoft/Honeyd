@@ -2644,6 +2644,9 @@ handle_udp_packet(struct template *tmpl, void *wrapper)
 				return 0;
 		}
 
+		if (!unicast && isBroadcast)
+			con->conhdr.ip_dst = templateIp;
+
 		con->tmpl = template_ref(tmpl);
 		generic_connect(tmpl, &con->conhdr, &con->cmd, con);
 	}
