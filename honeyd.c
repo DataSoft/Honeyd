@@ -561,7 +561,7 @@ honeyd_init(void)
 	{
 		if(errno != EEXIST)
 		{
-			perror("xxxDEBUGxxx bad 1\n");
+			perror("Error: Could not create ~/.config");
 		}
 	}
 
@@ -571,21 +571,21 @@ honeyd_init(void)
 	{
 		if(errno != EEXIST)
 		{
-			perror("xxxDEBUGxxx bad 2\n");
+			perror("Error: Could not create ~/.config/honeyd");
 		}
 	}
 	if(chown(full_path, uid, 0) != 0)
 	{
-		perror("xxxDEBUGxxx bad 3\n");
+		perror("Error: Could not change owner of ~/.config/honeyd");
 	}
 	if(chmod(full_path, S_IRWXU|S_IRWXO))
 	{
-		perror("xxxDEBUGxxx bad 4\n");
+		perror("Error: Could not change permissions of ~/.config/honeyd");
 	}
 
 	if(setenv("HONEYD_HOME", full_path, 1))
 	{
-		perror("xxxDEBUGxxx bad 5\n");
+		perror("Error: Could not set enviromnent variable HONEYD_HOME");
 	}
 }
 
