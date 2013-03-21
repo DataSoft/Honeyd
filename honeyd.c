@@ -2538,7 +2538,7 @@ handle_udp_packet(struct template *tmpl, void *wrapper)
 	struct addr addr;
 	struct spoof spoof;
 	char unicast;
-	char isBroadcast;
+	char isBroadcast = 0;
 	int i;
 	
 	uint16_t uh_sum;
@@ -2601,7 +2601,7 @@ handle_udp_packet(struct template *tmpl, void *wrapper)
 	 * that we can look at potential flags like local origination.
 	 */
 	honeyd_setudp(&honeyd_udp, ip, udp, INITIATED_BY_EXTERNAL);
-	if (isBroadcast)
+	if (!unicast && isBroadcast)
 		honeyd_udp.conhdr.ip_dst = templateIp;
 	con = (struct udp_con *)SPLAY_FIND(tree, &udpcons, &honeyd_udp.conhdr);
 
@@ -2623,7 +2623,7 @@ handle_udp_packet(struct template *tmpl, void *wrapper)
 
 		/* Send unreachable on closed port */
 		if (action == NULL || !PORT_ISOPEN(action)) {
-			if (!isBroadcast) {
+			if (unicast) {
 				syslog(LOG_DEBUG, "Connection to closed port: udp %s",
 						honeyd_contoa(&honeyd_udp.conhdr));
 				goto closed;
@@ -2638,7 +2638,7 @@ handle_udp_packet(struct template *tmpl, void *wrapper)
 
 		/* Out of memory is dealt by having the port closed */
 		if ((con = udp_new(ip, udp, INITIATED_BY_EXTERNAL)) == NULL) {
-			if (!isBroadcast)
+			if (unicast)
 				goto closed;
 			else
 				return 0;
@@ -2680,7 +2680,7 @@ handle_udp_packet(struct template *tmpl, void *wrapper)
 
  justlog:
 	honeyd_setudp(&honeyd_udp, ip, udp, INITIATED_BY_EXTERNAL);
-	if (isBroadcast)
+	if (!unicast && isBroadcast)
 		honeyd_udp.conhdr.ip_dst = templateIp;
 	honeyd_log_probe(honeyd_logfp, IP_PROTO_UDP, &honeyd_udp.conhdr,
 		pktlen, 0, NULL);
