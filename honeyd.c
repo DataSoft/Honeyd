@@ -2637,12 +2637,22 @@ handle_udp_packet(struct template *tmpl, void *wrapper)
 			honeyd_contoa(&honeyd_udp.conhdr));
 
 		/* Out of memory is dealt by having the port closed */
-		if ((con = udp_new(ip, udp, INITIATED_BY_EXTERNAL)) == NULL) {
+		if ((con = calloc(1, sizeof(struct udp_con))) == NULL) {
+			syslog(LOG_WARNING, "calloc: %m");
+
 			if (unicast)
 				goto closed;
 			else
 				return 0;
 		}
+		honeyd_setudp(con, ip, udp, INITIATED_BY_EXTERNAL);
+
+		if (!unicast && isBroadcast)
+			con->conhdr.ip_dst = templateIp;
+
+		connection_insert(&udpcons, &udplru, &con->conhdr);
+		con->conhdr.timeout = evtimer_new(libevent_base, honeyd_udp_timeout, con);
+		honeyd_log_flownew(honeyd_logfp, IP_PROTO_UDP, &con->conhdr);
 
 		con->tmpl = template_ref(tmpl);
 		generic_connect(tmpl, &con->conhdr, &con->cmd, con);
