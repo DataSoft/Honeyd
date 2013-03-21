@@ -13,9 +13,8 @@ import dns
 
 
 # TODO read in name from config file
-honeypotIp = os.getenv("HONEYD_IP_DST")
+honeypotIp = os.getenv("HONEYD_TEMPLATE_NAME")
 
-our_IP = sys.argv[1]
 honeyd_home = ""
 if("HONEYD_HOME" in os.environ):
 	honeyd_home = os.getenv("HONEYD_HOME")
@@ -24,7 +23,7 @@ fd = open(sys.argv[2])
 names_file = fd.readline().split(" ", 1)[1].rstrip("\n")
 names_path = honeyd_home + names_file
 
-our_name = AddNameAllocation(names_path, our_IP).upper()
+our_name = AddNameAllocation(names_path, honeypotIp).upper()
 if(our_name == ""):
 	sys.stderr.write("Unable to get mdns name")
 	sys.exit(0)

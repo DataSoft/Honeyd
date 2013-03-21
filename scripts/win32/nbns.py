@@ -19,10 +19,12 @@ def FirstLevelDecode(encoded_str):
 	return decoded
 
 
-our_IP = sys.argv[1]
+our_IP = ""
 honeyd_home = ""
 if("HONEYD_HOME" in os.environ):
 	honeyd_home = os.getenv("HONEYD_HOME")
+if("HONEYD_TEMPLATE_NAME" in os.environ):
+	honeyd_home = os.getenv("HONEYD_TEMPLATE_NAME")
 
 #the name of the "names" file is in the file at the second parameter
 fd = open(sys.argv[2])
