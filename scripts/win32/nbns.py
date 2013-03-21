@@ -24,7 +24,7 @@ honeyd_home = ""
 if("HONEYD_HOME" in os.environ):
 	honeyd_home = os.getenv("HONEYD_HOME")
 if("HONEYD_TEMPLATE_NAME" in os.environ):
-	honeyd_home = os.getenv("HONEYD_TEMPLATE_NAME")
+	our_IP = os.getenv("HONEYD_TEMPLATE_NAME")
 
 #the name of the "names" file is in the file at the second parameter
 fd = open(sys.argv[2])
@@ -144,13 +144,13 @@ elif query_type == '\x00\x21':
 	reponse_packet += '\x00\x01'
 	#TTL == 0
 	reponse_packet += '\x00\x00\x00\x00'
-	#Data Length 49 bytes + name + 1
-	name_len = len(our_name) + 50
+	#Data Length
+	name_len = 65
 	reponse_packet += '\x00' + chr(name_len)
 	#Number of names == 1
 	reponse_packet += '\x01'
 	#Name (ascii) (16 bytes)
-	reponse_packet += our_name + '\x00'
+	reponse_packet += our_name + ('\x20' * (15-len(our_name))) + '\x00'
 	#name flags
 	reponse_packet += '\x04\x00'
 	#Empty fields at end (46 bytes)
