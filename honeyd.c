@@ -552,7 +552,7 @@ honeyd_init(void)
 
 	char config_suffix[] = "/.config";
 	char honeyd_suffix[] = "/honeyd/";
-	char *full_path = malloc(strlen(home_path) + strlen(config_suffix) + strlen(honeyd_suffix));
+	char *full_path = malloc(strlen(home_path) + strlen(config_suffix) + strlen(honeyd_suffix) + 1);
 	strcpy(full_path, home_path);
 	strcat(full_path, config_suffix);
 
