@@ -387,18 +387,12 @@ honeyd_rrd_cb(int fd, short what, void *unused)
 {
 	static int count;
 	char line[1024];
-	struct timeval tv;
 
 	snprintf(line, sizeof(line), "%f:%f",
 	    (double)count_get_minute(stats_network.input_bytes)/60.0, 
 	    (double)count_get_minute(stats_network.output_bytes)/60.0);
 
 	rrdtool_db_update(honeyd_traffic_db, NULL, line);
-
-	timerclear(&tv);
-	tv.tv_sec = 60;
-	struct event *ev = evtimer_new(libevent_base, honeyd_rrd_cb, NULL);
-	evtimer_add(ev, &tv);
 
 	/* Create a graph every five minutes */
 	if (count++ % 5 == 0) {
@@ -458,7 +452,11 @@ honeyd_rrd_start(const char *rrdtool_path)
 	rrdtool_db_commit(honeyd_traffic_db);
 
 	/* Start the periodic traffic update timer */
-	honeyd_rrd_cb(-1, EV_TIMEOUT, NULL);
+	struct timeval tv;
+	timerclear(&tv);
+	tv.tv_sec = 60;
+	struct event *ev = event_new(libevent_base, -1, EV_PERSIST, honeyd_rrd_cb, NULL);
+	evtimer_add(ev, &tv);
 }
 
 /*
@@ -1205,6 +1203,7 @@ udp_free(struct udp_con *con)
 	if (con->tmpl != NULL)
 		template_free(con->tmpl);
 
+	event_free(con->conhdr.timeout);
 	free(con);
 }
 

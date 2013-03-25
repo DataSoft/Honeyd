@@ -405,7 +405,7 @@ interface_init(char *dev, int naddresses, char **addresses)
 		struct timeval tv = HONEYD_POLL_INTERVAL;
 
 		syslog(LOG_INFO, "switching to polling mode");
-		inter->if_recvev = evtimer_new(libevent_base, interface_poll_recv, inter);
+		inter->if_recvev = event_new(libevent_base, -1, EV_PERSIST, interface_poll_recv, inter);
 		evtimer_add(inter->if_recvev, &tv);
 	}
 }
@@ -562,9 +562,6 @@ static void
 interface_poll_recv(int fd, short type, void *arg)
 {
 	struct interface *inter = arg;
-	struct timeval tv = HONEYD_POLL_INTERVAL;
-
-	evtimer_add(inter->if_recvev, &tv);
 
 	interface_recv(fd, type, arg);
 }
