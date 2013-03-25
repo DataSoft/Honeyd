@@ -230,6 +230,7 @@ install-data-local:
 	find $(DESTDIR)$(honeyddatadir)/webserver -type d | xargs chmod a+xr
 	(cd $(top_srcdir) && tar -cf - $(top_srcdir)/scripts) | \
 	(cd $(DESTDIR)$(honeyddatadir) && tar -xf -)
+	python $(DESTDIR)$(honeyddatadir)/scripts/lib/init.py
 
 CLEANFILES = *.so
 DISTCLEANFILES = *~

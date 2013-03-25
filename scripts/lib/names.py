@@ -1,4 +1,5 @@
 import sqlite3
+import os
 
 #Returns the name that our IP address is allocated to
 #	returns empty string if not present
@@ -45,16 +46,18 @@ def AddNames(names_path, names):
 	conn.commit()
 
 def InitializeDB(names_path):
+	if not os.path.exists(os.path.dirname(names_path)):
+		os.makedirs(os.path.dirname(names_path))
 	conn = sqlite3.connect(names_path)
 	cursor = conn.cursor()
 	cursor.execute("select tbl_name from sqlite_master")
 	list_tables = cursor.fetchone()
 	if list_tables is None:
-		cursor.execute("CREATE TABLE allocs (IP text, name text UNIQUE)")
+		cursor.execute("CREATE TABLE allocs (IP text, name text PRIMARY KEY)")
 		return conn
 	list_tables = list_tables[0]
 	if("allocs" not in list_tables):
-		cursor.execute("CREATE TABLE allocs (IP text, name text UNIQUE)")
+		cursor.execute("CREATE TABLE allocs (IP text, name text PRIMARY KEY)")
 	conn.commit()
 	return conn
 
