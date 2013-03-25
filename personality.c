@@ -78,17 +78,9 @@ SPLAY_GENERATE(perstree, personality, node, perscompare);
 SPLAY_GENERATE(xp_fprint_tree, xp_fingerprint, node, xp_fprint_compare);
 
 static void
-personality_time_evcb(int fd, short what, void *unused)
+personality_time_evcb(int fd, short what, void *event)
 {
-	struct timeval tv;
-
 	gettimeofday(&tv_periodic, NULL);
-
-	timerclear(&tv);
-	tv.tv_usec = 100000;	/* every 100 ms */
-
-	struct event *ev = evtimer_new(libevent_base, personality_time_evcb, NULL);
-	evtimer_add(ev, &tv);
 }
 
 void
@@ -103,8 +95,15 @@ personality_init(void)
 	npersons = 0;
 	SPLAY_INIT(&personalities);
 
+
 	/* Start a timer that keeps track of the current system time */
-	personality_time_evcb(-1, EV_TIMEOUT, NULL);
+	struct event *ev = event_new(libevent_base, -1, EV_PERSIST, personality_time_evcb, NULL);
+
+	struct timeval tv;
+	timerclear(&tv);
+	tv.tv_usec = 100000;	/* every 100 ms */
+
+	evtimer_add(ev, &tv);
 }
 
 struct personality *

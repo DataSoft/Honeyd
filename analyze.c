@@ -291,7 +291,7 @@ analyze_init(void)
 	timerclear(&tv);
 	tv.tv_sec = ANALYZE_REPORT_INTERVAL; 
 
-	struct event *ev_analyze = evtimer_new(stats_libevent_base, analyze_report_cb, NULL);
+	struct event *ev_analyze = event_new(stats_libevent_base, -1, EV_PERSIST, analyze_report_cb, NULL);
 	evtimer_add(ev_analyze, &tv);
 
 	SPLAY_INIT(&oses);
@@ -824,14 +824,6 @@ analyze_print_report()
 void
 analyze_report_cb(int fd, short what, void *unused)
 {
-	struct timeval tv;
-
-	timerclear(&tv);
-	tv.tv_sec = ANALYZE_REPORT_INTERVAL;
-
-	struct event *ev = evtimer_new(stats_libevent_base, analyze_report_cb, NULL);
-	evtimer_add(ev, &tv);
-
 	analyze_print_report();
 }
 
