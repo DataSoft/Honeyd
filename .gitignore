@@ -160,3 +160,4 @@ os-test/results*
 /scripts/names
 /scripts/names_alloc
 
+/scripts/lib/names.pyc

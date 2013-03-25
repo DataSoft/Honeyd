@@ -54,6 +54,7 @@ def InitializeDB(names_path):
 	list_tables = cursor.fetchone()
 	if list_tables is None:
 		cursor.execute("CREATE TABLE allocs (IP text, name text PRIMARY KEY)")
+		conn.commit()
 		return conn
 	list_tables = list_tables[0]
 	if("allocs" not in list_tables):
