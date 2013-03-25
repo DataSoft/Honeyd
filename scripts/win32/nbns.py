@@ -4,7 +4,7 @@ import socket
 import os
 
 sys.path.append("/usr/share/honeyd/scripts/lib/")
-from names import GetAllocatedName, IsAllocated, AddNameAllocation
+from names import AddNameAllocation
 
 
 #Decodes a "First Level" encoded string
@@ -24,18 +24,16 @@ honeyd_home = ""
 if("HONEYD_HOME" in os.environ):
 	honeyd_home = os.getenv("HONEYD_HOME")
 if("HONEYD_TEMPLATE_NAME" in os.environ):
-	honeyd_home = os.getenv("HONEYD_TEMPLATE_NAME")
+	our_IP = os.getenv("HONEYD_TEMPLATE_NAME")
 
 #the name of the "names" file is in the file at the second parameter
 fd = open(sys.argv[2])
 names_file = fd.readline().split(" ", 1)[1].rstrip("\n")
 names_path = honeyd_home + names_file
 
-our_name = GetAllocatedName(names_path, our_IP).upper()
+our_name = AddNameAllocation(names_path, our_IP).upper()
 if(our_name == ""):
-	our_name = AddNameAllocation(names_path, our_IP).upper()
-	if(our_name == ""):
-		sys.exit(0)
+	sys.exit(0)
 
 #Parse the NBNS header
 
@@ -146,13 +144,13 @@ elif query_type == '\x00\x21':
 	reponse_packet += '\x00\x01'
 	#TTL == 0
 	reponse_packet += '\x00\x00\x00\x00'
-	#Data Length 49 bytes + name + 1
-	name_len = len(our_name) + 50
+	#Data Length
+	name_len = 65
 	reponse_packet += '\x00' + chr(name_len)
 	#Number of names == 1
 	reponse_packet += '\x01'
 	#Name (ascii) (16 bytes)
-	reponse_packet += our_name + '\x00'
+	reponse_packet += our_name + ('\x20' * (15-len(our_name))) + '\x00'
 	#name flags
 	reponse_packet += '\x04\x00'
 	#Empty fields at end (46 bytes)
