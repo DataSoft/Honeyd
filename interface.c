@@ -561,8 +561,6 @@ interface_recv(int fd, short type, void *arg)
 static void
 interface_poll_recv(int fd, short type, void *arg)
 {
-	struct interface *inter = arg;
-
 	interface_recv(fd, type, arg);
 }
 
