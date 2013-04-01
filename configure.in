@@ -11,6 +11,70 @@ AM_MAINTAINER_MODE
 
 AM_PROG_LIBTOOL
 
+AH_TEMPLATE([HAVE_STRUCT_SOCKADDR_STORAGE], [Define if your system defines struct sockaddr_storage])
+AH_TEMPLATE([HAVE_ACCRIGHTS_IN_MSGHDR], [Define if your system uses access rights style file descriptor passing])
+AH_TEMPLATE([HAVE_CONTROL_IN_MSGHDR], [Define if your system uses ancillary data style file descriptor passing])
+AH_TEMPLATE([HAVE_BROKEN_DNET], [Define if the addr_cmp in libdnet is broken])
+AH_TEMPLATE([u_int], [Define to unsigned int if <sys/types.h> does not define.])
+AH_TEMPLATE([u_int64_t], [Define to unsigned long long if <sys/types.h> does not define.])
+AH_TEMPLATE([u_int32_t], [Define to unsigned int if <sys/types.h> does not define.])
+AH_TEMPLATE([u_int16_t], [Define to unsigned short if <sys/types.h> does not define.])
+AH_TEMPLATE([u_int8_t], [Define to unsigned char if <sys/types.h> does not define.])
+
+AH_TEMPLATE([HAVE_TIMERADD], [Define if timeradd is defined in <sys/time.h>])
+
+
+AH_TEMPLATE([DL_NEED_UNDERSCORE])
+AH_TEMPLATE([NODLOPEN])
+AH_TEMPLATE([DLOPENLIBC])
+
+AH_TEMPLATE([HAVE_ISBLANK], [Define if isblank is defined in <ctype.h>])
+
+AH_BOTTOM([/* Prototypes for missing functions */
+#ifndef HAVE_STRLCPY
+size_t	 strlcpy(char *, const char *, size_t);
+#endif
+
+#ifndef HAVE_STRLCAT
+size_t	 strlcat(char *, const char *, size_t);
+#endif
+
+#ifndef HAVE_STRSEP
+char	*strsep(char **, const char *);
+#endif
+
+#ifndef HAVE_DAEMON
+int	daemon(int, int);
+#endif
+
+#ifndef HAVE_TIMERADD
+#define timeradd(tvp, uvp, vvp)                                         \
+        do {                                                            \
+                (vvp)->tv_sec = (tvp)->tv_sec + (uvp)->tv_sec;          \
+                (vvp)->tv_usec = (tvp)->tv_usec + (uvp)->tv_usec;       \
+                if ((vvp)->tv_usec >= 1000000) {                        \
+                        (vvp)->tv_sec++;                                \
+                        (vvp)->tv_usec -= 1000000;                      \
+                }                                                       \
+        } while (0)
+#define	timersub(tvp, uvp, vvp)						\
+	do {								\
+		(vvp)->tv_sec = (tvp)->tv_sec - (uvp)->tv_sec;		\
+		(vvp)->tv_usec = (tvp)->tv_usec - (uvp)->tv_usec;	\
+		if ((vvp)->tv_usec < 0) {				\
+			(vvp)->tv_sec--;				\
+			(vvp)->tv_usec += 1000000;			\
+		}							\
+	} while (0)
+#endif /* !HAVE_TIMERADD */
+
+
+#ifndef HAVE_ISBLANK
+#define isblank(x)	((x) == ' ' || (x) == '\t')
+#endif
+
+])
+
 dnl Initialize prefix.
 if test "$prefix" = "NONE"; then
    prefix="/usr"
