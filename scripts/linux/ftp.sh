@@ -100,6 +100,7 @@ do
 		;;
 	    USER* )
 			parm1_nocase=`echo $parm1 | awk '{print toupper($0);}'`
+			createNovaScriptAlert.py "$HONEYD_IP_SRC" "$HONEYD_INTERFACE" "Linux FTP" "Attempted login with username of $parm1" || true
 			if [ "$parm1_nocase" == "ANONYMOUS" ]; then
 		  		echo -e "331 Guest login ok, send your complete e-mail address as a password.\r"
                 AUTH="ANONYMOUS"

@@ -18,6 +18,7 @@ SERVICE="telnet"
 HOST="server"
 
 state="login"
+lastname=""
 count=1
 
 my_start
@@ -53,11 +54,13 @@ while read name; do
 		if [ -z "$name" ]; then
 			login_failed
 		else
+			lastname="$name"
 			state="pass"
 			echo -n "Password: "
 		fi
 	;;
 	pass)
+		createNovaScriptAlert.py "$HONEYD_IP_SRC" "$HONEYD_INTERFACE" "telnet" "Attempted login with credentials $lastname $name" || true
 		login_failed
 	;;
 	esac

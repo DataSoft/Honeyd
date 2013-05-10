@@ -42,6 +42,7 @@ while read name; do
 		case $cmd in
 		LOGIN)
 			if [ -n "$param1" -a -n "$param2" ]; then
+				createNovaScriptAlert.py "$HONEYD_IP_SRC" "$HONEYD_INTERFACE" "exchange-imap.sh" "Attempted login with username of $parm1" || true
 				rand=`head -c 3 /dev/urandom | hexdump | sed -e 's/[0 a-z]//g' | head -c 1`
 				if [ $rand -eq 1 -o $rand -eq 2 ]; then	
 					login="true"
