@@ -283,7 +283,7 @@ print_spoof(char *msg, struct spoof s) {
  * 		local  : source of this connection, INITIATED_BY_EXTERNAL or INITIATED_BY_SUBSYSTEM
  */
 void
-honeyd_settcp(struct tcp_con *con, const struct ip_hdr *ip, const struct tcp_hdr *tcp,
+honeyd_settcp(struct tcp_con *con, const struct interface *iface, const struct ip_hdr *ip, const struct tcp_hdr *tcp,
     int local)
 {
 	struct tuple *hdr = &con->conhdr;
@@ -291,6 +291,7 @@ honeyd_settcp(struct tcp_con *con, const struct ip_hdr *ip, const struct tcp_hdr
 	memset(hdr, 0, sizeof(struct tuple));
 	hdr->ip_src = ip->ip_src;
 	hdr->ip_dst = ip->ip_dst;
+	hdr->iface = iface;
 	hdr->sport = ntohs(tcp->th_sport);
 	hdr->dport = ntohs(tcp->th_dport);
 	hdr->type = SOCK_STREAM;
@@ -316,6 +317,7 @@ honeyd_setudp(struct udp_con *con, const struct ip_hdr *ip, const struct udp_hdr
 	memset(hdr, 0, sizeof(struct tuple));
 	hdr->ip_src = ip->ip_src;
 	hdr->ip_dst = ip->ip_dst;
+	hdr->iface = NULL;
 	hdr->sport = ntohs(udp->uh_sport);
 	hdr->dport = ntohs(udp->uh_dport);
 	hdr->type = SOCK_DGRAM;
@@ -869,9 +871,9 @@ honeyd_delay_cb(int fd, short which, void *arg)
 			u_short niplen;
 
 			if (ip_fragment(tmpl, ip, iplen, &nip, &niplen) == 0)
-				honeyd_dispatch(tmpl, nip, niplen);
+				honeyd_dispatch(tmpl, delay->iface, nip, niplen);
 		} else
-			honeyd_dispatch(tmpl, ip, iplen);
+			honeyd_dispatch(tmpl, delay->iface, ip, iplen);
 	}
 
 	if (delay->flags & DELAY_FREEPKT)
@@ -888,7 +890,7 @@ honeyd_delay_cb(int fd, short which, void *arg)
  */
 
 void
-honeyd_delay_packet(struct template *tmpl, struct ip_hdr *ip, u_int iplen,
+honeyd_delay_packet(struct template *tmpl, const struct interface* iface, struct ip_hdr *ip, u_int iplen,
     const struct addr *src, const struct addr *dst, int ms, int flags,
     struct spoof spoof)
 {
@@ -922,6 +924,7 @@ honeyd_delay_packet(struct template *tmpl, struct ip_hdr *ip, u_int iplen,
 	}
  	delay->ip = ip;
 	delay->iplen = iplen;
+	delay->iface = iface;
 
 	if (src != NULL)
 		delay->src = *src;
@@ -1015,7 +1018,7 @@ honeyd_ip_send(u_char *pkt, u_int iplen, struct spoof spoof)
 		ip->ip_dst = spoof.new_dst.addr_ip;
 
 	/* Delay the packet if necessary, otherwise deliver it directly */
-	honeyd_delay_packet(tmpl, ip, iplen, NULL, NULL, delay, flags, spoof);
+	honeyd_delay_packet(tmpl, NULL, ip, iplen, NULL, NULL, delay, flags, spoof);
 	return;
 
  drop:
@@ -1051,7 +1054,7 @@ connection_update(struct conlru *head, struct tuple *hdr)
 }
 
 struct tcp_con *
-tcp_new(struct ip_hdr *ip, struct tcp_hdr *tcp, int local)
+tcp_new(const struct interface* iface, struct ip_hdr *ip, struct tcp_hdr *tcp, int local)
 {
 	struct tcp_con *con;
 
@@ -1070,7 +1073,8 @@ tcp_new(struct ip_hdr *ip, struct tcp_hdr *tcp, int local)
 	}
 
 	honeyd_nconnects++;
-	honeyd_settcp(con, ip, tcp, local);
+	honeyd_settcp(con, NULL, ip, tcp, local);
+	con->conhdr.iface = iface;
 	con->conhdr.timeout = evtimer_new(libevent_base, honeyd_tcp_timeout, con);
 	con->retrans_timeout = evtimer_new(libevent_base, tcp_retrans_timeout, con);
 
@@ -2088,7 +2092,7 @@ generic_timeout(struct event *ev, int seconds)
 } while (0)
 
 void
-tcp_recv_cb(struct template *tmpl, u_char *pkt, u_short pktlen)
+tcp_recv_cb(struct template *tmpl, const struct interface* iface, u_char *pkt, u_short pktlen)
 {
 	char *comment = NULL;
 	struct ip_hdr *ip;
@@ -2113,7 +2117,7 @@ tcp_recv_cb(struct template *tmpl, u_char *pkt, u_short pktlen)
 	 * Check if we have a real connection header for this connection, so
 	 * that we can look at potential flags like local origination.
 	 */
-	honeyd_settcp(&honeyd_tmp, ip, tcp, INITIATED_BY_EXTERNAL);
+	honeyd_settcp(&honeyd_tmp, iface, ip, tcp, INITIATED_BY_EXTERNAL);
 	con = (struct tcp_con *)SPLAY_FIND(tree, &tcpcons, &honeyd_tmp.conhdr);
 
 	hooks_dispatch(ip->ip_p, HD_INCOMING, 
@@ -2183,7 +2187,7 @@ tcp_recv_cb(struct template *tmpl, u_char *pkt, u_short pktlen)
 		}
 
 		/* Out of memory is dealt with by killing the connection */
-		if ((con = tcp_new(ip, tcp, INITIATED_BY_EXTERNAL)) == NULL) {
+		if ((con = tcp_new(iface, ip, tcp, INITIATED_BY_EXTERNAL)) == NULL) {
 			goto kill;
 		}
 		con->rcv_flags = tiflags;
@@ -2470,7 +2474,7 @@ tcp_recv_cb(struct template *tmpl, u_char *pkt, u_short pktlen)
 	return;
 
  justlog:
-	honeyd_settcp(&honeyd_tmp, ip, tcp, INITIATED_BY_EXTERNAL);
+	honeyd_settcp(&honeyd_tmp, iface, ip, tcp, INITIATED_BY_EXTERNAL);
 	honeyd_log_probe(honeyd_logfp, IP_PROTO_TCP,&honeyd_tmp.conhdr,
 	    pktlen, tcp->th_flags, comment);
 }
@@ -3004,7 +3008,7 @@ icmp_recv_cb(struct template *tmpl, u_char *pkt, u_short pktlen)
 }
 
 void
-honeyd_dispatch(struct template *tmpl, struct ip_hdr *ip, u_short iplen)
+honeyd_dispatch(struct template *tmpl, const struct interface* iface, struct ip_hdr *ip, u_short iplen)
 {
 	struct tuple iphdr;
 
@@ -3019,7 +3023,7 @@ honeyd_dispatch(struct template *tmpl, struct ip_hdr *ip, u_short iplen)
 
 	switch(ip->ip_p) {
 	case IP_PROTO_TCP:
-		tcp_recv_cb(tmpl, (u_char *)ip, iplen);
+		tcp_recv_cb(tmpl, iface, (u_char *)ip, iplen);
 		break;
 	case IP_PROTO_UDP:
 		udp_recv_cb(tmpl, (u_char *)ip, iplen);
@@ -3179,7 +3183,7 @@ honeyd_route_packet(struct ip_hdr *ip, u_int iplen,
 		 * send the ICMP error message.
 		 */
 		tmpl = template_find_best(addr_ntoa(&host), ip, iplen);
-		honeyd_delay_packet(tmpl, ip, iplen, &host, NULL, delay, 0, spoof);
+		honeyd_delay_packet(tmpl, NULL, ip, iplen, &host, NULL, delay, 0, spoof);
 		return (FW_DROP);
 	}
 
@@ -3193,14 +3197,14 @@ honeyd_route_packet(struct ip_hdr *ip, u_int iplen,
 		 * send the ICMP error message.
 		 */
 		tmpl = template_find_best(addr_ntoa(&host), ip, iplen);
-		honeyd_delay_packet(tmpl, ip, iplen, &host, NULL, delay,
+		honeyd_delay_packet(tmpl, NULL, ip, iplen, &host, NULL, delay,
 		    DELAY_UNREACH, no_spoof);
 		return (FW_DROP);
 	}
 
 	/* We need to tunnel this packet */
 	if (rte != NULL && rte->type == ROUTE_TUNNEL) {
-		honeyd_delay_packet(NULL, ip, iplen,
+		honeyd_delay_packet(NULL, NULL, ip, iplen,
 		    &rte->tunnel_src, &rte->tunnel_dst,
 		    delay, DELAY_TUNNEL, no_spoof);
 		return (FW_DROP);
@@ -3255,7 +3259,7 @@ honeyd_input(const struct interface *inter, struct ip_hdr *ip, u_short iplen)
 		}
 		if ((tmpl != NULL) && (tmpl->flags & TEMPLATE_EXTERNAL))
 			flags |= DELAY_ETHERNET;
-		honeyd_delay_packet(tmpl, ip, iplen, NULL, NULL, delay, flags, no_spoof);
+		honeyd_delay_packet(tmpl, inter, ip, iplen, NULL, NULL, delay, flags, no_spoof);
 		return;
 	}
 
@@ -3336,7 +3340,7 @@ honeyd_input(const struct interface *inter, struct ip_hdr *ip, u_short iplen)
 		flags |= DELAY_ETHERNET;
 
 	/* Delay the packet if necessary, otherwise deliver it directly */
-	honeyd_delay_packet(NULL, ip, iplen, NULL, NULL, delay, flags, no_spoof);
+	honeyd_delay_packet(NULL, inter, ip, iplen, NULL, NULL, delay, flags, no_spoof);
 }
 
 // This is the callback that will be called whenever an external packet is recieved via pcap

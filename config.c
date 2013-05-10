@@ -1090,7 +1090,7 @@ template_delay_cb(int fd, short which, void *arg)
 		tmpl = template_ref(tmpl);
 
 		/* No Check for fragmentation */
-		honeyd_dispatch(tmpl, ip, iplen);
+		honeyd_dispatch(tmpl, NULL, ip, iplen);
 
 	}
 

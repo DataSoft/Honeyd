@@ -387,13 +387,13 @@ ui_init(void)
 #endif /* HAVE_SUN_LEN */
         if (bind(ui_socket, (struct sockaddr *)&ifsun, sizeof (ifsun)) == -1)
         {
-        	syslog(LOG_ERR, "%s: bind", __func__);
+        	syslog(LOG_ERR, "%s: bind error: %s", __func__, strerror(errno));
         	exit(EXIT_FAILURE);
         }
 
         if (listen(ui_socket, 5) == -1)
         {
-        	syslog(LOG_ERR, "%s: listen", __func__);
+        	syslog(LOG_ERR, "%s: listen error: %s", __func__, strerror(errno));
         	exit(EXIT_FAILURE);
         }
 

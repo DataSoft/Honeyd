@@ -86,6 +86,8 @@ struct delay {
 	struct addr src;
 	struct addr dst;
 
+	const struct interface *iface;
+
 	struct template *tmpl;
 	struct ip_hdr *ip;
 	u_int iplen;
@@ -157,6 +159,8 @@ struct tuple {
 	ip_addr_t ip_dst;
 	uint16_t sport;
 	uint16_t dport;
+
+	const struct interface *iface;
 
 	int type;	/* Either SOCK_STREAM or SOCK_DGRAM */
 
@@ -340,7 +344,7 @@ int tuple_iterate(struct conlru *, int (*f)(struct tuple *, void *), void *);
 struct tuple *tuple_find(struct tree *, struct tuple *);
 
 void honeyd_ip_send(u_char *, u_int, struct spoof spoof);
-void honeyd_dispatch(struct template *, struct ip_hdr *, u_short);
+void honeyd_dispatch(struct template *, const struct interface *, struct ip_hdr *, u_short);
 char *honeyd_contoa(const struct tuple *);
 
 void honeyd_input(const struct interface *, struct ip_hdr *, u_short);
@@ -370,7 +374,7 @@ int cmd_subsystem_localconnect(struct tuple *hdr, struct command *cmd,
     struct port *, void *arg);
 
 /* Network connection elements */
-struct tcp_con *tcp_new(struct ip_hdr *, struct tcp_hdr *, int);
+struct tcp_con *tcp_new(const struct interface *, struct ip_hdr *, struct tcp_hdr *, int);
 struct udp_con *udp_new(struct ip_hdr *, struct udp_hdr *, int);
 int tcp_setupconnect(struct tcp_con *);
 void tcp_connectfail(struct tcp_con *con);

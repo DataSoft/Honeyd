@@ -54,6 +54,7 @@
 #include <dnet.h>
 #include <syslog.h>
 #include <grp.h>
+#include <pcap.h>
 
 #undef timeout_pending
 #undef timeout_initialized
@@ -71,6 +72,8 @@
 #include "pyextend.h"
 #include "honeyd_overload.h"
 #include "util.h"
+
+#include "interface.h"
 
 ssize_t atomicio(ssize_t (*)(), int, void *, size_t);
 
@@ -237,6 +240,11 @@ cmd_environment(struct template *tmpl, struct tuple *hdr)
 	addr_pack(&addr, ADDR_TYPE_IP, IP_ADDR_BITS, &hdr->ip_dst,IP_ADDR_LEN);
 	snprintf(line, sizeof(line), "%s", addr_ntoa(&addr));
 	setenv("HONEYD_IP_DST", line, 1);
+
+	if (hdr->iface != NULL) {
+		snprintf(line, sizeof(line), "%s", hdr->iface->if_ent.intf_name);
+		setenv("HONEYD_INTERFACE", line, 1);
+	}
 
 	snprintf(line, sizeof(line), "%s", tmpl->name);
 	setenv("HONEYD_TEMPLATE_NAME", line, 1);

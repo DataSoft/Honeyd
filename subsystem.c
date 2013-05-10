@@ -609,7 +609,7 @@ subsystem_read(int fd, short what, void *arg)
 			tcp.th_sport = htons(port);
 			tcp.th_dport = htons(sub_port->number);
 
-			if ((con = tcp_new(&ip, &tcp, INITIATED_BY_SUBSYSTEM)) == NULL)
+			if ((con = tcp_new(NULL, &ip, &tcp, INITIATED_BY_SUBSYSTEM)) == NULL)
 				goto out;
 			con->tmpl = template_ref(tmpl);
 
