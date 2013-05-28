@@ -517,8 +517,11 @@ port_insert(struct template *tmpl, int proto, int number,
 	tmpport.proto = proto;
 	tmpport.number = number;
 	
+	// Check if this port/protocol already has an action set
 	if (SPLAY_FIND(porttree, &tmpl->ports, &tmpport) != NULL)
-		return (NULL);
+	{
+		syslog(LOG_WARNING, "WARNING: replacing already defined port/protocol for template %s: port: %d | protocol: %d", tmpl->name, number, proto);
+	}
 	
 	if ((port = calloc(1, sizeof(struct port))) == NULL)
 	{
