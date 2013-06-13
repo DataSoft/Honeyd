@@ -1,4 +1,5 @@
 import sys
+import os
 import struct
 import binascii
 import time
@@ -6,16 +7,16 @@ import time
 class PreLoginToken:
 	def __init__(self):
 		self.tokenPosition = 0
-
 		self.type = 0
 		self.position = 0
 		self.length = 0
 
-class PreLoginMessage:
+class TDSPacket:
 	def __init__(self):
 		self.type = 12
 		self.tokens = []
 
+	# Returns string version of the packet
 	def writePacket(self):
 		ret = "";
 		ret += struct.pack("!B", self.type)
@@ -36,10 +37,9 @@ class PreLoginMessage:
 
 		return ret
 
-
+	# Reads in a TDS packet. Really only parses pre-login packets.
 	def readPacket(self, stream):
 		self.type = struct.unpack("!B", stream.read(1))[0]
-		sys.stderr.write("READ PACKET OF TYPE " + str(self.type))
 		
 		self.status = struct.unpack("!B", stream.read(1))[0]
 		self.length = struct.unpack("!H", stream.read(2))[0]
@@ -74,14 +74,14 @@ class PreLoginMessage:
 
 
 			self.payloadStart = bytesRead + 1
-			sys.stderr.write("Payload started at: " + str(self.payloadStart))
 			if bytesRead < self.length:
 				self.payload = struct.unpack(str(self.length - bytesRead) + "s", stream.read(self.length - bytesRead))[0]
 		else:
 			self.payload = struct.unpack(str(self.length - bytesRead) + "s", stream.read(self.length - bytesRead))[0]
 
 		return True
-		
+	
+	# Just for debugging, gives a human readable version of the packet	
 	def toString(self):
 		ret = ""
 		ret += "Type: " + str(self.type) + "\n"
@@ -112,26 +112,27 @@ class PreLoginMessage:
 
 		return ret
 
+# Creates a generic login error response packet
 class LoginError:
 	def __init__(self):
 		self.tdstype = 4
 		self.status = 1
-		self.tlength = 93
 		self.channel = 51
 		self.number = 1
 		self.window = 0
 		
 		self.token = 0xaa
-		self.length = 69
-		self.error = 18452
+		self.error = 18456
 		self.state = 1
 		self.level = 14
-		self.errorMsg = "Login failed for user 'foo'."
+		self.errorMsg = "Login failed for user."
 		self.errorLength = len(self.errorMsg)
-		self.serverName = "PHERRICOXIDE-PC\\SQLEXPRESS"
+		self.serverName = os.getenv("HONEYD_IP_DST")
 		self.serverNameLength = len(self.serverName)
 		self.processNameLength = 0
 		self.lineNumber = 1
+		self.length = 14 + 2*self.serverNameLength + 2*self.errorLength
+		self.tlength = 38 + 2*self.serverNameLength + 2*self.errorLength
 
 		self.doneToken = 0xfd
 		self.statusFlags = 2
@@ -139,7 +140,8 @@ class LoginError:
 		self.rows = 0
 
 
-	def packedString(self):
+	# Returns string version of the packet
+	def writePacket(self):
 		ret = ""
 
 		ret += struct.pack('!B', self.tdstype)
@@ -157,15 +159,19 @@ class LoginError:
 		ret += struct.pack('<I', self.error)
 		ret += struct.pack('!B', self.state)
 		ret += struct.pack('!B', self.level)
+
 		ret += struct.pack('!B', self.errorLength)
 		ret += struct.pack('!B', 0)
-		ret += struct.pack(str(len(self.errorMsg)) + 's', self.errorMsg)
+		for char in self.errorMsg:
+			ret += struct.pack("<H", ord(char))
+
 		ret += struct.pack('!B', self.serverNameLength)
-		ret += struct.pack(str(len(self.serverName)) + 's', self.serverName)
+		for char in self.serverName:
+			ret += struct.pack("<H", ord(char))
+
 		ret += struct.pack('!B', self.processNameLength)
 		ret += struct.pack('<H', self.lineNumber)
 
-		ret += struct.pack('!B', 0)
 		ret += struct.pack('!B', 0)
 		ret += struct.pack('!B', 0)
 
@@ -176,18 +182,13 @@ class LoginError:
 		
 		ret += struct.pack('!I', 0)
 
-
-		sys.stderr.write("STRLEN IS " + str(len(ret)));
-		sys.stderr.write("severnamelength IS " + str(self.serverNameLength));
-		sys.stderr.write("errormsg IS " + str(self.errorLength));
 		return ret
 
 while True:
-	tds = PreLoginMessage()
+	tds = TDSPacket()
 	tds.readPacket(sys.stdin)
+	# Type 18 is the pre-login handshake packet
 	if tds.type == 18:
-		sys.stderr.write(tds.toString())
-
 		# Modify the packet
 		tds.type = 4
 		for token in tds.tokens:
@@ -200,11 +201,11 @@ while True:
 
 		sys.stdout.write(tds.writePacket())
 		sys.stdout.flush()
-	else:
-		sys.stderr.write("OEUOEOEUTNHONEUTHONEHUNOTEUH Sending bad login message!\n")
-		
+	# Types 16 and 23 are login attempts
+	elif (tds.type == 16 or tds.type == 23):
 		answer = LoginError()
-		sys.stdout.write(answer.packedString())
+		sys.stdout.write(answer.writePacket())
 		sys.stdout.flush()
+		os.system('createNovaScriptAlert.py "' + os.getenv("HONEYD_IP_SRC") + '" "' + os.getenv("HONEYD_INTERFACE") + '" "mssql" "Mssql database login attempt"') 
 		sys.exit(0)
 
