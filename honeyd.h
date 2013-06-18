@@ -137,6 +137,8 @@ struct port {
 	int proto;
 	u_short number;
 
+	int timeout; /* Used for periodic broadcast scripts */
+
 	struct action action;
 
 	/* Subsystem related information */
@@ -394,6 +396,10 @@ int udp_send(struct udp_con *con, u_char *payload, u_int len);
 
 void config_init(void);
 void config_read(char *);
+
+
+void bcast_insert(struct template *, int, int, struct action *);
+void bcast_trigger(int fd, short what, void *unused);
 
 struct port *port_insert(struct template *, int, int, struct action *);
 struct port *port_random(struct template *, int, struct action *, int, int);

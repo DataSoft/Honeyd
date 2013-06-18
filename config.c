@@ -109,8 +109,9 @@ port_compare(struct port *a, struct port *b)
 }
 
 SPLAY_PROTOTYPE(porttree, port, node, port_compare);
-
 SPLAY_GENERATE(porttree, port, node, port_compare);
+
+
 
 void
 config_init(void)
@@ -285,6 +286,7 @@ template_create(const char *name)
 	tmpl->udp.status = PORT_CLOSED;
 
 	SPLAY_INIT(&tmpl->ports);
+	SPLAY_INIT(&tmpl->bcasts);
 	SPLAY_INSERT(templtree, &templates, tmpl);
 
 	/* Configured subsystems */
@@ -354,6 +356,29 @@ template_insert(struct template *tmpl)
 	if (template_find(tmpl->name) != NULL)
 		return (-1);
 	SPLAY_INSERT(templtree, &templates, tmpl);
+
+
+	struct port *bport;
+
+	// Start broadcasts from this honeypot
+	// TODO refactor this to a template_activate function
+	if (tmpl->honeypot_instance)
+	{
+		SPLAY_FOREACH(bport, porttree, (struct porttree *)&tmpl->bcasts) {
+			struct timeval every;
+			every.tv_sec = bport->timeout;
+			every.tv_usec = 0;
+
+			struct udp_con *con = calloc(1, sizeof(struct udp_con));
+			con->tmpl = tmpl;
+			con->port = bport;
+
+			struct event *ev1 = event_new(libevent_base, -1, EV_TIMEOUT | EV_PERSIST, &bcast_trigger, (void*)con);
+			event_add(ev1, &every);
+
+			// TODO get rid of event when template destructed and garbage collect the ports
+		}
+	}
 
 	return (0);
 }
@@ -508,6 +533,30 @@ port_free(struct template *tmpl, struct port *port)
 	free(port);
 }
 
+// Callback for honeyd script broadcasts
+void bcast_trigger(int fd, short what, void *ptr) {
+	struct udp_con *con = (struct udp_con*)ptr;
+	struct template *tmpl = con->tmpl;
+	struct port *bport = con->port;
+
+
+	printf("\nBCAST_TRIGGER on template: %s for port %d\n", tmpl->name, bport->number);
+
+	//cmd_fork(struct tuple *hdr, struct command *cmd, struct template *tmpl,char *execcmd, char **argv, void *con);
+}
+
+// This lets you have a honeyd script run every n seconds and send out a broadcast UDP packet
+void bcast_insert(struct template *tmpl, int port, int seconds, struct action *action)
+{
+	struct port *p;
+	p = calloc(1, sizeof(struct port));
+	p->action = *action;
+	p->number = port;
+	p->timeout = seconds;
+
+	SPLAY_INSERT(porttree, &tmpl->bcasts, p);
+}
+
 struct port *
 port_insert(struct template *tmpl, int proto, int number,
     struct action *action)
@@ -658,6 +707,10 @@ template_clone(const char *newname, const struct template *tmpl,
 		if (port_insert(newtmpl, port->proto, port->number,
 			&port->action) == NULL)
 			return (NULL);
+	}
+
+	SPLAY_FOREACH(port, porttree, (struct porttree *)&tmpl->bcasts) {
+		bcast_insert(newtmpl, port->number, port->timeout,&port->action);
 	}
 
 	if(tmpl == NULL)

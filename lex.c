@@ -405,7 +405,7 @@ static yyconst flex_int16_t yy_accept[344] =
         0,    0,   89,   79,    0,   77,   79,   79,   79,   79,
        79,   79,   79,   79,   79,   79,   79,   79,   79,   79,
        79,   79,   79,   79,   79,   79,   79,   79,   65,   27,
-       62,   79,   79,   79,   79,   40,   79,   17,   79,   46,
+       62,   79,   79,   79,   79,   40,   79,   18,   79,   46,
        79,   63,   79,   79,   79,   79,   79,   79,   79,   79,
        79,   79,   79,   79,   79,   79,   79,   79,   79,   45,
 
@@ -413,29 +413,29 @@ static yyconst flex_int16_t yy_accept[344] =
        79,   79,   79,    2,   79,   79,   79,   79,   79,   79,
        79,   79,   79,   79,   79,   79,   79,   79,   79,   79,
        79,   79,   79,   79,   30,   79,   79,   79,   79,   79,
-       79,   79,   79,   33,   22,   21,   79,   79,   79,   79,
-       79,   79,   79,   79,   79,   13,   79,   79,   79,   79,
+       79,   79,   79,   33,   23,   22,   79,   79,   79,   79,
+       79,   79,   79,   79,   79,   14,   79,   79,   79,   79,
        28,   79,   56,   79,   79,   79,   57,   29,   79,   79,
-       64,    0,   38,   39,   79,   79,   79,   79,    4,   79,
-       79,   79,   79,   79,   79,   79,   79,   47,   20,   79,
+       64,    0,   38,   39,   79,   79,   79,   79,    5,   79,
+       79,   79,   79,   79,   79,   79,   79,   47,   21,   79,
        79,   79,   79,   79,   79,   54,   58,   79,   79,   79,
 
-       34,   61,   41,   79,   79,    7,   79,   79,   79,    3,
+       34,   61,   41,   79,   79,    8,   79,   79,   79,    4,
        79,   79,   79,   79,   79,   79,   79,   79,   79,   79,
        79,   68,   79,   79,   79,    0,   79,   79,   79,   79,
-        9,   79,    5,   79,   79,   72,   79,   79,   79,   79,
+       10,   79,    6,   79,   79,   72,   79,   79,   79,   79,
        32,   79,   79,   79,   79,   79,   79,   79,   79,   79,
-       79,   79,   79,   23,   79,   10,   79,   31,   79,   79,
-       53,   79,   79,   79,   79,   79,   79,    0,   12,   79,
-       79,   79,   79,    8,    1,   79,   55,   79,   79,   79,
+       79,   79,   79,   24,   79,   11,   79,   31,   79,   79,
+       53,   79,   79,   79,   79,   79,   79,    0,   13,   79,
+       79,   79,   79,    9,    1,   79,   55,   79,   79,   79,
        79,   79,   79,   79,   79,   79,   70,   79,   44,   79,
-       79,   15,   79,   48,   60,   79,   52,   79,   51,   79,
+       79,   16,   79,   48,   60,   79,   52,   79,   51,   79,
 
-       25,   76,   79,   79,   67,   79,   11,   79,   59,   79,
-       79,   18,   79,   73,   79,   36,   50,   79,   79,   49,
-       79,   79,   35,   16,   79,   79,   26,   71,    6,   19,
-       69,   79,   79,   79,   43,   37,   24,   66,   79,   42,
-       79,   14,    0
+       25,   76,   79,   79,   67,   79,   12,   79,   59,   79,
+       79,   19,   79,   73,   79,   36,   50,   79,   79,   49,
+       79,   79,   35,   17,   79,   79,   26,   71,    7,   20,
+       69,   79,   79,   79,   43,   37,    3,   66,   79,   42,
+       79,   15,    0
     } ;
 
 static yyconst flex_int32_t yy_ec[256] =
@@ -1038,112 +1038,112 @@ YY_RULE_SETUP
 case 3:
 YY_RULE_SETUP
 #line 88 "lex.l"
-{ return PORT; }
+{ return BCAST; }
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
 #line 89 "lex.l"
-{ return BIND; }
+{ return PORT; }
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
 #line 90 "lex.l"
-{ return CLONE; }
+{ return BIND; }
 	YY_BREAK
 case 6:
 YY_RULE_SETUP
 #line 91 "lex.l"
-{ return FILTERED; }
+{ return CLONE; }
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
 #line 92 "lex.l"
-{ return OPEN; }
+{ return FILTERED; }
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
 #line 93 "lex.l"
-{ return CLOSED; }
+{ return OPEN; }
 	YY_BREAK
 case 9:
 YY_RULE_SETUP
 #line 94 "lex.l"
-{return FILTERED;}
+{ return CLOSED; }
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
 #line 95 "lex.l"
-{return CLOSED;}
+{return FILTERED;}
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
 #line 96 "lex.l"
-{ return DEFAULT; }
+{return CLOSED;}
 	YY_BREAK
 case 12:
 YY_RULE_SETUP
 #line 97 "lex.l"
-{ return ACTION; }
+{ return DEFAULT; }
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
 #line 98 "lex.l"
-{ return SET; }
+{ return ACTION; }
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
 #line 99 "lex.l"
-{ return PERSONALITY; }
+{ return SET; }
 	YY_BREAK
 case 15:
 YY_RULE_SETUP
 #line 100 "lex.l"
-{ return RANDOM; }
+{ return PERSONALITY; }
 	YY_BREAK
 case 16:
 YY_RULE_SETUP
 #line 101 "lex.l"
-{ return ANNOTATE; }
+{ return RANDOM; }
 	YY_BREAK
 case 17:
 YY_RULE_SETUP
 #line 102 "lex.l"
-{ return NO; }
+{ return ANNOTATE; }
 	YY_BREAK
 case 18:
 YY_RULE_SETUP
 #line 103 "lex.l"
-{ return FINSCAN; }
+{ return NO; }
 	YY_BREAK
 case 19:
 YY_RULE_SETUP
 #line 104 "lex.l"
-{ return FRAGMENT; }
+{ return FINSCAN; }
 	YY_BREAK
 case 20:
 YY_RULE_SETUP
 #line 105 "lex.l"
-{ return DROP; }
+{ return FRAGMENT; }
 	YY_BREAK
 case 21:
 YY_RULE_SETUP
 #line 106 "lex.l"
-{ return OLD; }
+{ return DROP; }
 	YY_BREAK
 case 22:
 YY_RULE_SETUP
 #line 107 "lex.l"
-{ return NEW; }
+{ return OLD; }
 	YY_BREAK
 case 23:
 YY_RULE_SETUP
 #line 108 "lex.l"
-{ return PROXY; }
+{ return NEW; }
 	YY_BREAK
 case 24:
 YY_RULE_SETUP
 #line 109 "lex.l"
-{return BROADCAST;}
+{ return PROXY; }
 	YY_BREAK
 case 25:
 YY_RULE_SETUP

@@ -470,6 +470,7 @@ _dhcp_reply(struct template *tmpl, u_char *buf, size_t buflen)
 			syslog(LOG_ERR, "%s: strdup", __func__);
 			exit(EXIT_FAILURE);
 		}
+		tmpl->honeypot_instance = 1;
 		template_insert(tmpl);
 		template_dump_ips(templateDump);
 

@@ -39,159 +39,161 @@
    enum yytokentype {
      CREATE = 258,
      ADD = 259,
-     PORT = 260,
-     BIND = 261,
-     CLONE = 262,
-     DOT = 263,
-     FILTERED = 264,
-     OPEN = 265,
-     CLOSED = 266,
-     DEFAULT = 267,
-     SET = 268,
-     ACTION = 269,
-     PERSONALITY = 270,
-     RANDOM = 271,
-     ANNOTATE = 272,
-     NO = 273,
-     FINSCAN = 274,
-     FRAGMENT = 275,
-     DROP = 276,
-     OLD = 277,
-     NEW = 278,
-     COLON = 279,
-     PROXY = 280,
-     UPTIME = 281,
-     DROPRATE = 282,
-     IN = 283,
-     SYN = 284,
-     UID = 285,
-     GID = 286,
-     ROUTE = 287,
-     ENTRY = 288,
-     LINK = 289,
-     NET = 290,
-     UNREACH = 291,
-     SLASH = 292,
-     LATENCY = 293,
-     MS = 294,
-     LOSS = 295,
-     BANDWIDTH = 296,
-     SUBSYSTEM = 297,
-     OPTION = 298,
-     TO = 299,
-     SHARED = 300,
-     NETWORK = 301,
-     SPOOF = 302,
-     FROM = 303,
-     TEMPLATE = 304,
-     BROADCAST = 305,
-     TUNNEL = 306,
-     TARPIT = 307,
-     DYNAMIC = 308,
-     USE = 309,
-     IF = 310,
-     OTHERWISE = 311,
-     EQUAL = 312,
-     SOURCE = 313,
-     OS = 314,
-     IP = 315,
-     BETWEEN = 316,
-     DELETE = 317,
-     LIST = 318,
-     ETHERNET = 319,
-     DHCP = 320,
-     ON = 321,
-     MAXFDS = 322,
-     RESTART = 323,
-     DEBUG = 324,
-     DASH = 325,
-     TIME = 326,
-     INTERNAL = 327,
-     STRING = 328,
-     CMDSTRING = 329,
-     IPSTRING = 330,
-     NUMBER = 331,
-     PROTO = 332,
-     FLOAT = 333
+     BCAST = 260,
+     PORT = 261,
+     BIND = 262,
+     CLONE = 263,
+     DOT = 264,
+     FILTERED = 265,
+     OPEN = 266,
+     CLOSED = 267,
+     DEFAULT = 268,
+     SET = 269,
+     ACTION = 270,
+     PERSONALITY = 271,
+     RANDOM = 272,
+     ANNOTATE = 273,
+     NO = 274,
+     FINSCAN = 275,
+     FRAGMENT = 276,
+     DROP = 277,
+     OLD = 278,
+     NEW = 279,
+     COLON = 280,
+     PROXY = 281,
+     UPTIME = 282,
+     DROPRATE = 283,
+     IN = 284,
+     SYN = 285,
+     UID = 286,
+     GID = 287,
+     ROUTE = 288,
+     ENTRY = 289,
+     LINK = 290,
+     NET = 291,
+     UNREACH = 292,
+     SLASH = 293,
+     LATENCY = 294,
+     MS = 295,
+     LOSS = 296,
+     BANDWIDTH = 297,
+     SUBSYSTEM = 298,
+     OPTION = 299,
+     TO = 300,
+     SHARED = 301,
+     NETWORK = 302,
+     SPOOF = 303,
+     FROM = 304,
+     TEMPLATE = 305,
+     BROADCAST = 306,
+     TUNNEL = 307,
+     TARPIT = 308,
+     DYNAMIC = 309,
+     USE = 310,
+     IF = 311,
+     OTHERWISE = 312,
+     EQUAL = 313,
+     SOURCE = 314,
+     OS = 315,
+     IP = 316,
+     BETWEEN = 317,
+     DELETE = 318,
+     LIST = 319,
+     ETHERNET = 320,
+     DHCP = 321,
+     ON = 322,
+     MAXFDS = 323,
+     RESTART = 324,
+     DEBUG = 325,
+     DASH = 326,
+     TIME = 327,
+     INTERNAL = 328,
+     STRING = 329,
+     CMDSTRING = 330,
+     IPSTRING = 331,
+     NUMBER = 332,
+     PROTO = 333,
+     FLOAT = 334
    };
 #endif
 /* Tokens.  */
 #define CREATE 258
 #define ADD 259
-#define PORT 260
-#define BIND 261
-#define CLONE 262
-#define DOT 263
-#define FILTERED 264
-#define OPEN 265
-#define CLOSED 266
-#define DEFAULT 267
-#define SET 268
-#define ACTION 269
-#define PERSONALITY 270
-#define RANDOM 271
-#define ANNOTATE 272
-#define NO 273
-#define FINSCAN 274
-#define FRAGMENT 275
-#define DROP 276
-#define OLD 277
-#define NEW 278
-#define COLON 279
-#define PROXY 280
-#define UPTIME 281
-#define DROPRATE 282
-#define IN 283
-#define SYN 284
-#define UID 285
-#define GID 286
-#define ROUTE 287
-#define ENTRY 288
-#define LINK 289
-#define NET 290
-#define UNREACH 291
-#define SLASH 292
-#define LATENCY 293
-#define MS 294
-#define LOSS 295
-#define BANDWIDTH 296
-#define SUBSYSTEM 297
-#define OPTION 298
-#define TO 299
-#define SHARED 300
-#define NETWORK 301
-#define SPOOF 302
-#define FROM 303
-#define TEMPLATE 304
-#define BROADCAST 305
-#define TUNNEL 306
-#define TARPIT 307
-#define DYNAMIC 308
-#define USE 309
-#define IF 310
-#define OTHERWISE 311
-#define EQUAL 312
-#define SOURCE 313
-#define OS 314
-#define IP 315
-#define BETWEEN 316
-#define DELETE 317
-#define LIST 318
-#define ETHERNET 319
-#define DHCP 320
-#define ON 321
-#define MAXFDS 322
-#define RESTART 323
-#define DEBUG 324
-#define DASH 325
-#define TIME 326
-#define INTERNAL 327
-#define STRING 328
-#define CMDSTRING 329
-#define IPSTRING 330
-#define NUMBER 331
-#define PROTO 332
-#define FLOAT 333
+#define BCAST 260
+#define PORT 261
+#define BIND 262
+#define CLONE 263
+#define DOT 264
+#define FILTERED 265
+#define OPEN 266
+#define CLOSED 267
+#define DEFAULT 268
+#define SET 269
+#define ACTION 270
+#define PERSONALITY 271
+#define RANDOM 272
+#define ANNOTATE 273
+#define NO 274
+#define FINSCAN 275
+#define FRAGMENT 276
+#define DROP 277
+#define OLD 278
+#define NEW 279
+#define COLON 280
+#define PROXY 281
+#define UPTIME 282
+#define DROPRATE 283
+#define IN 284
+#define SYN 285
+#define UID 286
+#define GID 287
+#define ROUTE 288
+#define ENTRY 289
+#define LINK 290
+#define NET 291
+#define UNREACH 292
+#define SLASH 293
+#define LATENCY 294
+#define MS 295
+#define LOSS 296
+#define BANDWIDTH 297
+#define SUBSYSTEM 298
+#define OPTION 299
+#define TO 300
+#define SHARED 301
+#define NETWORK 302
+#define SPOOF 303
+#define FROM 304
+#define TEMPLATE 305
+#define BROADCAST 306
+#define TUNNEL 307
+#define TARPIT 308
+#define DYNAMIC 309
+#define USE 310
+#define IF 311
+#define OTHERWISE 312
+#define EQUAL 313
+#define SOURCE 314
+#define OS 315
+#define IP 316
+#define BETWEEN 317
+#define DELETE 318
+#define LIST 319
+#define ETHERNET 320
+#define DHCP 321
+#define ON 322
+#define MAXFDS 323
+#define RESTART 324
+#define DEBUG 325
+#define DASH 326
+#define TIME 327
+#define INTERNAL 328
+#define STRING 329
+#define CMDSTRING 330
+#define IPSTRING 331
+#define NUMBER 332
+#define PROTO 333
+#define FLOAT 334
 
 
 
@@ -220,7 +222,7 @@ typedef union YYSTYPE
 
 
 /* Line 2068 of yacc.c  */
-#line 224 "parse.h"
+#line 226 "parse.h"
 } YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */

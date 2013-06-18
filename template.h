@@ -58,6 +58,7 @@ struct template {
 	uint32_t addrbits;
 
 	struct porttree ports;
+	struct porttree bcasts;
 
 	struct action icmp;
 	struct action tcp;
