@@ -85,7 +85,10 @@ int includes_index = 0;
 %%
 create		{ return CREATE; }
 add		{ return ADD; }
+broadcast { return BCAST; }
 port		{ return PORT; }
+srcport		{ return SRCPORT; }
+dstport		{ return DSTPORT; }
 bind		{ return BIND; }
 clone		{ return CLONE; }
 filtered		{ return FILTERED; }
@@ -106,7 +109,6 @@ drop		{ return DROP; }
 old		{ return OLD; }
 new		{ return NEW; }
 proxy		{ return PROXY; }
-broadcast {return BROADCAST;}
 uptime		{ return UPTIME; }
 droprate	{ return DROPRATE; }
 in		{ return IN; }

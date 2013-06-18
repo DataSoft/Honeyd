@@ -160,9 +160,10 @@ will reread the configuration file when sent a SIGHUP signal.
 The syntax is as follows:
 .Bd -literal
 config	= creation | addition | delete | binding | set |
-          annotate | route [config] | option
+          annotate | route [config] | option | broadcast
 creation= "create" template-name | "create" "default" |
   "dynamic" template-name
+broadcast= "broadcast" template-name "srcport" number "dstport" number action
 addition= "add" template-name proto "port" port-number action |
   "add" template-name "subsystem" cmd-string ["shared"] |
   "add" template-name "use" template-name "if" condition

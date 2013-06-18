@@ -39,159 +39,165 @@
    enum yytokentype {
      CREATE = 258,
      ADD = 259,
-     PORT = 260,
-     BIND = 261,
-     CLONE = 262,
-     DOT = 263,
-     FILTERED = 264,
-     OPEN = 265,
-     CLOSED = 266,
-     DEFAULT = 267,
-     SET = 268,
-     ACTION = 269,
-     PERSONALITY = 270,
-     RANDOM = 271,
-     ANNOTATE = 272,
-     NO = 273,
-     FINSCAN = 274,
-     FRAGMENT = 275,
-     DROP = 276,
-     OLD = 277,
-     NEW = 278,
-     COLON = 279,
-     PROXY = 280,
-     UPTIME = 281,
-     DROPRATE = 282,
-     IN = 283,
-     SYN = 284,
-     UID = 285,
-     GID = 286,
-     ROUTE = 287,
-     ENTRY = 288,
-     LINK = 289,
-     NET = 290,
-     UNREACH = 291,
-     SLASH = 292,
-     LATENCY = 293,
-     MS = 294,
-     LOSS = 295,
-     BANDWIDTH = 296,
-     SUBSYSTEM = 297,
-     OPTION = 298,
-     TO = 299,
-     SHARED = 300,
-     NETWORK = 301,
-     SPOOF = 302,
-     FROM = 303,
-     TEMPLATE = 304,
-     BROADCAST = 305,
-     TUNNEL = 306,
-     TARPIT = 307,
-     DYNAMIC = 308,
-     USE = 309,
-     IF = 310,
-     OTHERWISE = 311,
-     EQUAL = 312,
-     SOURCE = 313,
-     OS = 314,
-     IP = 315,
-     BETWEEN = 316,
-     DELETE = 317,
-     LIST = 318,
-     ETHERNET = 319,
-     DHCP = 320,
-     ON = 321,
-     MAXFDS = 322,
-     RESTART = 323,
-     DEBUG = 324,
-     DASH = 325,
-     TIME = 326,
-     INTERNAL = 327,
-     STRING = 328,
-     CMDSTRING = 329,
-     IPSTRING = 330,
-     NUMBER = 331,
-     PROTO = 332,
-     FLOAT = 333
+     BCAST = 260,
+     PORT = 261,
+     SRCPORT = 262,
+     DSTPORT = 263,
+     BIND = 264,
+     CLONE = 265,
+     DOT = 266,
+     FILTERED = 267,
+     OPEN = 268,
+     CLOSED = 269,
+     DEFAULT = 270,
+     SET = 271,
+     ACTION = 272,
+     PERSONALITY = 273,
+     RANDOM = 274,
+     ANNOTATE = 275,
+     NO = 276,
+     FINSCAN = 277,
+     FRAGMENT = 278,
+     DROP = 279,
+     OLD = 280,
+     NEW = 281,
+     COLON = 282,
+     PROXY = 283,
+     UPTIME = 284,
+     DROPRATE = 285,
+     IN = 286,
+     SYN = 287,
+     UID = 288,
+     GID = 289,
+     ROUTE = 290,
+     ENTRY = 291,
+     LINK = 292,
+     NET = 293,
+     UNREACH = 294,
+     SLASH = 295,
+     LATENCY = 296,
+     MS = 297,
+     LOSS = 298,
+     BANDWIDTH = 299,
+     SUBSYSTEM = 300,
+     OPTION = 301,
+     TO = 302,
+     SHARED = 303,
+     NETWORK = 304,
+     SPOOF = 305,
+     FROM = 306,
+     TEMPLATE = 307,
+     BROADCAST = 308,
+     TUNNEL = 309,
+     TARPIT = 310,
+     DYNAMIC = 311,
+     USE = 312,
+     IF = 313,
+     OTHERWISE = 314,
+     EQUAL = 315,
+     SOURCE = 316,
+     OS = 317,
+     IP = 318,
+     BETWEEN = 319,
+     DELETE = 320,
+     LIST = 321,
+     ETHERNET = 322,
+     DHCP = 323,
+     ON = 324,
+     MAXFDS = 325,
+     RESTART = 326,
+     DEBUG = 327,
+     DASH = 328,
+     TIME = 329,
+     INTERNAL = 330,
+     STRING = 331,
+     CMDSTRING = 332,
+     IPSTRING = 333,
+     NUMBER = 334,
+     PROTO = 335,
+     FLOAT = 336
    };
 #endif
 /* Tokens.  */
 #define CREATE 258
 #define ADD 259
-#define PORT 260
-#define BIND 261
-#define CLONE 262
-#define DOT 263
-#define FILTERED 264
-#define OPEN 265
-#define CLOSED 266
-#define DEFAULT 267
-#define SET 268
-#define ACTION 269
-#define PERSONALITY 270
-#define RANDOM 271
-#define ANNOTATE 272
-#define NO 273
-#define FINSCAN 274
-#define FRAGMENT 275
-#define DROP 276
-#define OLD 277
-#define NEW 278
-#define COLON 279
-#define PROXY 280
-#define UPTIME 281
-#define DROPRATE 282
-#define IN 283
-#define SYN 284
-#define UID 285
-#define GID 286
-#define ROUTE 287
-#define ENTRY 288
-#define LINK 289
-#define NET 290
-#define UNREACH 291
-#define SLASH 292
-#define LATENCY 293
-#define MS 294
-#define LOSS 295
-#define BANDWIDTH 296
-#define SUBSYSTEM 297
-#define OPTION 298
-#define TO 299
-#define SHARED 300
-#define NETWORK 301
-#define SPOOF 302
-#define FROM 303
-#define TEMPLATE 304
-#define BROADCAST 305
-#define TUNNEL 306
-#define TARPIT 307
-#define DYNAMIC 308
-#define USE 309
-#define IF 310
-#define OTHERWISE 311
-#define EQUAL 312
-#define SOURCE 313
-#define OS 314
-#define IP 315
-#define BETWEEN 316
-#define DELETE 317
-#define LIST 318
-#define ETHERNET 319
-#define DHCP 320
-#define ON 321
-#define MAXFDS 322
-#define RESTART 323
-#define DEBUG 324
-#define DASH 325
-#define TIME 326
-#define INTERNAL 327
-#define STRING 328
-#define CMDSTRING 329
-#define IPSTRING 330
-#define NUMBER 331
-#define PROTO 332
-#define FLOAT 333
+#define BCAST 260
+#define PORT 261
+#define SRCPORT 262
+#define DSTPORT 263
+#define BIND 264
+#define CLONE 265
+#define DOT 266
+#define FILTERED 267
+#define OPEN 268
+#define CLOSED 269
+#define DEFAULT 270
+#define SET 271
+#define ACTION 272
+#define PERSONALITY 273
+#define RANDOM 274
+#define ANNOTATE 275
+#define NO 276
+#define FINSCAN 277
+#define FRAGMENT 278
+#define DROP 279
+#define OLD 280
+#define NEW 281
+#define COLON 282
+#define PROXY 283
+#define UPTIME 284
+#define DROPRATE 285
+#define IN 286
+#define SYN 287
+#define UID 288
+#define GID 289
+#define ROUTE 290
+#define ENTRY 291
+#define LINK 292
+#define NET 293
+#define UNREACH 294
+#define SLASH 295
+#define LATENCY 296
+#define MS 297
+#define LOSS 298
+#define BANDWIDTH 299
+#define SUBSYSTEM 300
+#define OPTION 301
+#define TO 302
+#define SHARED 303
+#define NETWORK 304
+#define SPOOF 305
+#define FROM 306
+#define TEMPLATE 307
+#define BROADCAST 308
+#define TUNNEL 309
+#define TARPIT 310
+#define DYNAMIC 311
+#define USE 312
+#define IF 313
+#define OTHERWISE 314
+#define EQUAL 315
+#define SOURCE 316
+#define OS 317
+#define IP 318
+#define BETWEEN 319
+#define DELETE 320
+#define LIST 321
+#define ETHERNET 322
+#define DHCP 323
+#define ON 324
+#define MAXFDS 325
+#define RESTART 326
+#define DEBUG 327
+#define DASH 328
+#define TIME 329
+#define INTERNAL 330
+#define STRING 331
+#define CMDSTRING 332
+#define IPSTRING 333
+#define NUMBER 334
+#define PROTO 335
+#define FLOAT 336
 
 
 
@@ -220,7 +226,7 @@ typedef union YYSTYPE
 
 
 /* Line 2068 of yacc.c  */
-#line 224 "parse.h"
+#line 230 "parse.h"
 } YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */

@@ -103,7 +103,7 @@ int curtype = -1;	/* Lex sets it to SOCK_STREAM or _DGRAM */
 
 %}
 
-%token	CREATE ADD PORT BIND CLONE DOT FILTERED OPEN CLOSED DEFAULT SET ACTION
+%token	CREATE ADD BCAST PORT SRCPORT DSTPORT BIND CLONE DOT FILTERED OPEN CLOSED DEFAULT SET ACTION
 %token	PERSONALITY RANDOM ANNOTATE NO FINSCAN FRAGMENT DROP OLD NEW COLON
 %token	PROXY UPTIME DROPRATE IN SYN UID GID ROUTE ENTRY LINK NET UNREACH
 %token	SLASH LATENCY MS LOSS BANDWIDTH SUBSYSTEM OPTION TO SHARED NETWORK
@@ -156,6 +156,7 @@ int curtype = -1;	/* Lex sets it to SOCK_STREAM or _DGRAM */
 config		: /* empty */
 		| config creation
 		| config addition
+		| config newbcast
 		| config delete
 		| config subsystem
 		| config binding
@@ -206,6 +207,17 @@ delete		: DELETE template
 		} else {
 			port_free($2, port);
 		}
+	}
+;
+newbcast    : BCAST template SRCPORT NUMBER DSTPORT NUMBER TIME NUMBER action
+	{
+		struct action *action;
+		if ($2 == NULL) {
+			yyerror("No template");
+			break;
+		}
+		
+		bcast_insert($2, $4, $6, $8, &$9);
 	}
 ;
 addition	: ADD template PROTO PORT NUMBER action

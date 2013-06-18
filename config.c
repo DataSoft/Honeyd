@@ -109,8 +109,9 @@ port_compare(struct port *a, struct port *b)
 }
 
 SPLAY_PROTOTYPE(porttree, port, node, port_compare);
-
 SPLAY_GENERATE(porttree, port, node, port_compare);
+
+
 
 void
 config_init(void)
@@ -285,6 +286,7 @@ template_create(const char *name)
 	tmpl->udp.status = PORT_CLOSED;
 
 	SPLAY_INIT(&tmpl->ports);
+	SPLAY_INIT(&tmpl->bcasts);
 	SPLAY_INSERT(templtree, &templates, tmpl);
 
 	/* Configured subsystems */
@@ -354,6 +356,31 @@ template_insert(struct template *tmpl)
 	if (template_find(tmpl->name) != NULL)
 		return (-1);
 	SPLAY_INSERT(templtree, &templates, tmpl);
+
+
+	struct port *bport;
+
+	// Start broadcasts from this honeypot
+	// TODO refactor this to a template_activate function
+	if (tmpl->honeypot_instance)
+	{
+		SPLAY_FOREACH(bport, porttree, (struct porttree *)&tmpl->bcasts) {
+			struct timeval every;
+			every.tv_sec = bport->timeout;
+			every.tv_usec = 0;
+
+			strncpy(bport->templateName, tmpl->name, sizeof(bport->templateName));
+
+			struct udp_con *con = calloc(1, sizeof(struct udp_con));
+			con->port = bport;
+
+
+			struct event *ev1 = event_new(libevent_base, -1, EV_TIMEOUT | EV_PERSIST, &bcast_trigger, (void*)con);
+			event_add(ev1, &every);
+
+			// TODO get rid of event when template destructed and garbage collect the ports
+		}
+	}
 
 	return (0);
 }
@@ -508,6 +535,64 @@ port_free(struct template *tmpl, struct port *port)
 	free(port);
 }
 
+// Callback for honeyd script broadcasts
+void bcast_trigger(int fd, short what, void *ptr) {
+	struct udp_con *con = (struct udp_con*)ptr;
+	struct port *bport = con->port;
+	struct template *tmpl = template_find((const char *)&bport->templateName);
+
+	struct in_addr honeypotAddress;
+	inet_aton(tmpl->name, &honeypotAddress);
+
+	struct ip_hdr ip;
+	struct udp_hdr udp;
+
+	ip.ip_src = 0xFFFFFFFF;
+	ip.ip_dst = honeypotAddress.s_addr;
+	udp.uh_sport = htons(bport->number);
+	udp.uh_dport = htons(bport->srcport);
+
+	struct udp_con *udpcon = udp_new(&ip, &udp, 0);
+	udpcon->tmpl = template_ref(tmpl);;
+
+	char *argv[32];
+
+	/* Create arguments */
+	int i;
+	char *p, *p2;
+	char line[512];
+
+	strlcpy(line, bport->action.action, sizeof(line));
+	p2 = line;
+	for (i = 0; i < sizeof(argv)/sizeof(char *) - 1; i++) {
+		if ((p = strsep(&p2, " ")) == NULL)
+			break;
+		if (strlen(p) == 0) {
+			i--;
+			continue;
+		}
+
+		argv[i] = p;
+	}
+
+	argv[i] = NULL;
+
+	cmd_fork(&udpcon->conhdr, &udpcon->cmd, tmpl, argv[0], argv, (void*)udpcon);
+}
+
+// This lets you have a honeyd script run every n seconds and send out a broadcast UDP packet
+void bcast_insert(struct template *tmpl, int srcport, int dstport, int seconds, struct action *action)
+{
+	struct port *p;
+	p = calloc(1, sizeof(struct port));
+	p->action = *action;
+	p->number = dstport;
+	p->srcport = srcport;
+	p->timeout = seconds;
+
+	SPLAY_INSERT(porttree, &tmpl->bcasts, p);
+}
+
 struct port *
 port_insert(struct template *tmpl, int proto, int number,
     struct action *action)
@@ -658,6 +743,10 @@ template_clone(const char *newname, const struct template *tmpl,
 		if (port_insert(newtmpl, port->proto, port->number,
 			&port->action) == NULL)
 			return (NULL);
+	}
+
+	SPLAY_FOREACH(port, porttree, (struct porttree *)&tmpl->bcasts) {
+		bcast_insert(newtmpl, port->srcport, port->number, port->timeout,&port->action);
 	}
 
 	if(tmpl == NULL)
