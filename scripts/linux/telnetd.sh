@@ -19,6 +19,7 @@ HOST="server"
 
 state="login"
 lastname=""
+name=""
 count=1
 
 my_start
@@ -43,11 +44,8 @@ echo -n "$HOST login: "
 
 while read name; do
 
-	# remove control-characters
-	name=`echo "$name" | sed s/[[:cntrl:]]//g`
-
-	echo "$name" >> $LOG
-
+	# remove non-ascii characters
+	name=`echo "$name" | perl -pi -e 's/[[:^ascii:]]//g'`
 
 	case $state in
 	login)
@@ -60,7 +58,7 @@ while read name; do
 		fi
 	;;
 	pass)
-		createNovaScriptAlert.py "$HONEYD_IP_SRC" "$HONEYD_INTERFACE" "telnet" "Attempted login with credentials $lastname $name" || true
+		createNovaScriptAlert.py "$HONEYD_IP_SRC" "$HONEYD_INTERFACE" "telnet" "Attempted login with username / password of: $lastname / $name" || true
 		login_failed
 	;;
 	esac
