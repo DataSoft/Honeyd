@@ -1053,6 +1053,23 @@ connection_update(struct conlru *head, struct tuple *hdr)
 	generic_timeout(hdr->timeout, HONEYD_IDLE_TIMEOUT);
 }
 
+/* Transforms the second variable into an absolute path, unless it is already one */
+
+void
+determine_path(char *abspath, char **input)
+{
+	char *buffer = NULL;
+	if (*input[0] != '/') {
+		buffer = malloc(strlen(abspath) + strlen(*input));
+		strcpy(buffer, abspath);
+		strcat(buffer, "/");
+		strcat(buffer, *input);
+		*input = (char *) malloc(strlen(buffer));
+		strcpy(*input, buffer);
+		free(buffer);
+	}
+}
+
 struct tcp_con *
 tcp_new(const struct interface* iface, struct ip_hdr *ip, struct tcp_hdr *tcp, int local)
 {
@@ -3518,7 +3535,14 @@ main(int argc, char *argv[])
 	int want_unittest = 0;
 	int setrand = 0;
 	int i, c, orig_argc, ninterfaces = 0;
+	char origin_path[1024];
 	FILE *fp;
+
+	if (getcwd(origin_path, sizeof(origin_path)) == NULL)
+	{
+		syslog(LOG_ERR, "Could not get run path on system.");
+		exit(EXIT_FAILURE);	
+	}
 
 	if(chdir(PATH_HONEYDDATA) == -1)
 	{
@@ -3631,30 +3655,38 @@ main(int argc, char *argv[])
 			dev[ninterfaces++] = optarg;
 			break;
 		case 'f':
+			determine_path(origin_path, &optarg);
 			config.config = optarg;
 			break;
 		case 'l':
+			determine_path(origin_path, &optarg);
 			logfile = optarg;
 			break;
 		case 's':
+			determine_path(origin_path, &optarg);
 			servicelog = optarg;
 			break;
 		case 't':
+			determine_path(origin_path, &optarg);
 			templateDump = optarg;
 			break;
 		case 'x':
+			determine_path(origin_path, &optarg);
 			config.xprobe = optarg;
 			break;
 		case 'a':
+			determine_path(origin_path, &optarg);
 			config.assoc = optarg;
 			break;
 		case 'p':
 			config.pers = optarg;
 			break;
 		case '0':
+			determine_path(origin_path, &optarg);
 			config.osfp = optarg;
 			break;
 		case 'm':
+			determine_path(origin_path, &optarg);
 			config.nmapMac = optarg;
 			break;
 		case 0:
