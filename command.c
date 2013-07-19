@@ -101,8 +101,12 @@ cmd_trigger_write(struct command *cmd, int size)
 void
 cmd_free(struct command *cmd)
 {
-	TRACE(event_get_fd(cmd->pread), event_del(cmd->pread));
-	TRACE(event_get_fd(cmd->pwrite), event_del(cmd->pwrite));
+	if (cmd->pread != NULL)
+		TRACE(event_get_fd(cmd->pread), event_del(cmd->pread));
+
+	if (cmd->pwrite != NULL)
+		TRACE(event_get_fd(cmd->pwrite), event_del(cmd->pwrite));
+
 	TRACE_RESET(cmd->pfd, close(cmd->pfd));
 	cmd->pfd = -1;
 	cmd->pid = -1;
@@ -193,8 +197,7 @@ cmd_proxy_connect(struct tuple *hdr, struct command *cmd, struct addrinfo *ai,
 		return (-1);
 	}
 
-	TRACE(fd,
-		cmd->pwrite = event_new(libevent_base, fd, EV_WRITE, cb->cb_connect, con));
+	TRACE(fd,cmd->pwrite = event_new(libevent_base, fd, EV_WRITE, cb->cb_connect, con));
 	TRACE(event_get_fd(cmd->pwrite), event_add(cmd->pwrite, &tv));
 
 	if (getnameinfo(ai->ai_addr, ai->ai_addrlen,
