@@ -3870,7 +3870,7 @@ main(int argc, char *argv[])
 	if (honeyd_verify_config)
 	{
 		syslog(LOG_ERR, "parsing configuration file successful");
-		exit(EXIT_FAILURE);
+		exit(EXIT_SUCCESS);
 	}
 
 	//Start sending DHCP discoveries that have been queue'd up
