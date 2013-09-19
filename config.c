@@ -176,7 +176,7 @@ void template_dump_ips(char* filePath)
 				//Only write to the size of the array-1, so that we're sure there's a NULL byte at the end
 				if(addr_ntop(tmpl->ethernet_addr, hwAddrString, sizeof(hwAddrString) -1) != NULL)
 				{
-					fprintf(fp, "%s, %s\n", tmpl->name, hwAddrString);
+					fprintf(fp, "%s, %s, %s\n", tmpl->name, hwAddrString, tmpl->inter->if_ent.intf_name);
 				}
 			}
 		}
