@@ -537,6 +537,7 @@ port_free(struct template *tmpl, struct port *port)
 
 // Callback for honeyd script broadcasts
 void bcast_trigger(int fd, short what, void *ptr) {
+	int i;
 	struct udp_con *con = (struct udp_con*)ptr;
 	struct port *bport = con->port;
 	struct template *tmpl = template_find((const char *)&bport->templateName);
@@ -547,7 +548,16 @@ void bcast_trigger(int fd, short what, void *ptr) {
 	struct ip_hdr ip;
 	struct udp_hdr udp;
 
-	ip.ip_src = 0xFFFFFFFF;
+
+	ip_addr_t templateIp;
+	int res = inet_pton(AF_INET, tmpl->name, &(templateIp));
+	uint32_t bcastAddress = ntohl(templateIp);
+	for (i = 0; i < 32 - tmpl->addrbits; i++)
+		bcastAddress |= (0 | (1 << i));
+	bcastAddress = htonl(bcastAddress);
+
+	ip.ip_src = bcastAddress;
+
 	ip.ip_dst = honeypotAddress.s_addr;
 	udp.uh_sport = htons(bport->number);
 	udp.uh_dport = htons(bport->srcport);
@@ -558,7 +568,6 @@ void bcast_trigger(int fd, short what, void *ptr) {
 	char *argv[32];
 
 	/* Create arguments */
-	int i;
 	char *p, *p2;
 	char line[512];
 
