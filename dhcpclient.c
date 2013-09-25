@@ -97,6 +97,7 @@ static struct timeval _timeout_tv = {1, 0};
 
 static int  _pack_request(struct dhcpclient_req *, void *, size_t *);
 static int  _pack_release(struct dhcpclient_req *, void *, size_t *);
+static int  _pack_renew(struct dhcpclient_req *, void *, size_t *);
 static int  _bcast(struct template *,
                 int (*)(struct dhcpclient_req *, void *, size_t *));
 static int  _unicast(struct template *,
@@ -325,6 +326,7 @@ _dhcp_reply(struct template *tmpl, u_char *buf, size_t buflen)
 	struct dhcp_msg *msg = (struct dhcp_msg *)buf;
 	size_t optlen = buflen - sizeof(*msg);
 	uint8_t *p, *end, opt1, opt1len, *opt1p;
+	uint32_t leaseTime = 0;
 	short replyreq = 0, ack = 0, done = 0;
 	struct netconf nc;
 	struct addr *which = NULL, ipmask;
@@ -396,6 +398,12 @@ _dhcp_reply(struct template *tmpl, u_char *buf, size_t buflen)
 			memcpy(nc.domain, opt1p, len);
 			nc.domain[len] = '\0';
 			nc.defined |= NC_DOMAIN;
+			break;
+		}
+		case DH_LEASETIME:{
+			memcpy(&leaseTime, opt1p, sizeof(leaseTime));
+			leaseTime = ntohl(leaseTime);
+			printf("Lease time was %d seconds\n", leaseTime);
 			break;
 		}
 		case DH_SERVIDENT:
@@ -801,3 +809,51 @@ _pack_release(struct dhcpclient_req *req, void *buf, size_t *restlen)
 
 	return (0);
 }
+
+// TODO test and call this
+static int
+_pack_renew(struct dhcpclient_req *req, void *buf, size_t *restlen)
+{
+	struct dhcp_msg *msg;
+	u_char *p;
+	size_t optlen, padlen = 0;
+	struct netconf *nc = &req->nc;
+
+	optlen = (3) + (1); /* just message type */
+
+	if (*restlen < sizeof(*msg) + optlen)
+		return (-1);
+
+	msg = (struct dhcp_msg *)buf;
+
+	memset(msg, 0, sizeof(struct dhcp_msg));
+	msg->dh_op = DH_BOOTREQUEST;
+	msg->dh_htype = DH_HTYPE_ETHERNET;
+	msg->dh_hlen = ETH_ADDR_LEN;
+	msg->dh_xid = req->xid;
+
+	memcpy(msg->dh_chaddr, &req->ea, ETH_ADDR_LEN);
+	msg->dh_ciaddr = nc->hostaddr.addr_ip;
+
+	msg->dh_magiccookie = htonl(DH_MAGICCOOKIE);
+
+	p = (u_char *)buf + sizeof(*msg);
+
+	/* Options */
+
+	/* Message type */
+	*p++ = DH_MSGTYPE;
+	*p++ = 1;
+	*p++ = DH_MSGTYPE_REQUEST;
+
+	*p = 0xff;		/* End options */
+
+	*restlen -= sizeof(*msg) + optlen;
+
+	if (*restlen >= padlen)
+		*restlen -= padlen;	/* Fix for retarted DHCP servers. */
+
+	return (0);
+}
+
+

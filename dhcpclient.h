@@ -108,6 +108,7 @@ struct dhcpclient_req {
 #define DH_HOSTNAME    12
 #define DH_DOMAINNAME  15
 #define DH_REQIP       50
+#define DH_LEASETIME   51
 #define DH_MSGTYPE     53
 #define DH_SERVIDENT   54
 #define DH_PARAMREQ    55
