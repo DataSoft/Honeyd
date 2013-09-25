@@ -2544,6 +2544,7 @@ udp_send(struct udp_con *con, u_char *payload, u_int len)
 }
 
 struct packet_wrapper {
+	const struct interface* iface;
 	u_char *pkt;
 	u_short pktlen;
 	u_char unicast;
@@ -2612,6 +2613,10 @@ handle_udp_packet(struct template *tmpl, void *wrapper)
 		}
 
 		if (!isBroadcast)
+			return 0;
+
+		// If it's broadcast, was it a broadcast packet on our interface?
+		if (pwrapper->iface != tmpl->inter)
 			return 0;
 	}
 
@@ -2719,7 +2724,7 @@ handle_udp_packet(struct template *tmpl, void *wrapper)
 
 
 void
-udp_recv_cb(struct template *tmpl, u_char *pkt, u_short pktlen)
+udp_recv_cb(struct template *tmpl, const struct interface* iface, u_char *pkt, u_short pktlen)
 {
 	struct ip_hdr *ip = NULL;
 	ip = (struct ip_hdr *)pkt;
@@ -2728,6 +2733,7 @@ udp_recv_cb(struct template *tmpl, u_char *pkt, u_short pktlen)
 		return;
 
 	struct packet_wrapper wrapper;
+	wrapper.iface = iface;
 	wrapper.pkt = pkt;
 	wrapper.pktlen = pktlen;
 
@@ -3043,7 +3049,7 @@ honeyd_dispatch(struct template *tmpl, const struct interface* iface, struct ip_
 		tcp_recv_cb(tmpl, iface, (u_char *)ip, iplen);
 		break;
 	case IP_PROTO_UDP:
-		udp_recv_cb(tmpl, (u_char *)ip, iplen);
+		udp_recv_cb(tmpl, iface, (u_char *)ip, iplen);
 		break;
 	case IP_PROTO_ICMP:
 		hooks_dispatch(ip->ip_p, HD_INCOMING, &iphdr,
