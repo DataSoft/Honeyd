@@ -76,14 +76,18 @@ struct netconf {
 #define DHREQ_STATE_WAITANS      0x02
 #define DHREQ_STATE_WAITACK      0x04
 #define DHREQ_STATE_GOTACK      0x08
+#define DHREQ_STATE_RENEWAL		0x10
 
 struct dhcpclient_req {
 	int             state;
 	eth_addr_t      ea;		/* our own */
 	eth_addr_t	server_ea;	/* from the server */
 	uint32_t        xid;
-	struct event    *timeoutev;
+	struct event    *timeoutEv;
+	struct event 	*renewEv;
+	struct event	*renewTimeoutEv;
 	struct timeval  timer;
+	struct timeval  renewTimer;
 	struct netconf  nc;
 	struct addr     servident;
 	int             ntries;
@@ -141,5 +145,7 @@ void queue_dhcp_discover(struct template *tmpl);
 void dhcp_send_discover();
 
 void dhcp_recv_cb(struct eth_hdr *, struct ip_hdr *, u_short);
+
+void dhcp_template_new(struct template *tmpl);
 
 #endif /* _DHCPCLIENT_H */

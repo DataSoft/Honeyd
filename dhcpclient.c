@@ -91,7 +91,7 @@ extern rand_t *honeyd_rand;
 
 int need_dhcp = 0;	/* set to one if a configuration specifies dhcp */
 
-static struct timeval _timeout_tv = {1, 0};
+static struct timeval _timeout_tv = {2, 0};
 
 #define NTRIES 10
 
@@ -103,6 +103,7 @@ static int  _bcast(struct template *,
 static int  _unicast(struct template *,
                 int (*)(struct dhcpclient_req *, void *, size_t *));
 static void _dhcp_timeout_cb(int, short, void *);
+static void _dhcp_renew_timeout_cb(int, short, void *);
 static void _dhcp_reply(struct template *, u_char *, size_t);
 static struct template * _dhcp_dequeue();
 int 		 _dhcp_getconf(struct template *);
@@ -229,8 +230,8 @@ _dhcp_getconf(struct template *tmpl)
 
 	req->ntries = 0;
 
-	req->timeoutev = evtimer_new(libevent_base, _dhcp_timeout_cb, tmpl);
-	evtimer_add(req->timeoutev, &_timeout_tv);
+	req->timeoutEv = evtimer_new(libevent_base, _dhcp_timeout_cb, tmpl);
+	evtimer_add(req->timeoutEv, &_timeout_tv);
 
 	return (0);
 }
@@ -263,9 +264,31 @@ dhcp_abort(struct template *tmpl)
 	if (req->state == 0)
 		return;
 
-	event_del(req->timeoutev);
+	event_del(req->timeoutEv);
 
 	req->state = 0;
+}
+
+static void
+_dhcp_renew_cb(int fd, short ev, void *arg)
+{
+	struct template *tmpl = arg;
+	tmpl->dhcp_req->state = DHREQ_STATE_RENEWAL;
+	event_del(tmpl->dhcp_req->renewEv);
+
+	// Start a timer to trigger if the renew fails
+	tmpl->dhcp_req->renewTimeoutEv = evtimer_new(libevent_base, _dhcp_renew_timeout_cb, tmpl);
+	evtimer_add(tmpl->dhcp_req->renewTimeoutEv, &_timeout_tv);
+
+	_unicast(tmpl, _pack_renew);
+}
+
+static void
+_dhcp_renew_timeout_cb(int fd, short ev, void *arg)
+{
+	struct template *tmpl = arg;
+	event_del(tmpl->dhcp_req->renewTimeoutEv);
+	dhcp_template_new(tmpl);
 }
 
 static void
@@ -300,7 +323,7 @@ _dhcp_timeout_cb(int fd, short ev, void *arg)
 		timeout_tv.tv_sec = 128;
 
 	timeout_tv.tv_usec = 0;
-	evtimer_add(req->timeoutev, &timeout_tv);
+	evtimer_add(req->timeoutEv, &timeout_tv);
 }
 
 static void
@@ -389,7 +412,7 @@ _dhcp_reply(struct template *tmpl, u_char *buf, size_t buflen)
 			if ((req->state & DHREQ_STATE_WAITANS) &&
 			    (*opt1p == DH_MSGTYPE_OFFER))
 				replyreq = 1;
-			if ((req->state & DHREQ_STATE_WAITACK) &&
+			if ((req->state & DHREQ_STATE_WAITACK || req->state & DHREQ_STATE_RENEWAL) &&
 			    (*opt1p == DH_MSGTYPE_ACK))
 				ack = 1;
 			break;
@@ -403,7 +426,6 @@ _dhcp_reply(struct template *tmpl, u_char *buf, size_t buflen)
 		case DH_LEASETIME:{
 			memcpy(&leaseTime, opt1p, sizeof(leaseTime));
 			leaseTime = ntohl(leaseTime);
-			printf("Lease time was %d seconds\n", leaseTime);
 			break;
 		}
 		case DH_SERVIDENT:
@@ -454,12 +476,33 @@ _dhcp_reply(struct template *tmpl, u_char *buf, size_t buflen)
 		struct addr addr = req->nc.hostaddr;
 		struct interface *inter = tmpl->inter;
 
+		// Set up renewal
+		if (leaseTime != 0)
+		{
+			req->renewTimer.tv_usec = 0;
+			req->renewTimer.tv_sec = leaseTime / 2;
+			req->renewEv = evtimer_new(libevent_base, _dhcp_renew_cb, tmpl);
+			evtimer_add(req->renewEv, &req->renewTimer);
+		}
+
+		// If this is a successful renewal, drop out here
+		if (req->state == DHREQ_STATE_RENEWAL)
+		{
+			syslog(LOG_NOTICE, "DHCP lease renewed with new lease of %d seconds\n", leaseTime);
+			req->state = DHREQ_STATE_GOTACK;
+
+			event_del(req->renewTimeoutEv);
+			return;
+		}
+
 		syslog(LOG_NOTICE, "[%s] got DHCP offer: %s",
 		    inter->if_ent.intf_name, addr_ntoa(&addr));
 
 		dhcp_abort(tmpl);
 		//Abort resets the state variable, so we have to set it again afterward
 		req->state = DHREQ_STATE_GOTACK;
+
+
 
 		if (template_find(addr_ntoa(&addr)) != NULL) {
 			syslog(LOG_WARNING,
@@ -541,7 +584,7 @@ dhcp_recv_cb(struct eth_hdr *eth, struct ip_hdr *ip, u_short iplen)
 		return;
 	}
 
-	if (!(req->state & (DHREQ_STATE_WAITANS | DHREQ_STATE_WAITACK)))
+	if (!(req->state & (DHREQ_STATE_WAITANS | DHREQ_STATE_WAITACK | DHREQ_STATE_RENEWAL)))
 		return;
 
 	if (msglen != (iplen - (ip->ip_hl << 2) - UDP_HDR_LEN))
@@ -810,7 +853,6 @@ _pack_release(struct dhcpclient_req *req, void *buf, size_t *restlen)
 	return (0);
 }
 
-// TODO test and call this
 static int
 _pack_renew(struct dhcpclient_req *req, void *buf, size_t *restlen)
 {
@@ -851,9 +893,32 @@ _pack_renew(struct dhcpclient_req *req, void *buf, size_t *restlen)
 	*restlen -= sizeof(*msg) + optlen;
 
 	if (*restlen >= padlen)
-		*restlen -= padlen;	/* Fix for retarted DHCP servers. */
+		*restlen -= padlen;
 
 	return (0);
+}
+
+
+void
+dhcp_template_new(struct template *tmpl)
+{
+	struct addr addr;
+
+	/* Need to find a temporary IP address */
+	if (template_get_dhcp_address(&addr) == -1) {
+		syslog(LOG_ERR, "Failed to obtain temporary IP address.");
+		return;
+	}
+
+	template_remove_arp(tmpl);
+	template_remove(tmpl);
+	free(tmpl->name);
+
+	tmpl->name = strdup(addr_ntoa(&addr));
+	template_post_arp(tmpl, &addr);
+
+	queue_dhcp_discover(tmpl);
+	dhcp_send_discover();
 }
 
 
