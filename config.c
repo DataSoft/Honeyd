@@ -548,15 +548,7 @@ void bcast_trigger(int fd, short what, void *ptr) {
 	struct ip_hdr ip;
 	struct udp_hdr udp;
 
-
-	ip_addr_t templateIp;
-	int res = inet_pton(AF_INET, tmpl->name, &(templateIp));
-	uint32_t bcastAddress = ntohl(templateIp);
-	for (i = 0; i < 32 - tmpl->addrbits; i++)
-		bcastAddress |= (0 | (1 << i));
-	bcastAddress = htonl(bcastAddress);
-
-	ip.ip_src = bcastAddress;
+	ip.ip_src = tmpl->inter->subnetBcastAddress;
 
 	ip.ip_dst = honeypotAddress.s_addr;
 	udp.uh_sport = htons(bport->number);

@@ -38,6 +38,7 @@ struct interface {
 
 	struct intf_entry if_ent;
 	int if_addrbits;
+	uint32_t subnetBcastAddress;
 	struct event *if_recvev;
 	pcap_t *if_pcap;
 	eth_t *if_eth;

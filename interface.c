@@ -309,6 +309,7 @@ interface_regular_filter(struct interface *inter,
 void
 interface_init(char *dev, int naddresses, char **addresses)
 {
+	int i;
 	struct bpf_program fcode;
 	char ebuf[PCAP_ERRBUF_SIZE];
 	struct interface *inter;
@@ -354,6 +355,12 @@ interface_init(char *dev, int naddresses, char **addresses)
 	inter->if_addrbits = inter->if_ent.intf_addr.addr_bits;
 	inter->if_ent.intf_addr.addr_bits = IP_ADDR_BITS;
 	
+
+	inter->subnetBcastAddress = ntohl((uint32_t)inter->if_ent.intf_addr.__addr_u.__ip);
+	for (i = 0; i < 32 - inter->if_addrbits; i++)
+		inter->subnetBcastAddress |= (0 | (1 << i));
+	inter->subnetBcastAddress = htonl(inter->subnetBcastAddress);
+
 	/* Don't open interfaces for real if we just want to verify config */
 	if (interface_verify_config)
 		return;

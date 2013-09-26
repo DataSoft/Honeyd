@@ -795,9 +795,15 @@ honeyd_delay_cb(int fd, short which, void *arg)
 		    &ip->ip_dst, IP_ADDR_LEN);
 
 		struct interface* inter = interface_find_responsible(&dst);
+
+		// Check if the destination is the broadcast address and skip ARP if so
+		if (inter != NULL && ip->ip_dst == inter->subnetBcastAddress)
+		{
+			honeyd_send_normally(ip, iplen);
 		/* This is the source template */
-		if (tmpl != NULL && tmpl->ethernet_addr != NULL && tmpl->inter != NULL &&
-		    inter == tmpl->inter) {
+		} else if (tmpl != NULL && tmpl->ethernet_addr != NULL && tmpl->inter != NULL &&
+		    inter == tmpl->inter)
+		{
 			struct addr src;
 		
 			/* To do ARP, we need to know all this information */
@@ -2594,11 +2600,6 @@ handle_udp_packet(struct template *tmpl, void *wrapper)
 		if (res != 1)
 			return 0;
 
-		uint32_t bcastAddress = ntohl(templateIp);
-		for (i = 0; i < 32 - tmpl->addrbits; i++)
-			bcastAddress |= (0 | (1 << i));
-		bcastAddress = htonl(bcastAddress);
-
 		/* Is it to the global broadcast address? */
 		if (ip->ip_dst == 0xFFFFFFFF) {
 			isBroadcast = 1;
@@ -2606,7 +2607,7 @@ handle_udp_packet(struct template *tmpl, void *wrapper)
 		} else if (ip->ip_dst == 0xFB0000E0) {
 			isBroadcast = 1;
 		/* Is it to the honeypot interface's subnet broadcast address? */
-		} else if (ip->ip_dst == bcastAddress) {
+		} else if (ip->ip_dst == tmpl->inter->subnetBcastAddress) {
 			isBroadcast = 1;
 		} else {
 			isBroadcast = 0;
