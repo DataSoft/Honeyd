@@ -2607,7 +2607,8 @@ handle_udp_packet(struct template *tmpl, void *wrapper)
 		} else if (ip->ip_dst == 0xFB0000E0) {
 			isBroadcast = 1;
 		/* Is it to the honeypot interface's subnet broadcast address? */
-		} else if (ip->ip_dst == tmpl->inter->subnetBcastAddress) {
+		} else if (tmpl->inter != NULL &&
+			ip->ip_dst == tmpl->inter->subnetBcastAddress) {
 			isBroadcast = 1;
 		} else {
 			isBroadcast = 0;
@@ -2740,7 +2741,7 @@ udp_recv_cb(struct template *tmpl, const struct interface* iface, u_char *pkt, u
 
 	// Send the packet to all of the templates and let handle_udp_packet
 	// figure out if it's a match to a subnet
-	if (!strcmp("default", tmpl->name))  {
+	if (tmpl == NULL || !strcmp("default", tmpl->name))  {
 		wrapper.unicast = 0;
 		template_iterate(&handle_udp_packet, (void*)&wrapper);
 	} else {
