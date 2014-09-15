@@ -51,14 +51,4 @@ sleep 1
 #	fi
 #done
 
-while read name; do
-	echo "$name" >> $LOG
-	LINE=`echo "$name" | egrep -i "[\n ]"`
-	if [ -z "$LINE" ]; then
-		echo "Protocol mismatch."
-		my_stop	
-	else
-        echo "$name"
-	fi
-done
 my_stop
