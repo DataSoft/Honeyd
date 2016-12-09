@@ -253,7 +253,7 @@ do
 		;;
 		PORT* )
 			#echo -e "500 Illegal PORT command.\r"
-			echo -e "200 PORT command successfull.\r"
+			echo -e "200 PORT command successful.\r"
 			#echo "parm1: $parm1"
 			#dataport=$parm1
 		;;
