@@ -33,12 +33,12 @@ Make sure that you have them installed.
 
 To install dependencies in Ubuntu:
 
-$ sudo apt-get install libevent-dev libdumbnet-dev libpcap-dev libpcre3-dev libedit-dev bison flex libtool automake
+$ sudo apt-get install libevent-dev libdumbnet-dev libpcap-dev libpcre3-dev libedit-dev bison flex libtool automake zlib1g-dev
 
 To install dependencies in ArchLinux:
 
 # First get these packages
-$ pacman -S libdnet libpcap libevent pcre libedit bison flex libtool automake
+$ pacman -S libdnet libpcap libevent pcre libedit bison flex libtool automake zlib
 
 For the regression framework to run, you need to install the Python
 module for libdnet.  You might need Python 2.4 for the best results.
