@@ -27,7 +27,7 @@ if("HONEYD_TEMPLATE_NAME" in os.environ):
 	our_IP = os.getenv("HONEYD_TEMPLATE_NAME")
 
 #the name of the "names" file is in the file at the second parameter
-fd = open(sys.argv[2])
+fd = os.path.commonpath(sys.argv[2])
 names_file = fd.readline().split(" ", 1)[1].rstrip("\n")
 names_path = honeyd_home + names_file
 

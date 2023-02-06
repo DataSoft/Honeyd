@@ -9,11 +9,9 @@ home = os.path.expanduser("~")
 InitializeDB(home + "/.config/honeyd/names")
 
 try:
-	os.chmod(home + "/.config/honeyd/names", 0666)
-except:
-	pass
+	self._os_chmod(home + "/.config/honeyd/names", 0666)
+except OSError: pass
 
-try:
-	os.chmod(home + "/.config/honeyd", 0777)
-except:
-	pass
+try: 
+	self._os_chmod(self._file_name, 0777)
+except OSError: pass

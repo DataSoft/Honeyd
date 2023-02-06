@@ -19,7 +19,7 @@ honeyd_home = ""
 if("HONEYD_HOME" in os.environ):
 	honeyd_home = os.getenv("HONEYD_HOME")
 
-fd = open(sys.argv[2])
+fd = os.path.commonpath(sys.argv[2])
 names_file = fd.readline().split(" ", 1)[1].rstrip("\n")
 names_path = honeyd_home + names_file
 
