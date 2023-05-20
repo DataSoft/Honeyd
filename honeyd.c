@@ -204,6 +204,7 @@ static char		*servicelog = NULL;
  * 		 provide, but I'm not familiar enough with honeyd to be comfortable with putting it in myself.
  */
 
+
 static struct option honeyd_long_opts[] = {
 	{"include-dir", 0, &honeyd_show_include_dir, 1},
 	{"data-dir",    0, &honeyd_show_data_dir, 1},

@@ -44,7 +44,7 @@ struct rrdtool_command {
 
 #define MAX_RRD_DATASRCS	100
 
-struct event_base *rrdtool_libevent_base;
+extern struct event_base *rrdtool_libevent_base;
 
 struct rrdtool_drv {
 	int fd;

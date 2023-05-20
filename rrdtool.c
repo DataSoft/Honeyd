@@ -62,6 +62,7 @@
 
 extern rand_t *honeyd_rand;
 
+struct event_base *rrdtool_libevent_base;
 
 static void rrdtool_restart(int, short, void *);
 static void rrdtool_write_command(struct rrdtool_drv *, char *);

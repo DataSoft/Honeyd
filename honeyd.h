@@ -56,7 +56,7 @@
 
 #include "compat/sys/tree.h"
 
-struct event_base *libevent_base;
+extern struct event_base *libevent_base;
 
 struct config {
 	char *config;	 /* Name of configuration file */

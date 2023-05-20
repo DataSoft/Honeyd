@@ -72,6 +72,9 @@ int npersons;
 struct personate person_drop = {};
 static struct timeval tv_periodic;
 
+struct perstree personalities;
+struct xp_fprint_tree xp_fprints;
+
 SPLAY_GENERATE(perstree, personality, node, perscompare);
 
 /* ET - For the Xprobe fingerprint tree */
