@@ -75,6 +75,10 @@ static void stats_make_fd(struct addr *, u_short);
 static void stats_activate(struct stats *stats);
 static void stats_deactivate(struct stats *stats);
 
+enum SIGTAGS signature_tags;
+enum MEASURETAGS measurement_tags;
+struct event_base *libevent_base;
+
 /* Many static variables.  We don't like them */
 
 /* We might have other consumers of our created records */

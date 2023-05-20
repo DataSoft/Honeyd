@@ -42,11 +42,13 @@ struct hash {
 	u_char digest[SHINGLE_SIZE];
 };
 
-enum {
+enum RECORDTAGS {
 	REC_TV_START, REC_TV_END, REC_SRC, REC_DST, REC_SRC_PORT, REC_DST_PORT,
 	REC_PROTO, REC_STATE, REC_OS_FP, REC_HASH, REC_BYTES, REC_FLAGS,
 	REC_MAX_TAGS
-} record_tags;
+};
+
+extern enum RECORDTAGS record_tags;
 
 #define RECORD_STATE_NEW	0x01
 
@@ -67,9 +69,12 @@ struct record {
 	TAILQ_HEAD(hashq, hash) hashes;	/* optional */
 };
 
-enum {
+enum STATE {
 	ADDR_TYPE, ADDR_BITS, ADDR_ADDR, ADDR_MAX_TAGS
-} address_tags;
+};
+
+extern enum STATE address_tags;
+
 
 void record_marshal(struct evbuffer *, struct record *);
 

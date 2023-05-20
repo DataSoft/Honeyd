@@ -48,7 +48,7 @@ struct user {
 
 SPLAY_HEAD(usertree, user);
 
-struct event_base *stats_libevent_base;
+extern struct event_base *stats_libevent_base;
 
 int signature_process(struct evbuffer *evbuf);
 void checkpoint_replay(int fd);
